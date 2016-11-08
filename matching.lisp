@@ -1,6 +1,7 @@
 
 (in-package :cl-conllu)
 
+
 (defclass token ()
   (id form lemma upostag xpostag feats head deprel deps misc))
 
@@ -11,54 +12,6 @@
    (tokens :initarg :tokens
 	   :initform nil
 	   :accessor sentence-tokens)))
-
-(defun read-file (filename)
-  (with-open-file (in filename)
-    (do ((line (read-line in nil nil)
-	       (read-line in nil nil))
-	 (lineno 0
-		 (+ 1 lineno))
-	 (current (make-instance 'sentence))
-	 (groups nil))
-	((null line)
-	 (progn (push current groups)
-		(reverse groups)))
-      (if (equal line "")
-	  (progn (push current groups)
-		 (setf current (make-instance 'sentence))
-		 (setf (sentence-start current) (+ 1 lineno)))
-	  (push line (sentence-tokens current))))))
-
-
-(defun read-file (filename)
-  (with-open-file (in filename)
-    (do ((line (read-line in nil nil)
-	       (read-line in nil nil))
-	 (lineno 0
-		 (+ 1 lineno))
-	 (state 1)
-	 (tokens nil)
-	 (begining 0)
-	 (sentences nil))
-	((null line)
-	 (push (reverse tokens) sentences)
-	 (reverse sentences))
-      (cond
-	((and (equal state 1) (equal line ""))
-	 nil)
-	((and (equal state 1) (not (equal line "")))
-	 (setf state 2
-	       begining lineno)
-	 (push line tokens))
-	((and (equal state 2) (not (equal line "")))
-	 (push line tokens))
-	((and (equal state 2) (equal line ""))
-	 (push (make-instance 'sentence :start begining :tokens (reverse tokens))
-	       sentences)
-	 (setf state 1
-	       tokens nil))))))
-
-
 
 (defun line->token (line)
   (if (cl-ppcre:scan "^#" line)
@@ -101,18 +54,13 @@
        (return (reverse sentences))))))
 
 
-(defun file-string (path)
-  (with-open-file (stream path)
-    (let ((data (make-string (file-length stream))))
-      (read-sequence data stream)
-      data)))
-
-;; (defparameter *sentences* (cl-ppcre:split "\\n\\n" (file-string "release/pt-ud-dev.conllu")))
-
-(defun words (sentence)
-  (mapcar (lambda (s) (cl-ppcre:split "\\t" s))
-	  (remove-if (lambda (s) (cl-ppcre:scan "^#" s)) sentence)))
+(defun sentence->text (sentence)
+  (format nil "~{~a~^ ~}"
+	  (mapcar (lambda (tk) (slot-value tk 'lemma))
+		  (remove-if-not (lambda (tk)
+				   (equal (class-of tk)
+					  (find-class 'token)))
+				 (sentence-tokens sentence)))))
 
 
-;; (format nil "~{~a~^ ~}" (mapcar #'second (words (cl-ppcre:split "\\n" (car *sentences*)))))
 
