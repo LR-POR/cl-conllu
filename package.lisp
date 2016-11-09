@@ -13,4 +13,9 @@
 ;; limitations under the License.
 
 (defpackage :cl-conllu
-  (:use :cl :cl-ppcre :split-sequence))
+  (:use :cl :cl-ppcre :split-sequence)
+  (:export
+   #:make-sentence
+   #:read-conllu
+   #:write-conllu
+   #:sentence->text))

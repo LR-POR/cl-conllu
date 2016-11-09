@@ -21,4 +21,4 @@
   :license "Apache 2.0"
   :depends-on (#:cl-ppcre #:split-sequence #:levenshtein #:alexandria)
   :components ((:file "package")
-	       (:file "matching"   :depends-on ("package"))))
+	       (:file "read-write"   :depends-on ("package"))))
