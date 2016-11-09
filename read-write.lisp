@@ -62,40 +62,45 @@
 
 
 (defun read-conllu (filename)
+  (with-open-file (in filename)
+    (read-conllu-from-stream in)))
+
+
+(defun read-conllu-from-stream (stream)
   (macrolet ((flush-line ()
-	       `(setq line (read-line in nil nil)
+	       `(setq line (read-line stream nil nil)
 		      lineno (+ lineno 1))))
-    (with-open-file (in filename)
-      (prog (line (lineno 0) begining lines sentences)
-       label-1
-       (flush-line)
-       (alexandria:switch (line :test #'equal)
-	 (nil (go label-3))
-	 ("" (go label-1))
-	 (t (setq begining lineno)
-	    (push line lines)
-	    (go label-2)))
+    (prog (line (lineno 0) begining lines sentences)
+     label-1
+     (flush-line)
+     (alexandria:switch (line :test #'equal)
+       (nil (go label-3))
+       ("" (go label-1))
+       (t (setq begining lineno)
+	  (push line lines)
+	  (go label-2)))
      
-       label-2
-       (flush-line)
-       (alexandria:switch (line :test #'equal)
-	 (nil (go label-3))
-	 ("" (push (make-sentence begining (reverse lines))
-		   sentences)
-	     (setq lines nil)
-	     (go label-1))
-	 (t (push line lines)
-	    (go label-2)))
+     label-2
+     (flush-line)
+     (alexandria:switch (line :test #'equal)
+       (nil (go label-3))
+       ("" (push (make-sentence begining (reverse lines))
+		 sentences)
+	   (setq lines nil)
+	   (go label-1))
+       (t (push line lines)
+	  (go label-2)))
 
-       label-3
-       (if lines
-	   (push (make-sentence begining (reverse lines))
-		 sentences))
-       (return (reverse sentences))))))
+     label-3
+     (if lines
+	 (push (make-sentence begining (reverse lines))
+	       sentences))
+     (return (reverse sentences)))))
 
 
-(defun list-to-tsv (alist)
-  (format nil "~{~a~^~a~}"
+;; O(2n) complexity
+(defun list-to-tsv (alist stream)
+  (format stream "~{~a~^~a~}"
 	  (reduce (lambda (a alist)
 		    (if alist
 			(cons a (cons #\Tab alist))
@@ -103,37 +108,41 @@
 		  alist :from-end t :initial-value nil)))
 
 
+(defun write-token (tk stream)
+  (reduce (lambda (alist a)
+	    (if alist (princ #\Tab stream))
+	    (princ (slot-value tk a) stream)
+	    (append alist (cons a nil)))
+	  '(id form lemma upostag xpostag feats head deprel deps misc)
+	  :initial-value nil))
+
+
+(defun write-sentence (sentence stream)
+  (maphash (lambda (k v)
+	     (format stream "# ~a ~a~%" k v))
+	   (sentence-meta sentence))
+  (reduce (lambda (alist tk)
+	    (if alist (princ #\Linefeed stream))
+	    (write-token tk stream)
+	    (append alist (cons tk nil)))
+	  (sentence-tokens sentence) :initial-value nil)
+  (princ #\Linefeed stream)) 
+
+
+(defun write-conllu-to-stream (sentences out)
+  (reduce (lambda (alist sent)
+	    (if alist (princ #\Linefeed out))
+	    (write-sentence sent out)
+	    (append alist (cons sent nil)))
+	  sentences :initial-value nil))
+
+
 (defun write-conllu (sentences filename &key (if-exists :supersede))
-  (labels ((print-cols (slots obj out start)
-	     (if (null slots)
-		 (princ #\Linefeed out)
-		 (progn
-		   (if (not start)
-		       (princ #\Tab out))
-		   (princ (slot-value obj (car slots)) out)
-		   (print-cols (cdr slots) obj out nil)))))
-    (with-open-file (out filename :direction :output :if-exists if-exists)
-      (let ((start t))
-	(dolist (sent sentences)
-	  (if start
-	      (setq start nil)
-	      (princ #\Linefeed out))
-	  (maphash (lambda (k v)
-		     (format out "# ~a ~a~%" k v))
-		   (sentence-meta sent))
-	  
-	  (mapc (lambda (tk)
-		  (write-line (list-to-tsv (mapcar (lambda (k) (slot-value tk k))
-						   '(id form lemma upostag xpostag feats head deprel deps misc)))
-			      out)
-	  	  ;; (print-cols '(id form lemma upostag xpostag feats head deprel deps misc)
-	  	  ;; 	      tk out t)
-		  )
-	  	(sentence-tokens sent)))))))
+  (with-open-file (out filename :direction :output :if-exists if-exists)
+    (write-conllu-to-stream sentences out)))
 
 
 (defun sentence->text (sentence)
   (format nil "~{~a~^ ~}"
 	  (mapcar (lambda (tk) (slot-value tk 'form))
 		  (sentence-tokens sentence))))
-
