@@ -97,6 +97,6 @@
 
 (defun sentence->text (sentence)
   (format nil "~{~a~^ ~}"
-	  (mapcar (lambda (tk) (slot-value tk 'lemma))
+	  (mapcar (lambda (tk) (slot-value tk 'form))
 		  (sentence-tokens sentence))))
 
