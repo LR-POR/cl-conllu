@@ -121,10 +121,15 @@
 	  (maphash (lambda (k v)
 		     (format out "# ~a ~a~%" k v))
 		   (sentence-meta sent))
+	  
 	  (mapc (lambda (tk)
-		  (print-cols '(id form lemma upostag xpostag feats head deprel deps misc)
-			      tk out t))
-		(sentence-tokens sent)))))))
+		  (write-line (list-to-tsv (mapcar (lambda (k) (slot-value tk k))
+						   '(id form lemma upostag xpostag feats head deprel deps misc)))
+			      out)
+	  	  ;; (print-cols '(id form lemma upostag xpostag feats head deprel deps misc)
+	  	  ;; 	      tk out t)
+		  )
+	  	(sentence-tokens sent)))))))
 
 
 (defun sentence->text (sentence)
