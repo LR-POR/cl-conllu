@@ -18,4 +18,7 @@
    #:make-sentence
    #:read-conllu
    #:write-conllu
-   #:sentence->text))
+   #:sentence->text
+   #:read-conllu-from-stream
+   #:write-sentence
+   #:write-conllu-to-stream))
