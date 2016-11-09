@@ -91,8 +91,20 @@
        (return (reverse sentences))))))
 
 
-(defun write-conllu (sentences)
-  "...")
+(defun write-conllu (sentences filename &key (if-exists :supersede))
+  (with-open-file (out filename :direction :output :if-exists if-exists)
+    (dolist (sent sentences)
+      (maphash (lambda (k v)
+		 (format out "# ~s ~s~%" k v))
+	       (sentence-meta sent))
+      (mapc (lambda (tk)
+	      (write-line (reduce (lambda (s k)
+				    (concatenate 'string s (slot-value tk k)))
+				  '(id form lemma upostag xpostag feats head deprel deps misc)
+				  :initial-value "")
+			  out))
+	    (sentence-tokens sent))
+      (write-line "" out)))))
 
 
 (defun sentence->text (sentence)
