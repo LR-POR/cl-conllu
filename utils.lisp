@@ -15,14 +15,14 @@
 			   (cons (mapcar (lambda (current)
 					   (list current
 						 (car sentences-1)
-						 (funcall teste
+						 (funcall test
 							  (funcall key (car sentences-1))
 							  (funcall key current))))
 					 sentences-2)
 				 distances)
-			   teste key)
+			   test key)
 		 (reverse distances))))
-   (diff-aux sentences-a sentences-b '() teste key)))
+   (diff-aux sentences-a sentences-b nil test key)))
 
 
 (defun find-min (list &key (min nil))
