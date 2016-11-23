@@ -21,4 +21,6 @@
   :license "Apache 2.0"
   :depends-on (#:cl-ppcre #:levenshtein #:alexandria)
   :components ((:file "package")
-	       (:file "read-write"   :depends-on ("package"))))
+	       (:file "data"       :depends-on ("package"))
+	       (:file "read-write" :depends-on ("data"))
+	       (:file "utils"      :depends-on ("data"))))

@@ -21,4 +21,5 @@
    #:sentence->text
    #:read-conllu-from-stream
    #:write-sentence
-   #:write-conllu-to-stream))
+   #:write-conllu-to-stream
+   #:diff))
