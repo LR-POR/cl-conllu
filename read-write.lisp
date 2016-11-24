@@ -29,6 +29,8 @@
 	  lines)
     meta))
 
+(defun collect-meta (lines)
+  (mapcar (lambda (line) (string-trim '(#\# #\Space #\Tab) line)) lines))
 
 (defun make-sentence (lineno lines)
   (labels ((reading (lines meta tokens)
