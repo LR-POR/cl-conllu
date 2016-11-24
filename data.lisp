@@ -16,3 +16,14 @@
    (tokens :initarg :tokens
 	   :initform nil
 	   :accessor sentence-tokens)))
+
+
+(defun sentence->text (sentence)
+  (format nil "~{~a~^ ~}"
+	  (mapcar (lambda (tk) (slot-value tk 'form))
+		  (sentence-tokens sentence))))
+
+
+(defun sentence-size (sentence)
+  (length (sentence-tokens sentence)))
+
