@@ -44,6 +44,16 @@
   (diff-aux sentences-a sentences-b nil limit test key))
 
 
+(defun print-diff (matriz)
+  (mapcar (lambda (line)
+	    (cons (sentence-meta (car line))
+		  (mapcar (lambda (pair)
+			    (list (sentence-meta (car pair))
+				  (cadr pair)))
+			  (cdr line))))
+	  matriz))
+
+
 (defun find-min (list &key (min nil))
   (cond
     ((null list)
@@ -53,3 +63,7 @@
 	    (caddr min)))
      (find-min (cdr list) :min (car list)))
     (t (find-min (cdr list) :min min))))
+
+
+
+
