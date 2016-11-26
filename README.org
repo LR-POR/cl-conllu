@@ -1,3 +1,8 @@
 #+title: Library for working with ConLLU files with CL
 
 Initial version. 
+
+https://editor.datatables.net/examples/inline-editing/simple
+https://codepen.io/ashblue/pen/mCtuA
+http://markcell.github.io/jquery-tabledit/#home 
+http://www.jtable.org

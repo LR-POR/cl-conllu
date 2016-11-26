@@ -103,9 +103,9 @@
 
 
 (defun write-sentence (sentence stream)
-  (maphash (lambda (k v)
-	     (format stream "# ~a ~a~%" k v))
-	   (sentence-meta sentence))
+  ;; (maphash (lambda (k v)
+  ;; 	     (format stream "# ~a ~a~%" k v))
+  ;; 	   (sentence-meta sentence))
   (reduce (lambda (alist tk)
 	    (if alist (princ #\Linefeed stream))
 	    (write-token tk stream)
@@ -125,4 +125,6 @@
 (defun write-conllu (sentences filename &key (if-exists :supersede))
   (with-open-file (out filename :direction :output :if-exists if-exists)
     (write-conllu-to-stream sentences out)))
+
+
 

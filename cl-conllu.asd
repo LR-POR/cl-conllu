@@ -19,8 +19,9 @@
   :description "Common Lisp corpus conllu utilities"
   :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
-  :depends-on (#:cl-ppcre #:levenshtein #:alexandria)
+  :depends-on (#:cl-ppcre #:alexandria :djula :ningle :clack :lack)
   :components ((:file "package")
 	       (:file "data"       :depends-on ("package"))
 	       (:file "read-write" :depends-on ("data"))
-	       (:file "utils"      :depends-on ("data"))))
+	       (:file "utils"      :depends-on ("data"))
+	       (:file "web"        :depends-on ("data"))))
