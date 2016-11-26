@@ -1,8 +1,30 @@
 #+title: Library for working with ConLLU files with CL
 
-Initial version. 
+We have already the basic funcionalities:
+
+1. load and save conllu files.
+2. compare list of sentences.
+
+* Web Interface
+
+The idea is two be able to edit the sentences via a local web
+interface. Working in progress.
+
+Lisp Backend:
+
+1. http://clacklisp.org
+2. http://8arrow.org/ningle/
+3. http://mmontone.github.io/djula/
+
+Javascript and CSS:
+
+4. http://getbootstrap.com
+5. http://jquery.com
+
+Table editor ideas:
 
 https://editor.datatables.net/examples/inline-editing/simple
 https://codepen.io/ashblue/pen/mCtuA
 http://markcell.github.io/jquery-tabledit/#home 
 http://www.jtable.org
+
