@@ -13,26 +13,16 @@
 	tk)))
 
 
-(defun line->values (line)
-  (if (cl-ppcre:scan "^#" line)
-      (let ((data (cl-ppcre:split "[ \\t]+" line)))
-	(values (cadr data) (caddr data)))
-      line))
-
-
 (defun collect-meta (lines)
-  (let ((meta (make-hash-table :test #'equal)))
-    (mapc (lambda (line)
-	    (multiple-value-bind (k v)
-		(line->values line)
-	      (setf (gethash k meta) v)))
-	  lines)
-    meta))
+  (mapcar (lambda (line)
+	    (let* ((cl  (string-trim '(#\# #\Space #\Tab) line))
+		   (pos (position #\Space cl)))
+	      (cons (subseq cl 0 pos)
+		    (subseq cl (1+ pos)))))
+	  lines))
 
-(defun collect-meta (lines)
-  (mapcar (lambda (line) (string-trim '(#\# #\Space #\Tab) line)) lines))
 
-(defun make-sentence (lineno lines)
+(defun make-sentence (lineno lines fn-meta)
   (labels ((reading (lines meta tokens)
 	     (cond
 	       ((null lines)
@@ -43,15 +33,15 @@
 		(reading (cdr lines) meta (cons (line->token (car lines)) tokens))))))
     (multiple-value-bind (meta tokens)
 	(reading lines nil nil)
-      (make-instance 'sentence :start lineno :tokens tokens :meta (collect-meta meta)))))
+      (make-instance 'sentence :start lineno :tokens tokens :meta (funcall fn-meta meta)))))
 
 
-(defun read-conllu (filename)
+(defun read-conllu (filename &key (fn-meta #'collect-meta))
   (with-open-file (in filename)
-    (read-conllu-from-stream in)))
+    (read-conllu-from-stream in :fn-meta fn-meta)))
 
 
-(defun read-conllu-from-stream (stream)
+(defun read-conllu-from-stream (stream &key (fn-meta #'collect-meta))
   (macrolet ((flush-line ()
 	       `(setq line (read-line stream nil nil)
 		      lineno (+ lineno 1))))
@@ -69,7 +59,7 @@
      (flush-line)
      (alexandria:switch (line :test #'equal)
        (nil (go label-3))
-       ("" (push (make-sentence begining (reverse lines))
+       ("" (push (make-sentence begining (reverse lines) fn-meta)
 		 sentences)
 	   (setq lines nil)
 	   (go label-1))
@@ -78,7 +68,7 @@
 
      label-3
      (if lines
-	 (push (make-sentence begining (reverse lines))
+	 (push (make-sentence begining (reverse lines) fn-meta)
 	       sentences))
      (return (reverse sentences)))))
 
@@ -103,9 +93,9 @@
 
 
 (defun write-sentence (sentence stream)
-  ;; (maphash (lambda (k v)
-  ;; 	     (format stream "# ~a ~a~%" k v))
-  ;; 	   (sentence-meta sentence))
+  (mapcar (lambda (pair)
+	    (format stream "# ~a ~a~%" (car pair) (cdr pair)))
+	  (sentence-meta sentence))
   (reduce (lambda (alist tk)
 	    (if alist (princ #\Linefeed stream))
 	    (write-token tk stream)
@@ -125,6 +115,4 @@
 (defun write-conllu (sentences filename &key (if-exists :supersede))
   (with-open-file (out filename :direction :output :if-exists if-exists)
     (write-conllu-to-stream sentences out)))
-
-
 
