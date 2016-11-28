@@ -102,3 +102,15 @@
 # WHERE {
 #   d:myList d:contents/rdf:rest*/rdf:first ?item
 # }
+
+# token com wordform "Foi", seguido de token com POS Verb.
+#prefix c: <http://example.com/>
+#
+#select ?t2
+#{
+#  ?t1 c:wf "Foi" .
+#  
+#  [ rdf:first ?t1 ; rdf:rest [ rdf:first ?t2 ] ] .
+#  
+#  ?t2 c:pos c:Verb .
+#}
