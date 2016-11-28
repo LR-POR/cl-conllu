@@ -1,4 +1,10 @@
 @prefix conll: <http://example.com/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 # 1	Foi	_	VERB	v-fin|PS|3S|IND	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin|fPOS=VERB++v-fin|PS|3S|IND	2	auxpass	_	_
 # 2	eleito	_	VERB	v-pcp|M|S	Gender=Masc|Number=Sing|VerbForm=Part|fPOS=VERB++v-pcp|M|S	0	ROOT	_	_
@@ -34,7 +40,7 @@
 
     conll:id1 a conll:Sentence .
 
-    conll:id1 conll:tokens ( conll:id1t2 conll:id1t3 conll:id1t4 conll:id1t5 conll:id1t6 conll:id1t7 conll:id1t8 conll:id1t1 conll:id1t8 ) .
+    conll:id1 conll:tokens (conll:id1t1 conll:id1t2 conll:id1t3 conll:id1t4 conll:id1t5 conll:id1t6 conll:id1t7 conll:id1t8) .
     conll:id1 rdfs:label "Foi eleito Mauro Borges, também do PMDB." .
     
     conll:id1t1 conll:pos conll:Verb .
