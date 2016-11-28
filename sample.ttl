@@ -40,7 +40,7 @@
 
     conll:id1 a conll:Sentence .
 
-    conll:id1 conll:tokens (conll:id1t1 conll:id1t2 conll:id1t3 conll:id1t4 conll:id1t5 conll:id1t6 conll:id1t7 conll:id1t8) .
+    conll:id1 conll:tokens (conll:id1t1 conll:id1t2 conll:id1t3 conll:id1t4 conll:id1t5 conll:id1t6 conll:id1t7 conll:id1t8 conll:id1t9) .
     conll:id1 rdfs:label "Foi eleito Mauro Borges, também do PMDB." .
     
     conll:id1t1 conll:pos conll:Verb .
