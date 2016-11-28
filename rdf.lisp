@@ -80,6 +80,7 @@
           (deps (slot-value tk 'deps))
           (misc (slot-value tk 'misc)))
       (format stream "conll:~a a conll:Token .~%" tid)
+      (format stream "conll:~a conll:sentence conll:~a .~%" tid id)
       (format stream "conll:~a conll:form ~a .~%" tid (make-literal form))
       (format stream "conll:~a conll:lemma ~a .~%" tid (make-literal lemma))
       (format stream "conll:~a conll:upos ~a .~%" tid (make-upos upostag))
