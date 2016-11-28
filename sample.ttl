@@ -114,3 +114,22 @@
 #  
 #  ?t2 c:pos c:Verb .
 #}
+
+# Aux Verb(verbform=Part)
+
+prefix c: <http://br.ibm.com/conll/>
+
+
+# verbos auxiliares seguidos de verbos no participio
+# select ?l1 ?l2
+# {
+#   ?t1 c:upos c:Aux .
+#   ?t1 c:form ?l1 .
+  
+#   [ rdf:first ?t1 ; rdf:rest [ rdf:first ?t2 ] ] .
+  
+#   ?t2 c:upos c:Verb .
+#   ?t2 c:features [ c:verbform c:Part ] .
+  
+#   ?t2 c:form ?l2 .
+# }
