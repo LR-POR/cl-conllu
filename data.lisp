@@ -17,6 +17,9 @@
 	   :accessor sentence-tokens)))
 
 
+(defun sentence-meta-value (sentence meta-field)
+  (cdr (assoc meta-field (sentence-meta sentence) :test #'equal)))
+
 (defun sentence->text (sentence)
   (format nil "~{~a~^ ~}"
 	  (mapcar (lambda (tk) (slot-value tk 'form))

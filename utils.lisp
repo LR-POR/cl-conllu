@@ -44,6 +44,22 @@
   (diff-aux sentences-a sentences-b nil limit test key))
 
 
+;; final version
+
+(defun diff (sentences-a sentences-b &key test key)
+  (let* ((distances (make-array (list (length sentences-a)
+				      (length sentences-b))
+				:initial-element -1))
+	 (dim (array-dimensions tb)))
+    (dotimes (line (car dim) distances)
+      (format t "Computing line [~a]~%" line)
+      (dotimes (column (cadr dim))
+	(setf (aref distances line column)
+	      (funcall test
+		       (funcall key (nth line sentences-1))
+		       (funcall key (nth column sentences-2))))))))
+
+
 (defun print-diff (matriz)
   (mapcar (lambda (line)
 	    (cons (sentence-meta (car line))
