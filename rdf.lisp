@@ -28,6 +28,9 @@
                      (#\Tab . "\\t"))
               :test #'char=)))
 
+(defun unspecified-field (c)
+  (string-equal c "_"))
+
 (defun make-literal (string)
   (format nil "\"~a\"" (escape-string string #'escape-turtle-char)))
 
@@ -35,21 +38,22 @@
   (format nil "~at~a" sentence-id token-id))
 
 (defun make-upos (upos)
-  (format nil "conll:~a"
-          (cdr (assoc upos
-                      (pairlis
-                       '("ADJ" "ADP" "ADV" "AUX" "CONJ" "DET" "INTJ" "NOUN" "NUM" "PART" "PRON" "PROPN" "PUNCT" "SCONJ" "SYM" "VERB" "X")
-                       '("Adj" "Adp" "Adv" "Aux" "Conj" "Det" "Intj" "Noun" "Num" "Part" "Pron" "PropN" "Punct" "SConj" "Sym" "Verb" "X"))
-                      :test #'string-equal))))
+  (format nil "conll:~a" (string-capitalize upos)))
 
 (defun make-dep (dep)
   (format nil "conll:~a" dep))
 
+(defun make-metadata (metadata)
+  (format nil "~{ ~a ~}"
+          (mapcar (lambda (m)
+                    (format nil "[ conll:metadata-key ~a ; conll:metadata-value ~a ]" (make-literal (car m)) (make-literal (cdr m)))) metadata)))
+
 (defun make-features (features)
-  (unless (string-equal features "_")
+  (unless (unspecified-field features)
     (format nil "~{ ~a~^;~}" 
-            (mapcar (lambda (f) (destructuring-bind (name value) (split-sequence #\= f)
-                                  (format nil "conll:~a conll:~a" (string-downcase name) value))) 
+            (mapcar (lambda (f)
+                      (destructuring-bind (name value) (split-sequence #\= f)
+                        (format nil "conll:~a conll:~a" (string-downcase name) value))) 
                     (split-sequence #\| features :remove-empty-subseqs t)))))
 
 (defun convert-sentence-to-turtle (stream conll text id)
@@ -57,7 +61,7 @@
   (format stream "conll:~a rdfs:label ~a .~%" id (make-literal text))
   (format stream "conll:~a conll:tokens (~{~a~^ ~}) .~%" id 
    (mapcar (lambda (tk) (format nil "conll:~a" (make-token-id id (slot-value tk 'id)))) (sentence-tokens conll)))
-
+  (format stream "conll:~a conll:metadata ( ~a ) .~%" id (make-metadata (sentence-meta conll)))
   (dolist (tk (sentence-tokens conll))
     (let ((tid (make-token-id id (slot-value tk 'id)))
           (form (slot-value tk 'form))
@@ -74,7 +78,16 @@
       (format stream "conll:~a conll:form ~a .~%" tid (make-literal form))
       (format stream "conll:~a conll:lemma ~a .~%" tid (make-literal lemma))
       (format stream "conll:~a conll:upos ~a .~%" tid (make-upos upostag))
-      (format stream "conll:~a conll:xpos ~a .~%" tid (make-literal xpostag))
+
+      ;; we append -raw to these as we don't have a good way of
+      ;; converting them to "proper" RDF
+      (unless (unspecified-field xpostag)
+       (format stream "conll:~a conll:xpos-raw ~a .~%" tid (make-literal xpostag)))
+      (unless (unspecified-field deps)
+       (format stream "conll:~a conll:deps-raw ~a .~%" tid (make-literal deps)))
+      (unless (unspecified-field misc)
+       (format stream "conll:~a conll:misc-raw ~a .~%" tid (make-literal misc)))
+
       (when feats
        (format stream "conll:~a conll:features [ ~a ] .~%" tid feats))
       (if (string-equal "root" deprel)
