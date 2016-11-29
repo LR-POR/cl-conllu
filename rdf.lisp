@@ -1,15 +1,5 @@
 (in-package :cl-conllu)
 
-;; (wilbur:add-namespace "conll" "http://br.ibm.com/conll/")
-
-;; @prefix conll: <http://example.com/> .
-;; @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-;; @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-;; @prefix dc: <http://purl.org/dc/elements/1.1/> .
-;; @prefix dcterms: <http://purl.org/dc/terms/> .
-;; @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-;; @prefix owl: <http://www.w3.org/2002/07/owl#> .
-
 ;; from Wilbur2
 (defun components->string (components)
   (with-output-to-string (stream)
@@ -100,10 +90,3 @@ there is no standardized way of knowing this.)"
 
   (dolist (c conlls)
     (convert-sentence-to-turtle stream c (funcall text-fn c) (funcall id-fn c))))
-
-
-(defun convert-bosque ()
-  (with-open-file (out "bosque.ttl" :direction :output :if-exists :supersede)
-    (convert-conll out (read-conllu "bosque.udep.conll")
-                   (lambda (s) (cdr (assoc "text" (sentence-meta s) :test #'equal)))
-                   (lambda (s) (cdr (assoc "ref" (sentence-meta s) :test #'equal))))))
