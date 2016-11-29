@@ -56,8 +56,8 @@
       (dotimes (column (cadr dim))
 	(setf (aref distances line column)
 	      (funcall test
-		       (funcall key (nth line sentences-1))
-		       (funcall key (nth column sentences-2))))))))
+		       (funcall key (nth line sentences-a))
+		       (funcall key (nth column sentences-b))))))))
 
 
 (defun print-diff (matriz)
@@ -79,7 +79,3 @@
 	    (caddr min)))
      (find-min (cdr list) :min (car list)))
     (t (find-min (cdr list) :min min))))
-
-
-
-
