@@ -28,7 +28,7 @@
                      (#\Tab . "\\t"))
               :test #'char=)))
 
-(defun unspecified-field (c)
+(defun unspecified-field? (c)
   (string-equal c "_"))
 
 (defun make-literal (string)
@@ -49,7 +49,7 @@
                     (format nil "[ conll:metadata-key ~a ; conll:metadata-value ~a ]" (make-literal (car m)) (make-literal (cdr m)))) metadata)))
 
 (defun make-features (features)
-  (unless (unspecified-field features)
+  (unless (unspecified-field? features)
     (format nil "~{ ~a~^;~}" 
             (mapcar (lambda (f)
                       (destructuring-bind (name value) (split-sequence #\= f)
@@ -81,11 +81,11 @@
 
       ;; we append -raw to these as we don't have a good way of
       ;; converting them to "proper" RDF
-      (unless (unspecified-field xpostag)
+      (unless (unspecified-field? xpostag)
        (format stream "conll:~a conll:xpos-raw ~a .~%" tid (make-literal xpostag)))
-      (unless (unspecified-field deps)
+      (unless (unspecified-field? deps)
        (format stream "conll:~a conll:deps-raw ~a .~%" tid (make-literal deps)))
-      (unless (unspecified-field misc)
+      (unless (unspecified-field? misc)
        (format stream "conll:~a conll:misc-raw ~a .~%" tid (make-literal misc)))
 
       (when feats
