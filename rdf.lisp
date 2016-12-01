@@ -128,7 +128,9 @@
 in CONLL, using the function TEXT-FN to extract the text of each
 sentence and ID-FN to extract the id of each sentence (we need this as
 there is no standardized way of knowing this.)"
-  (format stream "@prefix conll: <http://br.ibm.com/conll/> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . @prefix dc: <http://purl.org/dc/elements/1.1/> . @prefix dcterms: <http://purl.org/dc/terms/> . @prefix skos: <http://www.w3.org/2004/02/skos/core#> . @prefix owl: <http://www.w3.org/2002/07/owl#> .")
+  (format stream "@prefix conll: <http://br.ibm.com/conll/> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . @prefix dc: <http://purl.org/dc/elements/1.1/> . @prefix dcterms: <http://purl.org/dc/terms/> . @prefix skos: <http://www.w3.org/2004/02/skos/core#> . @prefix owl: <http://www.w3.org/2002/07/owl#> .~%")
 
+  (format stream "conll:corpus a conll:Corpus .~%")
+  (format stream "conll:corpus conll:sentences (~{~a~^ ~}) . ~%" (mapcar (lambda (c) (format nil "conll:~a" (funcall id-fn c))) conlls))
   (dolist (c conlls)
     (convert-sentence-to-turtle stream c (funcall text-fn c) (funcall id-fn c))))
