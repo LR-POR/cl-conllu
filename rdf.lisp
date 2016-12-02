@@ -56,9 +56,18 @@
   (format nil "conll:f~a" (string-downcase feat)))
 
 (defun make-metadata (metadata)
-  (format nil "~{ ~a ~}"
+  (with-output-to-string (s)
+    (mapcar (lambda (m)
+              (format s "conll:m~a a conll:MetadataKey .~%" (string-downcase (car m)))
+              (format s "conll:m~a rdfs:label ~a .~%" (string-downcase (car m)) 
+                      (make-literal (car m)))) metadata)
+    s))
+
+(defun make-metadata-bnode (metadata)
+  (format nil "~{ ~a~^;~}"
           (mapcar (lambda (m)
-                    (format nil "[ conll:metadata-key ~a ; conll:metadata-value ~a ]" (make-literal (car m)) (make-literal (cdr m)))) metadata)))
+                    (format nil "conll:m~a ~a" (string-downcase (car m)) 
+                            (make-literal (cdr m)))) metadata)))
 
 (defun make-features (features &optional (value-as-literal nil))
   (unless (unspecified-field? features)
@@ -91,7 +100,9 @@
   (format stream "conll:~a rdfs:label ~a .~%" id (make-literal text))
   (format stream "conll:~a conll:tokens (~{~a~^ ~}) .~%" id 
    (mapcar (lambda (tk) (format nil "conll:~a" (make-token-id id (slot-value tk 'id)))) (sentence-tokens conll)))
-  (format stream "conll:~a conll:metadata ( ~a ) .~%" id (make-metadata (sentence-meta conll)))
+
+  (format stream "~a~%" (make-metadata (sentence-meta conll)))
+  (format stream "conll:~a conll:metadata [ ~a ] .~%" id (make-metadata-bnode (sentence-meta conll)))
   (dolist (tk (sentence-tokens conll))
     (let ((tid (make-token-id id (slot-value tk 'id)))
           (form (slot-value tk 'form))
@@ -105,6 +116,7 @@
           (misc (make-features-bnode (slot-value tk 'misc) t)))
       (format stream "conll:~a a conll:Token .~%" tid)
       (format stream "conll:~a conll:sentence conll:~a .~%" tid id)
+
       (format stream "conll:~a conll:form ~a .~%" tid (make-literal form))
       (format stream "conll:~a conll:lemma ~a .~%" tid (make-literal lemma))
       (format stream "conll:~a conll:upos ~a .~%" tid (make-upos upostag))
