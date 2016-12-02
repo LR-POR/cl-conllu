@@ -1,7 +1,7 @@
 (in-package :cl-conllu)
 
-;; we use Turtle mostly due to the easy way of specifying containers
-;; and blank nodes.  also, there is a lot of duplicated code
+;; NOTES: 1) we use Turtle mostly due to the easy way of specifying
+;; containers and blank nodes.  2) there is a lot of duplicated code
 ;; generated. For example, all dependency relations are defined as
 ;; they are found (with a xx a conll:DepRel . xx rdfs:label foo .)
 ;; While we could solve this by first collecting all the unique values
