@@ -47,10 +47,9 @@
 ;; final version
 
 (defun diff (sentences-a sentences-b &key test key)
-  (let* ((distances (make-array (list (length sentences-a)
-				      (length sentences-b))
-				:initial-element -1))
-	 (dim (array-dimensions tb)))
+  (let* ((dim (list (length sentences-a)
+		    (length sentences-b)))
+	 (distances (make-array dim :initial-element -1)))
     (dotimes (line (car dim) distances)
       (format t "Computing line [~a]~%" line)
       (dotimes (column (cadr dim))
@@ -79,3 +78,15 @@
 	    (caddr min)))
      (find-min (cdr list) :min (car list)))
     (t (find-min (cdr list) :min min))))
+
+
+(defun sentence-valid? (sentence)
+  (and (every (lambda (tk)
+		(not (equal (slot-value tk 'id)
+			    (slot-value tk 'head))))
+	      (sentence-tokens sentence))
+       (some  (lambda (tk)
+		(and (equal 0 (slot-value tk 'head))
+		     (equal "root" (slot-value tk 'deprel))))
+	      (sentence-tokens sentence))))
+
