@@ -74,8 +74,8 @@
     (with-output-to-string (s)
       (mapc (lambda (f)
               (destructuring-bind (name value) (split-sequence #\= f)
-                (format s "conll:~a a conll:FeatureName . ~%" (make-featurename name))
-                (format s "conll:~a rdfs:label ~a . ~%" (make-featurename name) (make-literal name))
+                (format s "~a a conll:FeatureName . ~%" (make-featurename name))
+                (format s "~a rdfs:label ~a . ~%" (make-featurename name) (make-literal name))
                 (unless value-as-literal
                   (format s "conll:~a a conll:FeatureValue .~%" value)
                   (format s "conll:~a rdfs:label ~a .~%" value (make-literal value))))) 
@@ -88,8 +88,8 @@
             (mapcar (lambda (f)
                       (destructuring-bind (name value) (split-sequence #\= f)
                         (if value-as-literal
-                            (format nil "conll:~a ~a" (make-featurename name) (make-literal value))
-                            (format nil "conll:~a conll:~a" (make-featurename name) value)))) 
+                            (format nil "~a ~a" (make-featurename name) (make-literal value))
+                            (format nil "~a conll:~a" (make-featurename name) value)))) 
                     (split-sequence #\| features :remove-empty-subseqs t)))))
 
 (defun convert-sentence-to-turtle (stream conll text id)
