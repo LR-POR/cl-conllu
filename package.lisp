@@ -15,6 +15,8 @@
 (defpackage :cl-conllu
   (:use :cl :cl-ppcre :split-sequence)
   (:export
+   #:sentence-meta-value
+   #:sentence-valid?
    #:make-sentence
    #:read-conllu
    #:write-conllu
