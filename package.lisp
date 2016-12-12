@@ -19,6 +19,7 @@
    #:read-conllu
    #:write-conllu
    #:sentence->text
+   #:sentence-valid?
    #:read-conllu-from-stream
    #:write-sentence
    #:sentence->deep
