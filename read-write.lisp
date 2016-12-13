@@ -103,15 +103,16 @@
 	    (write-token tk stream)
 	    (append alist (cons tk nil)))
 	  (sentence-tokens sentence) :initial-value nil)
-  (princ #\Linefeed stream)) 
+  (princ #\Newline stream)) 
 
 
 (defun write-conllu-to-stream (sentences out)
   (reduce (lambda (alist sent)
-	    (if alist (princ #\Linefeed out))
+	    (if alist (princ #\Newline out))
 	    (write-sentence sent out)
 	    (append alist (cons sent nil)))
-	  sentences :initial-value nil))
+	  sentences :initial-value nil)
+  (princ #\Newline out))
 
 
 (defun write-conllu (sentences filename &key (if-exists :supersede))
