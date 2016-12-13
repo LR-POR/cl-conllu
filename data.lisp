@@ -1,9 +1,28 @@
 
 (in-package :cl-conllu)
 
-(defclass token ()
-  (id form lemma upostag xpostag feats head deprel deps misc))
 
+(defclass token ()
+  ((id      :initarg :id
+	    :accessor token-id)
+   (form    :initarg :form
+	    :accessor token-form)
+   (lemma   :initarg :lemma
+	    :accessor token-lemma)
+   (upostag :initarg :upostag
+	    :accessor token-upostag)
+   (xpostag :initarg :xpostag
+	    :accessor token-xpostag)
+   (feats   :initarg :feats
+	    :accessor token-feats)
+   (head    :initarg :head
+	    :accessor token-head)
+   (deprel  :initarg :deprel
+	    :accessor token-deprel)
+   (deps    :initarg :deps
+	    :accessor token-deps)
+   (misc    :initarg :misc
+	    :accessor token-misc)))
 
 (defclass sentence ()
   ((start  :initarg :start

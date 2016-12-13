@@ -26,4 +26,19 @@
    #:write-sentence
    #:sentence->deep
    #:write-conllu-to-stream
-   #:diff))
+   #:diff
+
+   #:token-id
+   #:token-form
+   #:token-lemma
+   #:token-upostag
+   #:token-xpostag
+   #:token-feats
+   #:token-head
+   #:token-deprel
+   #:token-deps
+   #:token-misc
+
+   #:sentence-start
+   #:sentence-meta
+   #:sentence-tokens))

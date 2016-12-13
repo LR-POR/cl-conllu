@@ -82,11 +82,8 @@
 
 (defun sentence-valid? (sentence)
   (and (every (lambda (tk)
-		(and (not (equal (slot-value tk 'id)
-				 (slot-value tk 'head)))
-		     ;; advmod -> ADV
-		     (or (not (equal "advmod" (slot-value tk 'deprel)))
-			 (equal "ADV" (slot-value tk 'upostag)))))
+		(not (equal (slot-value tk 'id)
+			    (slot-value tk 'head))))
 	      (sentence-tokens sentence))
        (some  (lambda (tk)
 		(and (equal 0 (slot-value tk 'head))
