@@ -27,25 +27,6 @@
     (aref d (1- height) (1- width))))
 
 
-(defun diff-aux (sentences-1 sentences-2 distances limit test key)
-  (if sentences-1
-      (let ((a (car sentences-1)))
-	(diff-aux (cdr sentences-1) sentences-2
-		  (cons (cons a (loop with size = (sentence-size a)
-				      for b in sentences-2
-				      for diff = (funcall test (funcall key a) (funcall key b))
-				      when (< (/ diff size) limit)
-				      collect (list b diff)))
-			distances)
-		  limit test key))
-      (reverse distances)))
-
-(defun diff (sentences-a sentences-b &key limit test key)
-  (diff-aux sentences-a sentences-b nil limit test key))
-
-
-;; final version
-
 (defun diff (sentences-a sentences-b &key test key)
   (let* ((dim (list (length sentences-a)
 		    (length sentences-b)))
