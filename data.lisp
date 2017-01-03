@@ -25,15 +25,18 @@
 	    :accessor token-misc)))
 
 (defclass sentence ()
-  ((start  :initarg :start
-	   :initform 0
-	   :accessor sentence-start)
-   (meta   :initarg :meta
-	   :initform nil
-	   :accessor sentence-meta)
-   (tokens :initarg :tokens
-	   :initform nil
-	   :accessor sentence-tokens)))
+  ((start   :initarg :start
+	    :initform 0
+	    :accessor sentence-start)
+   (meta    :initarg :meta
+	    :initform nil
+	    :accessor sentence-meta)
+   (tokens  :initarg :tokens
+	    :initform nil
+	    :accessor sentence-tokens)
+   (mtokens :initarg :mtokens
+	    :initform nil
+	    :accessor sentence-mtokens)))
 
 
 (defun sentence-meta-value (sentence meta-field)

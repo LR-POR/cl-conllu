@@ -15,6 +15,16 @@
 	tk)))
 
 
+(defun line->mtoken (line)
+  (if (cl-ppcre:scan "^#" line)
+      line
+      (let* ((res   (cl-ppcre:split "\\t" line))
+	     ;; to fix
+	     (range (cl-ppcre:scan-to-strings "([0-9]+)-([0-9]+)" (car res))))
+	(assert (equal 10 (length res)))
+	(append range (list (cadr res))))))
+
+
 (defun collect-meta (lines)
   (mapcar (lambda (line)
 	    (let* ((cl  (string-trim '(#\# #\Space #\Tab) line))
@@ -25,17 +35,20 @@
 
 
 (defun make-sentence (lineno lines fn-meta)
-  (labels ((reading (lines meta tokens)
+  (labels ((reading (lines meta tokens mtokens)
 	     (cond
 	       ((null lines)
-		(values (reverse meta) (reverse tokens)))
+		(values (reverse meta) (reverse tokens) (reverse mtokens)))
 	       ((cl-ppcre:scan "^#" (car lines))
-		(reading (cdr lines) (cons (car lines) meta) tokens))
-	       ((cl-ppcre:scan "^[1-9]+" (car lines))
-		(reading (cdr lines) meta (cons (line->token (car lines)) tokens))))))
-    (multiple-value-bind (meta tokens)
-	(reading lines nil nil)
-      (make-instance 'sentence :start lineno :tokens tokens :meta (funcall fn-meta meta)))))
+		(reading (cdr lines) (cons (car lines) meta) tokens mtokens))
+	       ((cl-ppcre:scan "^[1-9]+-[1-9+]\\t" (car lines))
+		(reading (cdr lines) meta tokens (cons (line->mtoken (car lines)) mtokens)))
+	       ((cl-ppcre:scan "^[1-9]+\\t" (car lines))
+		(reading (cdr lines) meta (cons (line->token (car lines)) tokens) mtokens)))))
+    (multiple-value-bind (meta tokens mtokens)
+	(reading lines nil nil nil)
+      (make-instance 'sentence :start lineno :tokens tokens
+		     :meta (funcall fn-meta meta) :mtokens mtokens))))
 
 
 (defun read-conllu (filename &key (fn-meta #'collect-meta))
