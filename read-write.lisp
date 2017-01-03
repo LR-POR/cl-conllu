@@ -18,9 +18,10 @@
 (defun line->mtoken (line)
   (if (cl-ppcre:scan "^#" line)
       line
-      (let* ((res   (cl-ppcre:split "\\t" line))
-	     ;; to fix
-	     (range (cl-ppcre:scan-to-strings "([0-9]+)-([0-9]+)" (car res))))
+      (let* ((res (cl-ppcre:split "\\t" line))
+	     (range-as-array (cadr (multiple-value-list (cl-ppcre:scan-to-strings "([0-9]+)-([0-9]+)" (car res)))))
+	     (range (loop for i below (array-dimension range-as-array 0)
+			 collect (parse-integer (aref range-as-array i)))))
 	(assert (equal 10 (length res)))
 	(append range (list (cadr res))))))
 
@@ -131,4 +132,3 @@
 (defun write-conllu (sentences filename &key (if-exists :supersede))
   (with-open-file (out filename :direction :output :if-exists if-exists)
     (write-conllu-to-stream sentences out)))
-
