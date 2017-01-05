@@ -24,6 +24,14 @@
    (misc    :initarg :misc
 	    :accessor token-misc)))
 
+(defclass mtoken ()
+  ((start   :initarg :start
+	    :accessor mtoken-start)
+   (end     :initarg :end
+	    :accessor mtoken-end)
+   (form    :initarg :form
+	    :accessor mtoken-form)))
+
 (defclass sentence ()
   ((start   :initarg :start
 	    :initform 0

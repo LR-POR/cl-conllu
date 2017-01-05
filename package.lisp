@@ -39,6 +39,11 @@
    #:token-deps
    #:token-misc
 
+   #:mtoken-start
+   #:mtoken-end
+   #:mtoken-form
+   
    #:sentence-start
    #:sentence-meta
-   #:sentence-tokens))
+   #:sentence-tokens
+   #:sentence-mtokens))
