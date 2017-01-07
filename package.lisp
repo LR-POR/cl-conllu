@@ -26,6 +26,7 @@
    #:write-sentence
    #:sentence->deep
    #:write-conllu-to-stream
+   #:levenshtein
    #:diff
 
    #:token-id

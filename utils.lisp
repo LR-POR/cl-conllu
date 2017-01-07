@@ -7,7 +7,7 @@
 ;; https://groups.google.com/forum/#!topic/comp.lang.lisp/NrMe2NmcCLU
 ;; https://goo.gl/KjclLT
 
-(defun distance (s1 s2 &key test)
+(defun levenshtein (s1 s2 &key test)
   (let* ((width (1+ (length s1)))
 	 (height (1+ (length s2)))
 	 (d (make-array (list height width))))
