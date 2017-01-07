@@ -109,39 +109,33 @@
 	  '(id form lemma upostag xpostag feats head deprel deps misc)
 	  :initial-value nil))
 
+
 (defun write-mtoken (mtk stream)
-   (reduce (lambda (alist a)
-	     (if alist (princ #\Tab stream))
-	     (cond ((eq a 'start-end )
-		    (format stream "~{~a-~a~}" (list (mtoken-start mtk) (mtoken-end mtk))))
-		   ((eq a '_ )
-		    (princ "_" stream))
-		   (t
-		    (princ (slot-value mtk a) stream)))
-	     (append alist (cons a nil)))
-	   (append '(start-end form) (make-list 8 :initial-element '_ ))
-	   :initial-value nil))
+  (reduce (lambda (alist a)
+	    (if alist (princ #\Tab stream))
+	    (princ a stream)
+	    (cons a alist))
+	  (append (list (format nil "~a-~a" (mtoken-start mtk) (mtoken-end mtk))
+			(mtoken-form mtk))
+		  (make-list 8 :initial-element '_ ))
+	  :initial-value nil))
+
 
 (defun write-sentence (sentence stream)
   (mapcar (lambda (pair)
 	    (format stream "# ~a ~a~%" (car pair) (cdr pair)))
 	  (sentence-meta sentence))
   (reduce (lambda (alist tk)
-	    (let* ((next-mtoken
-		   (find-if (lambda (x) (>= x (token-id tk)))
-			    (sentence-mtokens sentence)
-			    :key 'mtoken-start)))
+	    (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
+					 (sentence-mtokens sentence)
+					 :key 'mtoken-start)))
 	      (if alist (princ #\Linefeed stream))
-	      (if (and next-mtoken (eq (mtoken-start next-mtoken) (token-id tk)))
-		  (progn
-		    (write-mtoken next-mtoken stream)
-		    (princ #\Newline stream)
-		    (write-token tk stream)
-		    (append alist (cons next-mtoken nil))
-		    (append alist (cons tk nil)))
-		  (progn
-		    (write-token tk stream)
-		    (append alist (cons tk nil))))))
+	      (when (and next-mtoken
+			 (eq (mtoken-start next-mtoken) (token-id tk)))
+		(write-mtoken next-mtoken stream)
+		(princ #\Newline stream))
+	      (write-token tk stream)
+	      (cons tk alist)))
 	  (sentence-tokens sentence) :initial-value nil)
   (princ #\Newline stream))
 
@@ -150,9 +144,10 @@
   (reduce (lambda (alist sent)
 	    (if alist (princ #\Newline out))
 	    (write-sentence sent out)
-	    (append alist (cons sent nil)))
+	    (cons sent alist))
 	  sentences :initial-value nil)
-  (princ #\Newline out))
+  (princ #\Newline out)
+  (values))
 
 
 (defun write-conllu (sentences filename &key (if-exists :supersede))
