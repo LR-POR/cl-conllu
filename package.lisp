@@ -18,14 +18,13 @@
    #:sentence-meta-value
    #:sentence-valid?
    #:make-sentence
-   #:read-conllu
-   #:write-conllu
    #:sentence->text
    #:sentence-valid?
    #:read-conllu-from-stream
-   #:write-sentence
+   #:read-conllu
+   #:write-conllu
+   #:write-conllu-to-stream   
    #:sentence->deep
-   #:write-conllu-to-stream
    #:levenshtein
    #:diff
 
@@ -43,7 +42,8 @@
    #:mtoken-start
    #:mtoken-end
    #:mtoken-form
-   
+
+   #:sentence
    #:sentence-start
    #:sentence-meta
    #:sentence-tokens
