@@ -47,4 +47,11 @@
    #:sentence-start
    #:sentence-meta
    #:sentence-tokens
-   #:sentence-mtokens))
+   #:sentence-mtokens
+
+   #:read-rules
+   #:antecedente
+   #:consequente
+   #:match-token
+   #:apply?
+   #:apply-rule-in-tokens))
