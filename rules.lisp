@@ -99,6 +99,3 @@
 (defun read-rules (filename)
   (with-open-file (stream filename)
     (loop for i = (read stream nil) while i collect i)))
-
- (cl-conllu:apply? tokens '((a (CL-CONLLU::LEMMA "além") (CL-CONLLU::FORM "A.*"))
-			     (b 
