@@ -50,8 +50,13 @@
    #:sentence-mtokens
 
    #:read-rules
-   #:antecedente
-   #:consequente
+   #:rls
+   #:rhs
    #:match-token
-   #:apply?
-   #:apply-rule-in-tokens))
+   #:match?
+   #:apply-rule-in-tokens
+   #:apply-changes
+   #:apply-rhs
+   #:apply-conditions-in-token
+   #:apply-rule-in-sentence
+   #:corte-e-costura))
