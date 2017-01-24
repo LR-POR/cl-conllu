@@ -6,56 +6,48 @@
 
 ;; Nossas regras:
 ;;
+;; rule       ::= => rls rhs
+;; rls, rhs   ::= (pattern+)
+;; pattern    ::= (var condition+)
+;; condition  ::= (field expression)
+;; expression ::= string | regex
+;;
 ;; (=> ((a (pos "VERB") (lemma "co.*"))
 ;;      (b (lemma "de.*")))
 ;;     ((b (pos "PART"))))
 
 
+
+
 ;; START
 
-;; recursao sobre a lista de sentencas
-;(defun apply-rules (sentences rules)
- ; (dolist (sentece sentences) (apply-rules-in-sentence sentece)))
-
-;; esta funcao recebe o token de uma sentença e verifica se o lhs
-;; (lado esquerdo da regra) faz match com o token. Além de t ou nil
-;; tavez esta função precise retornar mais coisas. vamos precisar dos
-;; `binds`?
-
-;; rule ::= (=> rls rhs)
-;;rls ::= pattern+ rhs ::= pattern+ pattern := (var conditions+) condition := (field expression)
-
-
-(defun match-token (token pattern)
-  (if (null pattern)
-      t
-      (let* ((condition (car pattern))
-	     (field  (car condition))
-	     (regex (cadr condition)))
-	(if (cl-ppcre:scan-to-strings regex (slot-value token (intern (symbol-name field) :cl-conllu)))
-	    (match-token token (cdr pattern))
-	    nil)))) 
-
-    
-;; para cada senteca, interando sobre os tokens, tenta aplicar uma
-;; regra apos a outra e apos aplicar todas as regras avanca o
-;; token. Se recursive, no final dos tokens, recomeça até não haver
-;; mudanças.
-(defun corte-e-costura (conllu-file lisp-rule-file name-of-new-conllu)
+(defun corte-e-costura (conllu-file rules-file new-conllu-file)
   (let ((sentences (read-conllu conllu-file))
-	(rules (read-rules lisp-rule-file)))
-    (apply-rules-in-sentences sentences rules)
-    (write-conllu sentences name-of-new-conllu)))
-
-(defun apply-rules-in-sentences (sentences rules)
-  (dolist (sentence sentences) (apply-rules-in-sentence sentence rules)))
+	(rules (read-rules rules-file)))
+    (apply-rules sentences rules)
+    (write-conllu sentences new-conllu-file)))
+;;acessores e leitor de regras
 
 
-(defun apply-rules-in-sentence (a-sentence rules)
-  (if (null rules)
-      a-sentence
-      (apply-rules-in-sentence (apply-rule-in-sentence a-sentence (car rules))
-			       (cdr rules))))
+(defun rls (rule)
+  (cadr rule))
+
+
+(defun rhs (rule)
+  (caddr rule))
+
+
+(defun read-rules (filename)
+  (with-open-file (stream filename)
+    (loop for i = (read stream nil) while i collect i)))
+
+
+;; 
+
+
+(defun apply-rules (sentences rules)
+  (dolist (sentence sentences)
+    (dolist (rule rules) (apply-rule-in-sentence sentence rule))))
 
 
 (defun apply-rule-in-sentence (a-sentence rule)
@@ -88,6 +80,17 @@
 	      (match? (cdr tokens) (cdr rls) (append bindings  (list (caar rls) (car tokens))))
 	      nil))))
 
+(defun match-token (token pattern)
+  (if (null pattern)
+      t
+      (let* ((condition (car pattern))
+	     (field  (car condition))
+	     (regex (cadr condition)))
+	(if (cl-ppcre:scan-to-strings regex (slot-value token (intern (symbol-name field) :cl-conllu)))
+	    (match-token token (cdr pattern))
+	    nil))))
+
+
 (defun apply-rhs (bindings rhs)
   (if (null rhs)
       (values)
@@ -109,16 +112,8 @@
 	(apply-conditions-in-token (cdr conditions) token))))
 
 
-;; rules
 
-(defun rls (rule)
-  (cadr rule))
 
-(defun rhs (rule)
-  (caddr rule))
 
-(defun read-rules (filename)
-  (with-open-file (stream filename)
-    (loop for i = (read stream nil) while i collect i)))
 
 
