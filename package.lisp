@@ -30,6 +30,8 @@
    #:insert-mtokens
    #:insert-mtoken
    #:mtoken->tokens
+   #:push-token
+   #:pop-token
 
    #:token
    #:token-id

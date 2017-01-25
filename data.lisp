@@ -120,3 +120,75 @@
 				  (<= x (mtoken-end mtoken))))
 		 (sentence-tokens sentence)
 		 :key 'token-id))
+
+(defun push-token (sentence inserted-token)
+  ;; Inserts token at sentence object.
+  ;; Please not it won't be inserted exactly as given: it's ID will be the same (place where it'll be inserted) but it's head should point to id value prior to the insertion.
+  ;;
+  ;; For instance, consider the sentence "John eats cake". We'll have:
+  ;; ID	FORM	HEAD
+  ;; 1	John	2
+  ;; 2	eats	0
+  ;; 3	cake	2
+  ;; 
+  ;; We want to insert "chocolate", transforming it into:
+  ;; ID	FORM	HEAD
+  ;; 1	John	2
+  ;; 2	eats	0
+  ;; 3	chocolate	3
+  ;; 4	cake	2
+  ;; 
+  ;; In this case, we'll insert a token object with values (:ID 3 :FORM chocolate :HEAD 3), as "cake" had id 3 before the insertion.
+  (dolist (token (sentence-tokens sentence))
+    (when (>= (token-id token)
+	      (token-id inserted-token))
+      (setf (slot-value token 'id)
+	    (1+ (slot-value token 'id))))
+    (when (>= (token-head token)
+	      (token-id inserted-token))
+      (setf (slot-value token 'head)
+	    (1+ (slot-value token 'head)))))
+  (labels ((if-exists (slot-name)
+	     (if (slot-boundp inserted-token slot-name)
+		 (slot-value inserted-token slot-name)
+		 "_")))
+    (push (make-instance 'token
+			 :id (token-id inserted-token)
+			 :form (if-exists 'form)
+			 :lemma (if-exists 'lemma)
+			 :upostag (if-exists 'upostag)
+			 :xpostag (if-exists 'xpostag)
+			 :feats (if-exists 'feats)
+			 :head (if (>= (token-head inserted-token)
+				       (token-id inserted-token))
+				   (1+ (token-head inserted-token))
+				   (token-head inserted-token))
+			 :deprel (if-exists 'deprel)
+			 :deps (if-exists 'deps)
+			 :misc (if-exists 'misc))
+	  (sentence-tokens sentence)))
+  (setf (slot-value sentence 'tokens)
+	(sort (sentence-tokens sentence) #'< :key #'token-id))
+  sentence)
+;; This can be improved defining and using an inserted-push that
+;; inserts an element in a sorted list instead of inserting and then sorting everything
+
+(defun pop-token (sentence id)
+  ;; Output: removed token with id equal to `id`
+  ;; Side-effects: token with id `id` is removed from sentence's token list
+  (let ((removed-token (find id (sentence-tokens sentence) :key #'token-id)))
+    (setf (slot-value sentence 'tokens)
+	  (remove removed-token (sentence-tokens sentence)))
+    (dolist (token (sentence-tokens sentence))
+      (when (> (token-id token) id)
+	(setf (slot-value token 'id)
+	      (1- (slot-value token 'id))))
+      (cond 
+	((> (token-head token) id)
+	 (setf (slot-value token 'head)
+	       (1- (slot-value token 'head))))
+	((= (token-head token) id)
+	 ;; If a token's head was the removed token, it's new HEAD value is now "_"
+	 (setf (slot-value token 'head)
+	       "_")))) 
+    removed-token))
