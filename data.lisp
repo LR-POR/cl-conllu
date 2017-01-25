@@ -90,3 +90,33 @@
   (remove-if-not (lambda (tk)
 		   (equal (slot-value tk 'head) (slot-value token 'id)))
 		 (sentence-tokens sentence)))
+
+(defun insert-mtokens (sentence mtokens &key (if-exists 'do-nothing))
+  (mapc (lambda (mtoken)
+	  (let ((existing-mtoken
+		 (find-if (lambda (x)
+			    (and
+			     (eq (mtoken-start x) (mtoken-start mtoken))
+			     (eq (mtoken-end x) (mtoken-end mtoken))))
+			  (sentence-mtokens sentence))))
+	    (if existing-mtoken
+		(case if-exists
+		  (('do-nothing) nil)
+		  (('overwrite)
+		   (remove existing-mtoken (sentence-mtokens sentence))
+		   (push mtoken (sentence-mtokens sentence)))
+		  (('add)
+		   (push mtoken (sentence-mtokens sentence))))
+		(and
+		 (push mtoken (sentence-mtokens sentence))))))
+	mtokens)
+  (setf (sentence-mtokens sentence) (sort (sentence-mtokens sentence) '< :key 'mtoken-start)))
+
+(defun insert-mtoken (sentence mtoken &key (if-exists 'do-nothing))
+  (insert-mtokens sentence (list mtoken) :if-exists if-exists))
+
+(defun mtoken->tokens (sentence mtoken)
+  (remove-if-not (lambda (x) (and (>= x (mtoken-start mtoken))
+				  (<= x (mtoken-end mtoken))))
+		 (sentence-tokens sentence)
+		 :key 'token-id))

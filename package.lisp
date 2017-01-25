@@ -27,7 +27,11 @@
    #:sentence->deep
    #:levenshtein
    #:diff
+   #:insert-mtokens
+   #:insert-mtoken
+   #:mtoken->tokens
 
+   #:token
    #:token-id
    #:token-form
    #:token-lemma
@@ -39,6 +43,7 @@
    #:token-deps
    #:token-misc
 
+   #:mtoken
    #:mtoken-start
    #:mtoken-end
    #:mtoken-form
