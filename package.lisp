@@ -49,14 +49,4 @@
    #:sentence-tokens
    #:sentence-mtokens
 
-   #:read-rules
-   #:rls
-   #:rhs
-   #:match-token
-   #:match?
-   #:apply-rule-in-tokens
-   #:apply-changes
-   #:apply-rhs
-   #:apply-conditions-in-token
-   #:apply-rule-in-sentence
    #:corte-e-costura))
