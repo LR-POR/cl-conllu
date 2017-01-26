@@ -26,6 +26,8 @@
 	(rules (read-rules rules-file)))
     (apply-rules sentences rules)
     (write-conllu sentences new-conllu-file)))
+
+
 ;;acessores e leitor de regras
 
 
@@ -80,13 +82,14 @@
 	      (match? (cdr tokens) (cdr rls) (append bindings  (list (caar rls) (car tokens))))
 	      nil))))
 
+
 (defun match-token (token pattern)
   (if (null pattern)
       t
       (let* ((condition (car pattern))
 	     (field  (car condition))
 	     (regex (cadr condition)))
-	(if (cl-ppcre:scan-to-strings regex (slot-value token (intern (symbol-name field) :cl-conllu)))
+	(if (cl-ppcre:scan regex (slot-value token (intern (symbol-name field) :cl-conllu)))
 	    (match-token token (cdr pattern))
 	    nil))))
 
@@ -107,13 +110,6 @@
       (values)
       (let* ((condition (car conditions))
 	    (field (car condition))
-	    (regex (cadr condition)))
-	(setf (slot-value token (intern (symbol-name field) :cl-conllu)) regex)
+	    (a-value (cadr condition)))
+	(setf (slot-value token (intern (symbol-name field) :cl-conllu)) a-value)
 	(apply-conditions-in-token (cdr conditions) token))))
-
-
-
-
-
-
-
