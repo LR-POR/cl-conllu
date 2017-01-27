@@ -71,3 +71,15 @@
 		     (equal "root" (slot-value tk 'deprel))))
 	      (sentence-tokens sentence))))
 
+;; (defun copy-object (object)
+;;   ;; Creates a new object with equal (EQUAL) field values
+;;   (let* ((class (class-of object))
+;; 	 (copy (make-instance class)))
+
+;; (defun copy-sentence (sentence)
+;;   (let ((copy (make-instance 'sentence)))
+    
+
+;; (defun insert-sorted (list &key (key #'identity) (test #'<))
+;;   ;; Inserts new element in a sorted list, preserving the sorting
+;; )

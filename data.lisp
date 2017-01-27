@@ -199,7 +199,7 @@
 	     ((>= (cadr interval) id)
 	      (return interval))))))
     (if in-mtoken
-	(progn (format t "WARNING: This token is contained in the multitoken ~{~a-~a~}.~%Not removing.~%Remove the multitoken before removing this token.~%~%" in-mtoken)
+	(progn (format t "WARNING: This token is contained in the multiword token ~{~a-~a~}.~%Not removing.~%Remove the multiword token before removing this token.~%~%" in-mtoken)
 	       sentence)
 	(progn (setf (slot-value sentence 'tokens)
 		     (remove removed-token (sentence-tokens sentence)))
