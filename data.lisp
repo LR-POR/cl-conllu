@@ -115,6 +115,15 @@
 (defun insert-mtoken (sentence mtoken &key (if-exists 'do-nothing))
   (insert-mtokens sentence (list mtoken) :if-exists if-exists))
 
+(defun remove-mtoken (sentence start end)
+  ;; Removes mtoken with start value equal to `start` and end value equal to `end`
+  (setf (sentence-mtokens sentence)
+	(remove-if (lambda (mtk)
+		     (and
+		      (equal (mtoken-start mtk) start)
+		      (equal (mtoken-end mtk) end)))
+		   sentence-mtokens)))
+  
 (defun mtoken->tokens (sentence mtoken)
   (remove-if-not (lambda (x) (and (>= x (mtoken-start mtoken))
 				  (<= x (mtoken-end mtoken))))
@@ -176,19 +185,34 @@
 (defun pop-token (sentence id)
   ;; Output: removed token with id equal to `id`
   ;; Side-effects: token with id `id` is removed from sentence's token list
-  (let ((removed-token (find id (sentence-tokens sentence) :key #'token-id)))
-    (setf (slot-value sentence 'tokens)
-	  (remove removed-token (sentence-tokens sentence)))
-    (dolist (token (sentence-tokens sentence))
-      (when (> (token-id token) id)
-	(setf (slot-value token 'id)
-	      (1- (slot-value token 'id))))
-      (cond 
-	((> (token-head token) id)
-	 (setf (slot-value token 'head)
-	       (1- (slot-value token 'head))))
-	((= (token-head token) id)
-	 ;; If a token's head was the removed token, it's new HEAD value is now "_"
-	 (setf (slot-value token 'head)
-	       "_")))) 
-    removed-token))
+  (let ((removed-token (find id (sentence-tokens sentence) :key #'token-id))
+	(in-mtoken
+	 (dolist (interval
+		   (mapcar
+		    #'(lambda (mtk)
+			(list (mtoken-start mtk)
+			      (mtoken-end mtk)))
+		    (sentence-mtokens sentence)))
+	   (cond
+	     ((> (car interval) id)
+	      (return nil))
+	     ((>= (cadr interval) id)
+	      (return interval))))))
+    (if in-mtoken
+	(progn (format t "WARNING: This token is contained in the multitoken ~{~a-~a~}.~%Not removing.~%Remove the multitoken before removing this token.~%~%" in-mtoken)
+	       sentence)
+	(progn (setf (slot-value sentence 'tokens)
+		     (remove removed-token (sentence-tokens sentence)))
+	       (dolist (token (sentence-tokens sentence))
+		 (when (> (token-id token) id)
+		   (setf (slot-value token 'id)
+			 (1- (slot-value token 'id))))
+		 (cond 
+		   ((> (token-head token) id)
+		    (setf (slot-value token 'head)
+			  (1- (slot-value token 'head))))
+		   ((= (token-head token) id)
+		    ;; If a token's head was the removed token, it's new HEAD value is now "_"
+		    (setf (slot-value token 'head)
+			  "_"))))
+	       removed-token))))

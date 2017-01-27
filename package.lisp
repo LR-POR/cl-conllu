@@ -29,6 +29,7 @@
    #:diff
    #:insert-mtokens
    #:insert-mtoken
+   #:remove-mtoken
    #:mtoken->tokens
    #:push-token
    #:pop-token
