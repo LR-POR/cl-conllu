@@ -30,10 +30,10 @@
 
 (defun collect-meta (lines)
   (mapcar (lambda (line)
-	    (let* ((cl  (string-trim '(#\# #\Space #\Tab) line))
-		   (pos (position #\Space cl)))
-	      (cons (subseq cl 0 pos)
-		    (subseq cl (1+ pos)))))
+	    (let* ((cl (string-trim '(#\# #\Space #\Tab) line))
+		   (pos (position #\= cl)))
+	      (cons (subseq cl 0 (1- pos))
+		    (subseq cl (+ 2 pos)))))
 	  lines))
 
 
@@ -123,7 +123,7 @@
 
 (defun write-sentence (sentence stream)
   (mapcar (lambda (pair)
-	    (format stream "# ~a ~a~%" (car pair) (cdr pair)))
+	    (format stream "# ~a = ~a~%" (car pair) (cdr pair)))
 	  (sentence-meta sentence))
   (reduce (lambda (alist tk)
 	    (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
