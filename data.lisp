@@ -56,6 +56,19 @@
 		  (sentence-tokens sentence))))
 
 
+(defun sentence-valid? (sentence)
+  (and (every (lambda (tk)
+		(not (equal (slot-value tk 'id)
+			    (slot-value tk 'head))))
+	      (sentence-tokens sentence))
+       (some  (lambda (tk)
+		(and (equal 0 (slot-value tk 'head))
+		     (equal "root" (slot-value tk 'deprel))))
+	      (sentence-tokens sentence))
+       (sentence-meta-value sentence "text")
+       (sentence-meta-value sentence "sent_id")))
+
+
 (defun sentence-size (sentence)
   (length (sentence-tokens sentence)))
 
@@ -90,3 +103,4 @@
   (remove-if-not (lambda (tk)
 		   (equal (slot-value tk 'head) (slot-value token 'id)))
 		 (sentence-tokens sentence)))
+

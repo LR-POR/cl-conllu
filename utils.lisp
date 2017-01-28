@@ -61,13 +61,5 @@
     (t (find-min (cdr list) :min min))))
 
 
-(defun sentence-valid? (sentence)
-  (and (every (lambda (tk)
-		(not (equal (slot-value tk 'id)
-			    (slot-value tk 'head))))
-	      (sentence-tokens sentence))
-       (some  (lambda (tk)
-		(and (equal 0 (slot-value tk 'head))
-		     (equal "root" (slot-value tk 'deprel))))
-	      (sentence-tokens sentence))))
+
 
