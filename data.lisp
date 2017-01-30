@@ -117,12 +117,20 @@
 
 (defun remove-mtoken (sentence start end)
   ;; Removes mtoken with start value equal to `start` and end value equal to `end`
-  (setf (sentence-mtokens sentence)
-	(remove-if (lambda (mtk)
-		     (and
-		      (equal (mtoken-start mtk) start)
-		      (equal (mtoken-end mtk) end)))
-		   sentence-mtokens)))
+  (let ((mtoken-to-remove
+	 (find-if (lambda (mtk)
+		    (and
+		     (equal (mtoken-start mtk) start)
+		     (equal (mtoken-end mtk) end)))
+		  (sentence-mtokens sentence))))
+    (cond (mtoken-to-remove
+	   (setf (sentence-mtokens sentence)
+		 (remove mtoken-to-remove
+			 (sentence-mtokens sentence)))
+	   sentence)
+	  (t
+	   (format t "There's no ~a-~a mtoken to remove.~%~%" start end)
+	   sentence))))
   
 (defun mtoken->tokens (sentence mtoken)
   (remove-if-not (lambda (x) (and (>= x (mtoken-start mtoken))
@@ -186,6 +194,9 @@
   ;; Output: removed token with id equal to `id`
   ;; Side-effects: token with id `id` is removed from sentence's token list
   (let ((removed-token (find id (sentence-tokens sentence) :key #'token-id))
+	(is-head (find-if
+		  (lambda (x) (equal id (token-head x)))
+		  (sentence-tokens sentence)))
 	(in-mtoken
 	 (dolist (interval
 		   (mapcar
@@ -198,21 +209,28 @@
 	      (return nil))
 	     ((>= (cadr interval) id)
 	      (return interval))))))
-    (if in-mtoken
-	(progn (format t "WARNING: This token is contained in the multiword token ~{~a-~a~}.~%Not removing.~%Remove the multiword token before removing this token.~%~%" in-mtoken)
-	       sentence)
-	(progn (setf (slot-value sentence 'tokens)
-		     (remove removed-token (sentence-tokens sentence)))
-	       (dolist (token (sentence-tokens sentence))
-		 (when (> (token-id token) id)
-		   (setf (slot-value token 'id)
-			 (1- (slot-value token 'id))))
-		 (cond 
-		   ((> (token-head token) id)
-		    (setf (slot-value token 'head)
-			  (1- (slot-value token 'head))))
-		   ((= (token-head token) id)
-		    ;; If a token's head was the removed token, it's new HEAD value is now "_"
-		    (setf (slot-value token 'head)
-			  "_"))))
-	       removed-token))))
+    (cond ((null removed-token)
+	   (format t "WARNING: There's no token ~a.~%~%" id)
+	   sentence)
+	  (in-mtoken
+	   (format t "WARNING: This token is contained in the multiword token ~{~a-~a~}.~%Not removing.~%Remove the multiword token before removing this token.~%~%" in-mtoken)
+	   sentence)
+	  (is-head
+	   (format t "WARNING: This token is the head of token ~a.~%Not removing.~%Please change its head before removing this token.~%~%" (token-id is-head))
+	   sentence)
+	  (t
+	   (setf (slot-value sentence 'tokens)
+		 (remove removed-token (sentence-tokens sentence)))
+	   (dolist (token (sentence-tokens sentence))
+	     (when (> (token-id token) id)
+	       (setf (slot-value token 'id)
+		     (1- (slot-value token 'id))))
+	     (cond 
+	       ((> (token-head token) id)
+		(setf (slot-value token 'head)
+		      (1- (slot-value token 'head))))
+	       ((= (token-head token) id)
+		;; If a token's head was the removed token, it's new HEAD value is now "_"
+		(setf (slot-value token 'head)
+		      "_"))))
+	   removed-token))))
