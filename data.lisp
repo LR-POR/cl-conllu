@@ -54,27 +54,32 @@
   (cdr (assoc meta-field (sentence-meta sentence) :test #'equal)))
 
 
-(defun sentence-text-aux (tokens mtokens response)
+(defun sentence-text-aux (tokens mtokens garbage-end response)
   (labels ((forma (obj)
 	     (if (search "SpaceAfter=No" (slot-value obj 'misc))
 		 (list (slot-value obj 'form))
 		 (list (slot-value obj 'form) " "))))
     (cond
       ((and (null tokens) (null mtokens))
-       response)
-      ((null mtokens)
-       (sentence-text-aux (cdr tokens) mtokens (append response (forma (car tokens)))))
-      ((null tokens)
-       (sentence-text-aux tokens (cdr mtokens) (append response (forma (car mtokens)))))
-      ((<= (mtoken-start (car mtokens))
-	   (token-id (car tokens)))
-       (sentence-text-aux tokens (cdr mtokens) (append response (forma (car mtokens)))))
+       (if (equal " " (car (last response)))
+	   (subseq response 0 (1- (length response)))
+	   response))
+
+      ((and garbage-end (< (token-id (car tokens)) garbage-end))
+       (sentence-text-aux (cdr tokens) mtokens garbage-end response))
+      ((and garbage-end (equal (token-id (car tokens)) garbage-end))
+       (sentence-text-aux (cdr tokens) mtokens nil response))
+      
+      ((and mtokens (<= (mtoken-start (car mtokens)) (token-id (car tokens))))
+       (sentence-text-aux tokens (cdr mtokens)
+			  (mtoken-end (car mtokens))
+			  (append response (forma (car mtokens)))))
       (t
-       (sentence-text-aux (cdr tokens) mtokens (append response (forma (car tokens))))))))
+       (sentence-text-aux (cdr tokens) mtokens garbage-end (append response (forma (car tokens))))))))
 
 
 (defun sentence->text (sentence)
-  (format nil "~{~a~}" (sentence-text-aux (sentence-tokens sentence) (sentence-mtokens sentence) nil)))
+  (format nil "~{~a~}" (sentence-text-aux (sentence-tokens sentence) (sentence-mtokens sentence) nil nil)))
 
 
 (defun sentence-valid? (sentence)
