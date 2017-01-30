@@ -234,3 +234,41 @@
 		(setf (slot-value token 'head)
 		      "_"))))
 	   removed-token))))
+
+(defun set-head (sentence id new-head &optional deprel)
+  ;; Safely sets head value of `id` token to new-head, with deprel value equal to `deprel`.
+  ;; Before setting, checks if not setting the value to a descendant in the dependency tree, as this would make the graph cyclic, destroying the tree structure.
+  (let ((token (find id (sentence-tokens sentence) :key #'token-id))
+	(descendant?
+	 (is-descendant? new-head id sentence)))
+    (cond
+      (descendant?
+       ;; Should we make a pointer from each token object to its sentence object?
+       ;; If we did this, `is-descendant?` could receive only the token objects.
+       (format t "A token cannot have a descendant as head.~%Token ~a is descendant of token ~a, via path ~{~a, ~}. Nothing changed.~%~% "
+	       new-head id descendant?))
+      ((equal id new-head)
+       (format t "A token cannot have itself as head. Nothing changed.~%~%"))
+      (t
+       (setf (slot-value token 'head)
+	     new-head)
+       (if deprel
+	   (setf (slot-value token 'deprel)
+		 deprel))))))
+
+(defun is-descendant? (id-1 id-2 sentence)
+  ;; Is token with id-1 descendant of token with id-2?
+  (is-descendant?-aux id-1 id-2 sentence nil))
+
+(defun is-descendant?-aux (id-1 id-2 sentence alist)
+  (let ((father-of-1-id (token-head
+			(find id-1
+			      (sentence-tokens sentence)
+			      :key #'token-id))))
+    (cond
+      ((eq father-of-1-id 0)
+       nil)
+      ((eq father-of-1-id id-2)
+       (reverse (cons id-2 (cons id-1 alist))))
+      (t
+       (is-descendant?-aux father-of-1-id id-2 sentence (cons id-1 alist))))))
