@@ -59,16 +59,16 @@
 	     (if (search "SpaceAfter=No" (slot-value obj 'misc))
 		 (cons (slot-value obj 'form) lst)
 		 (cons " " (cons (slot-value obj 'form) lst))))
-	   (aux (tokens mtokens garbage-end response)
+	   (aux (tokens mtokens ignore response)
 	     (cond 
 	       ((and (null tokens) (null mtokens))
 		(if (equal " " (car response))
 		    (reverse (cdr response))
 		    (reverse response)))
 
-	       ((and garbage-end (< (token-id (car tokens)) garbage-end))
-		(aux (cdr tokens) mtokens garbage-end response))
-	       ((and garbage-end (equal (token-id (car tokens)) garbage-end))
+	       ((and ignore (< (token-id (car tokens)) ignore))
+		(aux (cdr tokens) mtokens ignore response))
+	       ((and ignore (equal (token-id (car tokens)) ignore))
 		(aux (cdr tokens) mtokens nil response))
       
 	       ((and mtokens (<= (mtoken-start (car mtokens)) (token-id (car tokens))))
@@ -76,7 +76,7 @@
 				   (mtoken-end (car mtokens))
 				   (forma (car mtokens) response)))
 	       (t
-		(aux (cdr tokens) mtokens garbage-end (forma (car tokens) response))))))
+		(aux (cdr tokens) mtokens ignore (forma (car tokens) response))))))
     (format nil "~{~a~}" (aux (sentence-tokens sentence) (sentence-mtokens sentence) nil nil))))
 
 
@@ -90,6 +90,8 @@
 		     (equal "root" (slot-value tk 'deprel))))
 	      (sentence-tokens sentence))
        (sentence-meta-value sentence "text")
+       (equal (sentence-meta-value sentence "text")
+	      (sentence->text sentence))
        (sentence-meta-value sentence "sent_id")))
 
 
