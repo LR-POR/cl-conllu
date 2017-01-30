@@ -30,7 +30,10 @@
    (end     :initarg :end
 	    :accessor mtoken-end)
    (form    :initarg :form
-	    :accessor mtoken-form)))
+	    :accessor mtoken-form)
+   (misc    :initarg :misc
+	    :initform "_"
+	    :accessor mtoken-misc)))
 
 (defclass sentence ()
   ((start   :initarg :start
@@ -50,10 +53,28 @@
 (defun sentence-meta-value (sentence meta-field)
   (cdr (assoc meta-field (sentence-meta sentence) :test #'equal)))
 
+
+(defun sentence-text-aux (tokens mtokens response)
+  (labels ((forma (obj)
+	     (if (search "SpaceAfter=No" (slot-value obj 'misc))
+		 (list (slot-value obj 'form))
+		 (list (slot-value obj 'form) " "))))
+    (cond
+      ((and (null tokens) (null mtokens))
+       response)
+      ((null mtokens)
+       (sentence-text-aux (cdr tokens) mtokens (append response (forma (car tokens)))))
+      ((null tokens)
+       (sentence-text-aux tokens (cdr mtokens) (append response (forma (car mtokens)))))
+      ((<= (mtoken-start (car mtokens))
+	   (token-id (car tokens)))
+       (sentence-text-aux tokens (cdr mtokens) (append response (forma (car mtokens)))))
+      (t
+       (sentence-text-aux (cdr tokens) mtokens (append response (forma (car tokens))))))))
+
+
 (defun sentence->text (sentence)
-  (format nil "~{~a~^ ~}"
-	  (mapcar (lambda (tk) (slot-value tk 'form))
-		  (sentence-tokens sentence))))
+  (format nil "~{~a~}" (sentence-text-aux (sentence-tokens sentence) (sentence-mtokens sentence) nil)))
 
 
 (defun sentence-valid? (sentence)

@@ -22,11 +22,11 @@
 	     (res (cl-ppcre:split "\\t" line))
 	     (range (cadr (multiple-value-list (cl-ppcre:scan-to-strings "([0-9]+)-([0-9]+)" (car res))))))
 	(assert (equal 10 (length res)))
-	(setf (slot-value mtk 'start) (parse-integer (aref range 0)))
-	(setf (slot-value mtk 'end) (parse-integer (aref range 1)))
-	(setf (slot-value mtk 'form) (cadr res))
+	(setf (slot-value mtk 'start) (parse-integer (aref range 0))
+	      (slot-value mtk 'end)   (parse-integer (aref range 1))
+	      (slot-value mtk 'form)  (second res)
+	      (slot-value mtk 'misc)  (car (last res)))
 	mtk)))
-
 
 (defun collect-meta (lines)
   (mapcar (lambda (line)
@@ -117,7 +117,8 @@
 	    (cons a alist))
 	  (append (list (format nil "~a-~a" (mtoken-start mtk) (mtoken-end mtk))
 			(mtoken-form mtk))
-		  (make-list 8 :initial-element '_ ))
+		  (make-list 7 :initial-element '_ )
+		  (list (mtoken-misc mtk)))
 	  :initial-value nil))
 
 
