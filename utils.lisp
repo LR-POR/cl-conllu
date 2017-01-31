@@ -83,3 +83,10 @@
 ;; (defun insert-sorted (list &key (key #'identity) (test #'<))
 ;;   ;; Inserts new element in a sorted list, preserving the sorting
 ;; )
+
+(defun insert-at (lst index newelt)
+  (if (equal index 0)
+      (cons newelt lst)
+      (progn
+	(push newelt (cdr (nthcdr (1- index) lst)))
+	lst)))

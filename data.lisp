@@ -1,7 +1,6 @@
 
 (in-package :cl-conllu)
 
-
 (defclass token ()
   ((id      :initarg :id
 	    :accessor token-id)
@@ -10,18 +9,25 @@
    (lemma   :initarg :lemma
 	    :accessor token-lemma)
    (upostag :initarg :upostag
+	    :initform "_"
 	    :accessor token-upostag)
    (xpostag :initarg :xpostag
+	    :initform "_"
 	    :accessor token-xpostag)
    (feats   :initarg :feats
+	    :initform "_"
 	    :accessor token-feats)
    (head    :initarg :head
+	    :initform "_"
 	    :accessor token-head)
    (deprel  :initarg :deprel
+	    :initform "_"
 	    :accessor token-deprel)
    (deps    :initarg :deps
+	    :initform "_"
 	    :accessor token-deps)
    (misc    :initarg :misc
+	    :initform "_"
 	    :accessor token-misc)))
 
 (defclass mtoken ()
@@ -137,8 +143,14 @@
 		 :key 'token-id))
 
 (defun push-token (sentence inserted-token)
-  ;; Inserts token at sentence object.
-  ;; Please not it won't be inserted exactly as given: it's ID will be the same (place where it'll be inserted) but it's head should point to id value prior to the insertion.
+  " Inserts token at sentence object.  Please not it won't be inserted
+   exactly as given: it's ID will be the same (place where it'll be
+   inserted) but it's head should point to id value prior to the
+   insertion. "
+  ;; Inserts token at sentence object.  Please not it won't be
+  ;; inserted exactly as given: it's ID will be the same (place where
+  ;; it'll be inserted) but it's head should point to id value prior
+  ;; to the insertion.
   ;;
   ;; For instance, consider the sentence "John eats cake". We'll have:
   ;; ID	FORM	HEAD
@@ -153,7 +165,9 @@
   ;; 3	chocolate	3
   ;; 4	cake	2
   ;; 
-  ;; In this case, we'll insert a token object with values (:ID 3 :FORM chocolate :HEAD 3), as "cake" had id 3 before the insertion.
+  ;; In this case, we'll insert a token object with values (:ID 3
+  ;; :FORM chocolate :HEAD 3), as "cake" had id 3 before the
+  ;; insertion.
   (dolist (token (sentence-tokens sentence))
     (when (>= (token-id token)
 	      (token-id inserted-token))
@@ -167,28 +181,28 @@
 	     (if (slot-boundp inserted-token slot-name)
 		 (slot-value inserted-token slot-name)
 		 "_")))
-    (push (make-instance 'token
-			 :id (token-id inserted-token)
-			 :form (if-exists 'form)
-			 :lemma (if-exists 'lemma)
-			 :upostag (if-exists 'upostag)
-			 :xpostag (if-exists 'xpostag)
-			 :feats (if-exists 'feats)
-			 :head (if (>= (token-head inserted-token)
-				       (token-id inserted-token))
-				   (1+ (token-head inserted-token))
-				   (token-head inserted-token))
-			 :deprel (if-exists 'deprel)
-			 :deps (if-exists 'deps)
-			 :misc (if-exists 'misc))
-	  (sentence-tokens sentence)))
-  (setf (slot-value sentence 'tokens)
-	(sort (sentence-tokens sentence) #'< :key #'token-id))
-  sentence)
+    (insert-at (sentence-tokens sentence)
+	       (1+ (token-id inserted-token))
+	       (make-instance 'token
+			      :id (token-id inserted-token)
+			      :form (if-exists 'form)
+			      :lemma (if-exists 'lemma)
+			      :upostag (if-exists 'upostag)
+			      :xpostag (if-exists 'xpostag)
+			      :feats (if-exists 'feats)
+			      :head (if (>= (token-head inserted-token)
+					    (token-id inserted-token))
+					(1+ (token-head inserted-token))
+					(token-head inserted-token))
+			      :deprel (if-exists 'deprel)
+			      :deps (if-exists 'deps)
+			      :misc (if-exists 'misc))
+	       (sentence-tokens sentence))))
 ;; This can be improved defining and using an inserted-push that
 ;; inserts an element in a sorted list instead of inserting and then sorting everything
 
 (defun pop-token (sentence id)
+  ;; (values sentence t|nil)
   ;; Output: removed token with id equal to `id`
   ;; Side-effects: token with id `id` is removed from sentence's token list
   (let ((removed-token (find id (sentence-tokens sentence) :key #'token-id))
