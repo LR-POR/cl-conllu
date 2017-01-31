@@ -115,13 +115,11 @@
 (defun insert-mtoken (sentence mtoken &key (if-exists 'do-nothing))
   (insert-mtokens sentence (list mtoken) :if-exists if-exists))
 
-(defun remove-mtoken (sentence start end)
-  ;; Removes mtoken with start value equal to `start` and end value equal to `end`
+(defun remove-mtoken (sentence start)
+  ;; Removes mtoken with start value equal to `start`.
   (let ((mtoken-to-remove
 	 (find-if (lambda (mtk)
-		    (and
-		     (equal (mtoken-start mtk) start)
-		     (equal (mtoken-end mtk) end)))
+		     (equal (mtoken-start mtk) start))
 		  (sentence-mtokens sentence))))
     (cond (mtoken-to-remove
 	   (setf (sentence-mtokens sentence)
@@ -129,7 +127,7 @@
 			 (sentence-mtokens sentence)))
 	   sentence)
 	  (t
-	   (format t "There's no ~a-~a mtoken to remove.~%~%" start end)
+	   (format t "WARNING: There's no multiword token starting with ~a to remove.~%~%" start)
 	   sentence))))
   
 (defun mtoken->tokens (sentence mtoken)
