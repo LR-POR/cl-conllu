@@ -49,4 +49,9 @@
    #:sentence-tokens
    #:sentence-mtokens
 
-   #:corte-e-costura))
+   #:corte-e-costura
+   #:rls
+   #:read-rules
+   #:match-token
+   #:match?
+   #:intern-rule))
