@@ -182,7 +182,7 @@
 		 (slot-value inserted-token slot-name)
 		 "_")))
     (insert-at (sentence-tokens sentence)
-	       (1+ (token-id inserted-token))
+	       (1- (token-id inserted-token))
 	       (make-instance 'token
 			      :id (token-id inserted-token)
 			      :form (if-exists 'form)
@@ -196,8 +196,7 @@
 					(token-head inserted-token))
 			      :deprel (if-exists 'deprel)
 			      :deps (if-exists 'deps)
-			      :misc (if-exists 'misc))
-	       (sentence-tokens sentence))))
+			      :misc (if-exists 'misc)))))
 ;; This can be improved defining and using an inserted-push that
 ;; inserts an element in a sorted list instead of inserting and then sorting everything
 
