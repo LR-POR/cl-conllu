@@ -63,3 +63,9 @@
 
 
 
+(defun insert-at (lst index newelt)
+  (if (equal index 0)
+      (cons newelt lst)
+      (progn
+	(push newelt (cdr (nthcdr (1- index) lst)))
+	lst)))
