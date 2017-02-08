@@ -24,15 +24,10 @@
    #:read-conllu
    #:write-conllu
    #:write-conllu-to-stream   
-   #:sentence->deep
    #:levenshtein
    #:diff
-   #:insert-mtokens
-   #:insert-mtoken
-   #:remove-mtoken
-   #:mtoken->tokens
-   #:push-token
-   #:pop-token
+   #:insert-token
+   #:remove-token
 
    #:token
    #:token-id

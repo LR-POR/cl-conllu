@@ -144,113 +144,70 @@
 		 :key 'token-id))
 
 
-(defun push-token (sentence inserted-token)
-  " Inserts token at sentence object.  Please not it won't be inserted
-   exactly as given: it's ID will be the same (place where it'll be
-   inserted) but it's head should point to id value prior to the
-   insertion. "
-  (dolist (token (sentence-tokens sentence))
-    (when (>= (token-id token)
-	      (token-id inserted-token))
-      (setf (slot-value token 'id)
-	    (1+ (slot-value token 'id))))
-    (when (>= (token-head token)
-	      (token-id inserted-token))
-      (setf (slot-value token 'head)
-	    (1+ (slot-value token 'head)))))
-  (labels ((if-exists (slot-name)
-	     (if (slot-boundp inserted-token slot-name)
-		 (slot-value inserted-token slot-name)
-		 "_")))
-    (insert-at (sentence-tokens sentence)
-	       (1- (token-id inserted-token))
-	       (make-instance 'token
-			      :id (token-id inserted-token)
-			      :form (if-exists 'form)
-			      :lemma (if-exists 'lemma)
-			      :upostag (if-exists 'upostag)
-			      :xpostag (if-exists 'xpostag)
-			      :feats (if-exists 'feats)
-			      :head (if (>= (token-head inserted-token)
-					    (token-id inserted-token))
-					(1+ (token-head inserted-token))
-					(token-head inserted-token))
-			      :deprel (if-exists 'deprel)
-			      :deps (if-exists 'deps)
-			      :misc (if-exists 'misc)))))
+(defun insert-token (sentence new-token)
+  "Inserts token in a sentence object. It will not be inserted exactly
+   as given: it's ID will be the same (place where it'll be inserted)
+   but it's head should point to id value prior to the insertion. It
+   changes the sentence object passed."
+  (with-slots (tokens) sentence
+    (dolist (token tokens)
+      (if (>= (token-id token) (token-id new-token))
+	  (incf (token-id token)))
+      (if (>= (token-head token) (token-id new-token))
+	  (incf (token-head token))))
+    (if (>= (token-head new-token)
+	    (token-id new-token))
+	(incf (token-head inserted-token)))
+    (insert-at tokens (1- (token-id new-token)) new-token)
+    sentence))
 
-(defun pop-token (sentence id)
-  (let ((removed-token (find id (sentence-tokens sentence) :key #'token-id))
-	(is-head (find-if
-		  (lambda (x) (equal id (token-head x)))
-		  (sentence-tokens sentence)))
-	(in-mtoken
-	 (dolist (interval
-		   (mapcar
-		    #'(lambda (mtk)
-			(list (mtoken-start mtk)
-			      (mtoken-end mtk)))
-		    (sentence-mtokens sentence)))
-	   (cond
-	     ((> (car interval) id)
-	      (return nil))
-	     ((>= (cadr interval) id)
-	      (return interval))))))
-    (cond ((null removed-token)
-	   (format t "WARNING: There's no token ~a.~%~%" id)
-	   sentence)
-	  (in-mtoken
-	   (format t "WARNING: This token is contained in the multiword token ~{~a-~a~}.~%Not removing.~%Remove the multiword token before removing this token.~%~%" in-mtoken)
-	   sentence)
-	  (is-head
-	   (format t "WARNING: This token is the head of token ~a.~%Not removing.~%Please change its head before removing this token.~%~%" (token-id is-head))
-	   sentence)
-	  (t
-	   (setf (slot-value sentence 'tokens)
-		 (remove removed-token (sentence-tokens sentence)))
-	   (dolist (token (sentence-tokens sentence))
-	     (when (> (token-id token) id)
-	       (setf (slot-value token 'id)
-		     (1- (slot-value token 'id))))
-	     (cond 
-	       ((> (token-head token) id)
-		(setf (slot-value token 'head)
-		      (1- (slot-value token 'head))))
-	       ((= (token-head token) id)
-		(setf (slot-value token 'head)
-		      "_"))))
-	   removed-token))))
+
+(defun remove-token (sentence id)
+  "Remove the token with the given ID if it is not part of a
+   multi-word token and it does not contain childs. It returns two
+   values, the sentence (changed or not) and a boolean (nil if the
+   sentence was not changed and true if changed. If the removed token
+   is the root of the sentence, a new root must be provided."
+  (with-slots (tokens mtokens) sentence
+    (let ((to-remove (find id tokens :key #'token-id :test #'equal))
+	  (childs (find id tokens :key #'token-head :test #'equal)))
+      (cond ((find id (loop for mtk in mtokens
+			    append (list (mtoken-start mtk) (mtoken-end mtk)))
+		   :test #'equal)
+	     (values sentence nil))
+	    ((or (null to-remove) childs)
+	     (values sentence nil))
+	    (t (dolist (token (sentence-tokens sentence))
+		 (if (> (token-id token) id)
+		     (decf (token-id token)))
+		 (if (> (token-head token) id)
+		     (decf (token-head token))))
+	       (setf tokens (remove to-remove tokens))
+	       (values sentence t))))))
+
 
 (defun set-head (sentence id new-head &optional deprel)
-  (let ((token (find id (sentence-tokens sentence) :key #'token-id))
-	(descendant?
-	 (is-descendant? new-head id sentence)))
+  (let ((token (find id (sentence-tokens sentence)
+		     :key #'token-id :test #'equal)))
     (cond
-      (descendant?
-       (format t "A token cannot have a descendant as head.~%Token ~a is descendant of token ~a, via path ~{~a, ~}. Nothing changed.~%~% "
-	       new-head id descendant?))
+      ((is-descendant? new-head id sentence)
+       (values sentence nil))
       ((equal id new-head)
-       (format t "A token cannot have itself as head. Nothing changed.~%~%"))
+       (values sentence nil))
       (t
-       (setf (slot-value token 'head)
-	     new-head)
+       (setf (slot-value token 'head) new-head)
        (if deprel
-	   (setf (slot-value token 'deprel)
-		 deprel))))))
+	   (setf (token-deprel 'deprel) deprel))
+       (values sentence t)))))
 
 
-(defun is-descendant? (id-1 id-2 sentence)
-  (is-descendant?-aux id-1 id-2 sentence nil))
-
-
-(defun is-descendant?-aux (id-1 id-2 sentence alist)
-  (let ((father-of-1-id (token-head
-			 (find id-1 (sentence-tokens sentence) :key #'token-id))))
+(defun is-descendant? (id-1 id-2 sentence &optional alist)
+  (let ((parent (token-head (find id-1 (sentence-tokens sentence)
+				  :key #'token-id :test #'equal))))
     (cond
-      ((eq father-of-1-id 0)
-       nil)
-      ((eq father-of-1-id id-2)
+      ((equal parent 0) nil)
+      ((equal parent id-2)
        (reverse (cons id-2 (cons id-1 alist))))
       (t
-       (is-descendant?-aux father-of-1-id id-2 sentence (cons id-1 alist))))))
+       (is-descendant? parent id-2 sentence (cons id-1 alist))))))
 

@@ -1,12 +1,12 @@
 
 (in-package :cl-conllu)
 
+(let ((sents (cl-conllu:read-conllu #P"test/test.conllu"))
+      (nk (make-instance 'cl-conllu:token
+			 :id 9 :form "yesterday" :lemma "yesterday" :upostag "ADV"
+			 :head 4 :deprel "advmod")))
+  (cl-conllu:write-conllu sents #P"test/test-equal.conllu")
+  (cl-conllu:write-conllu (list (cl-conllu:insert-token (car sents) nk)) #P"test/test-ins.conllu"))
 
-(let ((sent (cl-conllu:read-conllu "pt-ud-train.conllu")))
-  (write-conllu sent "teste.conllu"))
-
-(let ((test (with-output-to-string (s)
-	      (write-conllu-to-stream (cl-conllu:read-conllu "pt-ud-train.conllu") s))))
-  (with-input-from-string (in test)
-    (equal test (with-output-to-string (out)
-		  (write-conllu-to-stream (read-conllu-from-stream in) out)))))
+(let ((sents (cl-conllu:read-conllu #P"test/test.conllu")))
+  (cl-conllu:write-conllu (list (cl-conllu:remove-token (car sents) 7))  #P"test/test-del.conllu"))
