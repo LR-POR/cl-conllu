@@ -137,52 +137,12 @@
 		 (sentence-tokens sentence)))
 
 
-(defun insert-mtokens (sentence mtokens &key (if-exists 'do-nothing))
-  (mapc (lambda (mtoken)
-	  (let ((existing-mtoken
-		 (find-if (lambda (x)
-			    (and
-			     (eq (mtoken-start x) (mtoken-start mtoken))
-			     (eq (mtoken-end x) (mtoken-end mtoken))))
-			  (sentence-mtokens sentence))))
-	    (if existing-mtoken
-		(case if-exists
-		  (('do-nothing) nil)
-		  (('overwrite)
-		   (remove existing-mtoken (sentence-mtokens sentence))
-		   (push mtoken (sentence-mtokens sentence)))
-		  (('add)
-		   (push mtoken (sentence-mtokens sentence))))
-		(and
-		 (push mtoken (sentence-mtokens sentence))))))
-	mtokens)
-  (setf (sentence-mtokens sentence) (sort (sentence-mtokens sentence) '< :key 'mtoken-start)))
-
-
-(defun insert-mtoken (sentence mtoken &key (if-exists 'do-nothing))
-  (insert-mtokens sentence (list mtoken) :if-exists if-exists))
-
-
-(defun remove-mtoken (sentence start)
-  (let ((mtoken-to-remove
-	 (find-if (lambda (mtk)
-		     (equal (mtoken-start mtk) start))
-		  (sentence-mtokens sentence))))
-    (cond (mtoken-to-remove
-	   (setf (sentence-mtokens sentence)
-		 (remove mtoken-to-remove
-			 (sentence-mtokens sentence)))
-	   sentence)
-	  (t
-	   (format t "WARNING: There's no multiword token starting with ~a to remove.~%~%" start)
-	   sentence))))
-  
-
 (defun mtoken->tokens (sentence mtoken)
   (remove-if-not (lambda (x) (and (>= x (mtoken-start mtoken))
 				  (<= x (mtoken-end mtoken))))
 		 (sentence-tokens sentence)
 		 :key 'token-id))
+
 
 (defun push-token (sentence inserted-token)
   " Inserts token at sentence object.  Please not it won't be inserted
