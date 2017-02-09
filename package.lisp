@@ -13,7 +13,7 @@
 ;; limitations under the License.
 
 (defpackage :cl-conllu
-  (:use :cl :cl-ppcre :split-sequence)
+  (:use :cl :cl-ppcre :split-sequence :cl-log)
   (:export
    #:sentence-meta-value
    #:sentence-valid?
@@ -54,4 +54,8 @@
    #:read-rules
    #:match-token
    #:match?
-   #:intern-rule))
+   #:intern-rule
+   #:apply-rule-in-tokens
+   #:apply-rules-in-sentence
+   #:apply-rules-in-sentence-aux
+   #:apply-rule-in-sentence))

@@ -22,11 +22,17 @@
 
 ;; START
 
-(defun corte-e-costura (conllu-file rules-file new-conllu-file)
+(defun corte-e-costura (conllu-file rules-file new-conllu-file log-file &key recursive)
+  (setf (cl-log:log-manager)
+	(make-instance 'cl-log:log-manager :message-class 'cl-log:formatted-message))
+  (cl-log:start-messenger 'cl-log:text-file-messenger
+			  :filename log-file)
   (let ((sentences (read-conllu conllu-file))
 	(rules (read-rules rules-file)))
-    (apply-rules sentences rules)
+    (apply-rules sentences rules recursive)
     (write-conllu sentences new-conllu-file)))
+
+
 
 
 ;;acessores e leitor de regras
@@ -91,17 +97,6 @@
 	  (mapcar #'intern-pattern (list sides)))))
 
 
-;; (defun intern-pattern (pattern)
-;;   (if (atom pattern)
-;;       (list pattern)
-;;       (let ((var (car pattern))
-;; 	    (conditions (cdr pattern)))
-;; 	(append (list var) (mapcar
-;; 		       #'(lambda (condition) (list (intern (symbol-name (car condition)) :cl-conllu)
-;; 						   (cadr condition)))
-;; 		       conditions)))))
-
-
 (defun intern-pattern (pattern)
   (if (atom pattern)
       (list pattern)
@@ -109,38 +104,58 @@
        #'(lambda (condition) (if (atom condition)
 				 condition
 				 (list (intern (symbol-name (car condition)) :cl-conllu)
-					  (cadr condition))))
+				       (cadr condition))))
        pattern)))
 
 ;; 
 
 
-(defun apply-rules (sentences rules)
+(defun apply-rules (sentences rules recursive)
   (dolist (sentence sentences)
-    (dolist (rule rules) (apply-rule-in-sentence sentence rule))))
+    (apply-rules-in-sentence sentence rules (cdr (assoc "sent_id" (sentence-meta sentence) :test #'equalp)) recursive)))
 
 
-(defun apply-rule-in-sentence (a-sentence rule)
+(defun apply-rules-in-sentence (a-sentence rules sent-id  recursive &optional old-rules-applied)
+  (let ((new-rules-applied (apply-rules-in-sentence-aux a-sentence rules sent-id)))
+    (if (and new-rules-applied recursive (not (equal old-rules-applied new-rules-applied)))
+	(apply-rules-in-sentence a-sentence rules sent-id recursive new-rules-applied)
+	a-sentence)))
+
+
+(defun apply-rules-in-sentence-aux (a-sentence rules sent-id &optional applied?)
+  (if (null rules)
+      applied?
+      (let ((applied (apply-rule-in-sentence a-sentence (car rules) sent-id)))
+	(if applied
+	    (apply-rules-in-sentence-aux a-sentence (cdr rules) sent-id (append applied? applied))
+	    (apply-rules-in-sentence-aux a-sentence (cdr rules) sent-id  applied?)))))
+
+
+(defun apply-rule-in-sentence (a-sentence rule sent-id)
   (if (null rule)
-      a-sentence
+      nil
       (let ((tokens (cl-conllu:sentence-tokens a-sentence)))
-	   (apply-rule-in-tokens tokens rule)
-	   a-sentence)))
+	(apply-rule-in-tokens tokens rule sent-id))))
 
 
-(defun apply-rule-in-tokens (tokens rule)
+(defun apply-rule-in-tokens (tokens rule sent-id &optional matchs)
   (if (null tokens)
-      (values)
-      (progn
-	(apply-changes tokens rule)
-	(apply-rule-in-tokens (cdr tokens) rule))))
+      matchs
+      (let ((match (apply-changes tokens rule)))
+	(if match
+	    (progn
+	      (cl-log:log-message :info "A regra ~D deu match na sentença  ~D" rule sent-id)
+	      (apply-rule-in-tokens (cdr tokens) rule sent-id  (append matchs match)))
+	    (apply-rule-in-tokens (cdr tokens) rule sent-id matchs)))))
 
 
 (defun apply-changes (tokens rule)
   (let  ((bindings (match? tokens (rls rule))))
     (if bindings
-	(apply-rhs bindings (rhs rule))
-	(values))))
+	(progn
+	  (apply-rhs bindings (rhs rule))
+	  (cons (car tokens) (rls rule)))
+	nil)))
 
 
 (defun match? (tokens rls &optional (bindings nil))
@@ -166,11 +181,11 @@
 
 (defun apply-rhs (bindings rhs)
   (if (null rhs)
-      (values)
+      t
       (let* ((pattern (car rhs))
-	    (var (car pattern))
-	    (conditions (cdr pattern))
-	    (token (getf bindings var)))
+	     (var (car pattern))
+	     (conditions (cdr pattern))
+	     (token (getf bindings var)))
 	(apply-conditions-in-token conditions token)
 	(apply-rhs bindings (cdr rhs)))))
 
@@ -179,7 +194,7 @@
   (if (null conditions)
       (values)
       (let* ((condition (car conditions))
-	    (field (car condition))
-	    (a-value (cadr condition)))
+	     (field (car condition))
+	     (a-value (cadr condition)))
 	(setf (slot-value token field) a-value)
 	(apply-conditions-in-token (cdr conditions) token))))
