@@ -162,6 +162,9 @@
     sentence))
 
 
+ 
+
+
 (defun remove-token (sentence id)
   "Remove the token with the given ID if it is not part of a
    multi-word token and it does not contain childs. It returns two
@@ -171,9 +174,8 @@
   (with-slots (tokens mtokens) sentence
     (let ((to-remove (find id tokens :key #'token-id :test #'equal))
 	  (childs (find id tokens :key #'token-head :test #'equal)))
-      (cond ((find id (loop for mtk in mtokens
-			    append (list (mtoken-start mtk) (mtoken-end mtk)))
-		   :test #'equal)
+      (cond ((some (lambda (mt) (<= (mtoken-start mt) id (mtoken-end mt)))
+		   mtokens)
 	     (values sentence nil))
 	    ((or (null to-remove) childs)
 	     (values sentence nil))
