@@ -28,6 +28,7 @@
    #:diff
    #:insert-token
    #:remove-token
+   #:adjust-sentence
 
    #:token
    #:token-id
