@@ -212,4 +212,23 @@
        (reverse (cons id-2 (cons id-1 alist))))
       (t
        (is-descendant? parent id-2 sentence (cons id-1 alist))))))
+ 
 
+(defun adjust-sentence (sentence)
+  "Receives a sentence and reenumerate IDs and HEAD values of each
+  token so that their order (as in sentence-tokens) is respected."
+  (let ((new-id (make-hash-table))
+	(counter 0))
+    (dolist (token (sentence-tokens sentence))
+      (incf counter)
+      (setf (gethash (token-id token) new-id) counter))
+    (labels ((adjust-value (obj slot-name)
+	       (setf (slot-value obj slot-name)
+		     (gethash (slot-value obj slot-name) new-id))))
+      (dolist (token (sentence-tokens sentence))
+	(adjust-value token 'id)
+	(adjust-value token 'head))
+      (dolist (mtoken (sentence-mtokens sentence))
+	(adjust-value mtoken 'start)
+	(adjust-value mtoken 'end))))
+  sentence)
