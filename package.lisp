@@ -50,4 +50,5 @@
    #:sentence-start
    #:sentence-meta
    #:sentence-tokens
-   #:sentence-mtokens))
+   #:sentence-mtokens
+   #:sentence-equal))
