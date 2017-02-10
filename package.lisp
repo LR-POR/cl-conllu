@@ -51,4 +51,6 @@
    #:sentence-meta
    #:sentence-tokens
    #:sentence-mtokens
-   #:sentence-equal))
+   #:sentence-equal
+
+   #:write-selected-sentence))
