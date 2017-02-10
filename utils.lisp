@@ -61,11 +61,12 @@
     (t (find-min (cdr list) :min min))))
 
 
-
-
 (defun insert-at (lst index newelt)
   (if (equal index 0)
       (cons newelt lst)
       (progn
 	(push newelt (cdr (nthcdr (1- index) lst)))
 	lst)))
+
+(defun range (n)
+  (loop for x from 0 to (1- n) collect x))

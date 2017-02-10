@@ -217,18 +217,21 @@
 (defun adjust-sentence (sentence)
   "Receives a sentence and reenumerate IDs and HEAD values of each
   token so that their order (as in sentence-tokens) is respected."
-  (let ((new-id (make-hash-table))
-	(counter 0))
-    (dolist (token (sentence-tokens sentence))
-      (incf counter)
-      (setf (gethash (token-id token) new-id) counter))
-    (labels ((adjust-value (obj slot-name)
-	       (setf (slot-value obj slot-name)
-		     (gethash (slot-value obj slot-name) new-id))))
-      (dolist (token (sentence-tokens sentence))
-	(adjust-value token 'id)
-	(adjust-value token 'head))
-      (dolist (mtoken (sentence-mtokens sentence))
-	(adjust-value mtoken 'start)
-	(adjust-value mtoken 'end))))
+  (with-slots (tokens mtokens) sentence
+    (let ((maps (cons `(0 . 0)
+		      (mapcar (lambda (tk pos)
+				(cons (token-id tk) (1+ pos)))
+			      tokens (range (length tokens))))))
+      (dolist (tk tokens)
+	(setf (token-id tk)   (cdr (assoc (token-id tk) maps))
+	      (token-head tk) (cdr (assoc (token-head tk) maps))))
+      (dolist (mtk mtokens)
+	(setf (mtoken-start mtk) (cdr (assoc (mtoken-start mtk) maps))
+	      (mtoken-end mtk)   (cdr (assoc (mtoken-end mtk) maps))))))
   sentence)
+
+
+
+
+
+
