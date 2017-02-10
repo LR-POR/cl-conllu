@@ -19,7 +19,6 @@
    #:sentence-valid?
    #:make-sentence
    #:sentence->text
-   #:sentence-valid?
    #:read-conllu-from-stream
    #:read-conllu
    #:write-conllu
@@ -28,6 +27,7 @@
    #:diff
    #:insert-token
    #:remove-token
+   #:adjust-sentence
 
    #:token
    #:token-id

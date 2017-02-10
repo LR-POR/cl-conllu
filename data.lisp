@@ -230,8 +230,3 @@
 	      (mtoken-end mtk)   (cdr (assoc (mtoken-end mtk) maps))))))
   sentence)
 
-
-
-
-
-
