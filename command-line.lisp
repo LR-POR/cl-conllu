@@ -1,27 +1,3 @@
-;; (uncomment below to use this as a script)
-;; #!/usr/local/bin/sbcl --script
-;; (load "~/quicklisp/setup.lisp")
-;; (ql:quickload :cl-conllu)
-
-
-;; Usage:
-;;
-;; For isolating sentences from a .conllu file: ...
-;;
-;; For modifying a .conllu:
-;; if X.conllu is the original file and Y.conllu is a new file,
-;; outputs a Z.conllu, which is a modified X file, where, for each
-;; sentence S:
-;; - if S is in X and Y (checked via sent_id metavalue), use Y's version
-;; - if S is only in X, keep it as it is
-;; - if S is only in Y, depends on a "add-new" key
-;;   - if its value is "y" or "t", then add at the end of the file
-;;   - if it's value is "n" or "nil", then it doesn't appear in Z.
-;; ...
-
-;; Global variable for arguments when calling as a script with sbcl:
-;; sb-ext:*posix-argv*
-
 (in-package :cl-conllu)
 
 (defun write-selected-sentence (filename sent-id)
@@ -49,3 +25,24 @@ For instance, both calls below return the same:
     (if desired-sentence
 	(write-conllu-to-stream (cons desired-sentence nil) t))))
 			    
+(defun modify-conllu (orig-file mod-file &optional (add-new t))
+  (let ((original (read-conllu orig-file))
+	(modif (read-conllu mod-file))
+	(new-sents nil))
+    (dolist (mod-sentence modif)
+      (let ((orig-sentence
+	     (find (sentence-meta-value mod-sentence "sent_id")
+		   original
+		   :key (lambda (sent)
+			  (sentence-meta-value sent "sent_id"))
+		   :test #'equal)))
+	(if orig-sentence
+	    (setf original
+		  (substitute mod-sentence
+			      orig-sentence
+			      original))
+	    (push mod-sentence new-sents))))
+    (if add-new
+	(append original (reverse new-sents))
+	original)))
+     
