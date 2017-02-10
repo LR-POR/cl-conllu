@@ -157,7 +157,7 @@
 	  (incf (token-head token))))
     (if (>= (token-head new-token)
 	    (token-id new-token))
-	(incf (token-head inserted-token)))
+	(incf (token-head new-token)))
     (insert-at tokens (1- (token-id new-token)) new-token)
     sentence))
 
