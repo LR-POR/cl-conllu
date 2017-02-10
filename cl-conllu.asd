@@ -24,4 +24,5 @@
 	       (:file "data"       :depends-on ("package"))
 	       (:file "read-write" :depends-on ("data"))
 	       (:file "utils"      :depends-on ("data"))
-	       (:file "rdf"      :depends-on ("data"))))
+	       (:file "rdf"      :depends-on ("data"))
+	       (:file "command-line"      :depends-on ("data"))))
