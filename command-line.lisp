@@ -1,48 +1,38 @@
+
 (in-package :cl-conllu)
 
-(defun write-selected-sentence (filename sent-id)
-  "If sent-id is a number, then returns a sentence whose sent_id is 'filename-sent-id'. If not, searches as a string exactly as given.
-For instance, both calls below return the same:
-  (write-selected-sentence \"CF1.conlllu\" 1)
-  (write-selected-sentence \"CF1.conllu\" \"CF1-1\")"
-  (let ((sentences (read-conllu filename))
-	(desired-sentence nil))
-    (if (numberp sent-id)
-	(setf desired-sentence
-	      (find  (concatenate
-		      'string
-		      (pathname-name filename) "-" (format nil "~a" sent-id))
-		     sentences
-		     :key (lambda (sent)
-			    (sentence-meta-value sent "sent_id"))
-		     :test #'equal))
-	(setf desired-sentence
-	      (find sent-id
-		    sentences
-		    :key (lambda (sent)
-			   (sentence-meta-value sent "sent_id"))
-		    :test #'equal)))
-    (if desired-sentence
-	(write-conllu-to-stream (cons desired-sentence nil) t))))
-			    
-(defun modify-conllu (orig-file mod-file &optional (add-new t))
-  (let ((original (read-conllu orig-file))
-	(modif (read-conllu mod-file))
-	(new-sents nil))
-    (dolist (mod-sentence modif)
-      (let ((orig-sentence
-	     (find (sentence-meta-value mod-sentence "sent_id")
-		   original
-		   :key (lambda (sent)
-			  (sentence-meta-value sent "sent_id"))
-		   :test #'equal)))
-	(if orig-sentence
-	    (setf original
-		  (substitute mod-sentence
-			      orig-sentence
-			      original))
-	    (push mod-sentence new-sents))))
-    (if add-new
-	(append original (reverse new-sents))
-	original)))
-     
+(defun select-sentence (id sentences)
+  (find id sentences :key #'sentence-id :test #'equal))
+
+
+(defun write-selected-sentence (filename id output)
+  "Returns a sentence whose 'sent_id' from the list of sentences in
+   'filename'."
+  (let* ((sentences (read-conllu filename))
+	 (selected (select-sentence id sentences)))
+    (if selected
+	(write-conllu-to-stream (list selected) output))))
+
+
+(defun adjust-conllu (input-filename output)
+  (write-conllu-to-stream (mapcar #'adjust-sentence (read-conllu input-filename))
+			  output))
+
+
+(defun modify-conllu (original-file changes-file output &optional (add-news nil))
+  "The original file contains a set of sentences. The modified file
+   contains some sentences from original modified, this function
+   replaces in original the sentences presented in modified file,
+   matching them using the sentence ids. If the modified file contains
+   sentence not in original, the flag 'add-new' , if true, says that
+   these sentence must be added in the end of the original file."
+  (let ((originals (read-conllu original-file))
+	(changes   (read-conllu changes-file))
+	(news      nil))
+    (dolist (sent changes)
+      (let ((sent-dated (select-sentence (sentence-id sent) originals)))
+	(if sent-dated
+	    (substitute sent sent-dated originals :key #'sentence-id :test #'equal)
+	    (if add-news
+		(push sent news)))))
+    (write-conllu-to-stream (append originals (reverse news)) output)))

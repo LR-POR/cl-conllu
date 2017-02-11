@@ -60,6 +60,10 @@
   (cdr (assoc meta-field (sentence-meta sentence) :test #'equal)))
 
 
+(defun sentence-id (sentence)
+  (sentence-meta-value sentence "sent_id"))
+
+
 (defun sentence->text (sentence)
   (labels ((forma (obj lst)
 	     (if (search "SpaceAfter=No" (slot-value obj 'misc))
@@ -216,7 +220,7 @@
 
 (defun adjust-sentence (sentence)
   "Receives a sentence and reenumerate IDs and HEAD values of each
-  token so that their order (as in sentence-tokens) is respected."
+   token so that their order (as in sentence-tokens) is respected."
   (with-slots (tokens mtokens) sentence
     (let ((maps (cons `(0 . 0)
 		      (mapcar (lambda (tk pos)
@@ -230,44 +234,43 @@
 	      (mtoken-end mtk)   (cdr (assoc (mtoken-end mtk) maps))))))
   sentence)
 
+
 (defun token-equal (token-1 token-2)
   "Tests if, for each slot, token-1 has the same values as token-2."
-  (every
-   (lambda (slot)
-     (equal (slot-value token-1 slot)
-	    (slot-value token-2 slot)))
-   '(id form lemma upostag
-     xpostag feats head deprel deps misc)))
+  (every (lambda (slot)
+	   (equal (slot-value token-1 slot)
+		  (slot-value token-2 slot)))
+	 '(id form lemma upostag xpostag feats head deprel deps misc)))
+
 
 (defun mtoken-equal (mtoken-1 mtoken-2)
   "Tests if, for each slot, mtoken-1 has the same values as mtoken-2."
-  (every
-   (lambda (slot)
-     (equal (slot-value mtoken-1 slot)
-	    (slot-value mtoken-2 slot)))
-   '(start end form misc)))
+  (every (lambda (slot)
+	   (equal (slot-value mtoken-1 slot)
+		  (slot-value mtoken-2 slot)))
+	 '(start end form misc)))
+
 
 (defun sentence-equal (sent-1 sent-2)
   "Tests if, for each slot, sent-1 has the same values as sent-2.
-  For tokens and multiword tokens, it uses token-equal and mtoken-equal,
-  respectively."
-  (and
-   (every
-    (lambda (slot)
-      (equal (slot-value sent-1 slot)
-	     (slot-value sent-2 slot)))
-    '(start meta))
-   (if (equal (length (sentence-tokens sent-1))
-	      (length (sentence-tokens sent-2)))
-       (dotimes (x (length (sentence-tokens sent-1)) t)
-	 (unless (token-equal
-		  (nth x (sentence-tokens sent-1))
-		  (nth x (sentence-tokens sent-2)))
-	   (return nil))))
-   (if (equal (length (sentence-mtokens sent-1))
-	      (length (sentence-mtokens sent-2)))
-       (dotimes (x (length (sentence-mtokens sent-1)) t)
-	 (unless (mtoken-equal
-		  (nth x (sentence-mtokens sent-1))
-		  (nth x (sentence-mtokens sent-2)))
-	   (return nil))))))
+   For tokens and multiword tokens, it uses token-equal and
+   mtoken-equal, respectively."
+  (and (every
+	(lambda (slot)
+	  (equal (slot-value sent-1 slot)
+		 (slot-value sent-2 slot)))
+	'(start meta))
+       (if (equal (length (sentence-tokens sent-1))
+		  (length (sentence-tokens sent-2)))
+	   (dotimes (x (length (sentence-tokens sent-1)) t)
+	     (unless (token-equal
+		      (nth x (sentence-tokens sent-1))
+		      (nth x (sentence-tokens sent-2)))
+	       (return nil))))
+       (if (equal (length (sentence-mtokens sent-1))
+		  (length (sentence-mtokens sent-2)))
+	   (dotimes (x (length (sentence-mtokens sent-1)) t)
+	     (unless (mtoken-equal
+		      (nth x (sentence-mtokens sent-1))
+		      (nth x (sentence-mtokens sent-2)))
+	       (return nil))))))

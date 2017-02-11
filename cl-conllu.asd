@@ -21,8 +21,8 @@
   :license "Apache 2.0"
   :depends-on (#:cl-ppcre #:alexandria :split-sequence)
   :components ((:file "package")
-	       (:file "data"       :depends-on ("package"))
-	       (:file "read-write" :depends-on ("data"))
-	       (:file "utils"      :depends-on ("data"))
-	       (:file "rdf"      :depends-on ("data"))
-	       (:file "command-line"      :depends-on ("data"))))
+	       (:file "data"         :depends-on ("package"))
+	       (:file "read-write"   :depends-on ("data"))
+	       (:file "utils"        :depends-on ("data"))
+	       (:file "rdf"          :depends-on ("data"))
+	       (:file "command-line" :depends-on ("data"))))
