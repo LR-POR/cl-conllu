@@ -128,7 +128,8 @@
 	  (sentence-meta sentence))
   (reduce (lambda (alist tk)
 	    (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
-					 (sentence-mtokens sentence)
+					 (sort (sentence-mtokens sentence) #'<=
+					       :key #'mtoken-start)
 					 :key 'mtoken-start)))
 	      (if alist (princ #\Linefeed stream))
 	      (when (and next-mtoken

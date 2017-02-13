@@ -20,4 +20,5 @@
 		    *standard-output*))
     ((equal cmd "adjust")
      (adjust-conllu (nth 2 sb-ext:*posix-argv*)
-		   *standard-output*))))
+		    *standard-output*))))
+

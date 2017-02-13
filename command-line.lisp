@@ -27,12 +27,21 @@
    sentence not in original, the flag 'add-new' , if true, says that
    these sentence must be added in the end of the original file."
   (let ((originals (read-conllu original-file))
-	(changes   (read-conllu changes-file))
-	(news      nil))
-    (dolist (sent changes)
-      (let ((sent-dated (select-sentence (sentence-id sent) originals)))
-	(if sent-dated
-	    (substitute sent sent-dated originals :key #'sentence-id :test #'equal)
-	    (if add-news
-		(push sent news)))))
-    (write-conllu-to-stream (append originals (reverse news)) output)))
+	(changes   (read-conllu changes-file)))
+    (labels ((apply-changes (changes originals news)
+	       (if changes
+		   (let ((new (car changes)))
+		     (if (select-sentence (sentence-id new) originals)
+			 (apply-changes (cdr changes)
+					(substitute-if new
+						       (lambda (b)
+							 (equal (sentence-id new)
+								(sentence-id b)))
+						       originals)
+					news)
+			 (apply-changes (cdr changes) originals
+					(cons new news))))
+		   (if add-news
+		       (append originals (reverse news))
+		       originals))))
+      (write-conllu-to-stream (apply-changes changes originals nil) output))))
