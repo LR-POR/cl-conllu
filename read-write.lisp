@@ -127,7 +127,7 @@
 	    (format stream "# ~a = ~a~%" (car pair) (cdr pair)))
 	  (sentence-meta sentence))
   (with-slots (tokens mtokens) sentence
-    (sort mtokens #'<= :key #'mtoken-start)
+    (setf mtokens (sort mtokens #'<= :key #'mtoken-start))
     (reduce (lambda (alist tk)
 	      (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
 					   mtokens
