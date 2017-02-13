@@ -126,19 +126,20 @@
   (mapcar (lambda (pair)
 	    (format stream "# ~a = ~a~%" (car pair) (cdr pair)))
 	  (sentence-meta sentence))
-  (reduce (lambda (alist tk)
-	    (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
-					 (sort (sentence-mtokens sentence) #'<=
-					       :key #'mtoken-start)
-					 :key 'mtoken-start)))
-	      (if alist (princ #\Linefeed stream))
-	      (when (and next-mtoken
-			 (eq (mtoken-start next-mtoken) (token-id tk)))
-		(write-mtoken next-mtoken stream)
-		(princ #\Newline stream))
-	      (write-token tk stream)
-	      (cons tk alist)))
-	  (sentence-tokens sentence) :initial-value nil)
+  (with-slots (tokens mtokens) sentence
+    (sort mtokens #'<= :key #'mtoken-start)
+    (reduce (lambda (alist tk)
+	      (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
+					   mtokens
+					   :key 'mtoken-start)))
+		(if alist (princ #\Linefeed stream))
+		(when (and next-mtoken
+			   (equal (mtoken-start next-mtoken) (token-id tk)))
+		  (write-mtoken next-mtoken stream)
+		  (princ #\Newline stream))
+		(write-token tk stream)
+		(cons tk alist)))
+	    tokens :initial-value nil))
   (princ #\Newline stream))
 
 
