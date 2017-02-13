@@ -68,5 +68,4 @@
 	(push newelt (cdr (nthcdr (1- index) lst)))
 	lst)))
 
-(defun range (n)
-  (loop for x from 0 to (1- n) collect x))
+

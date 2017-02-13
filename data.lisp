@@ -225,7 +225,7 @@
     (let ((maps (cons `(0 . 0)
 		      (mapcar (lambda (tk pos)
 				(cons (token-id tk) (1+ pos)))
-			      tokens (range (length tokens))))))
+			      tokens (alexandria:iota (length tokens))))))
       (dolist (tk tokens)
 	(setf (token-id tk)   (cdr (assoc (token-id tk) maps))
 	      (token-head tk) (cdr (assoc (token-head tk) maps))))
