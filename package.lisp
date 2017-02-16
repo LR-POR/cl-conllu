@@ -58,4 +58,7 @@
    #:apply-rule-in-tokens
    #:apply-rules-in-sentence
    #:apply-rules-in-sentence-aux
-   #:apply-rule-in-sentence))
+   #:apply-rule-in-sentence
+   #:valid-vars
+   #:intern-rule
+   #:add-value))

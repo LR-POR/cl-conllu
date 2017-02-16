@@ -10,12 +10,15 @@
 ;; rls, rhs   ::= (pattern+)
 ;; pattern    ::= (var condition+)
 ;; var        ::= ?.*
-;; condition  ::= (field expression)
+;; condition  ::= (op field expression)
+;; op rls     ::= (= equal   ~ member   % or)
+;; op rhs     ::= (= replace   + add)
+;;
 ;; expression ::= string | regex
 ;;
-;; (=> ((a (pos "VERB") (lemma "co.*"))
+;; (=> ((a (= pos "VERB") (lemma "co.*"))
 ;;      (b (lemma "de.*")))
-;;     ((b (pos "PART"))))
+;;     ((b (= pos "PART"))))
 
 
 
@@ -104,7 +107,8 @@
        #'(lambda (condition) (if (atom condition)
 				 condition
 				 (list (intern (symbol-name (car condition)) :cl-conllu)
-				       (cadr condition))))
+				       (intern (symbol-name (cadr condition)) :cl-conllu)
+				       (caddr condition))))
        pattern)))
 
 ;; 
@@ -172,11 +176,30 @@
   (if (null pattern)
       t
       (let* ((condition (car pattern))
-	     (field  (car condition))
-	     (regex (cadr condition)))
-	(if (cl-ppcre:scan regex (slot-value token field))
-	    (match-token token (cdr pattern))
-	    nil))))
+	     (op (car condition))
+	     (field  (cadr condition))
+	     (regex (caddr condition)))
+	(cond ((equal op '=) (equal-test field regex (cdr pattern) token))
+	      ((equal op '~) (member-test field regex (cdr pattern) token))
+	      ((equal op '%) (or-test field regex (cdr pattern) token))))))
+	
+
+(defun equal-op (field regex rest-pattern token)
+  (if (equal regex (slot-value token field))
+      (match-token token rest-pattern)
+      nil))
+
+
+(defun member-op (field regex rest-pattern token)
+  (if (cl-ppcre:scan regex (slot-value token field))
+      (match-token token rest-pattern)
+      nil))
+
+
+(defun or-op (field regex rest-pattern token)
+  (if (cl-ppcre:scan regex (slot-value token field))
+      (match-token token rest-pattern)
+      nil))
 
 
 (defun apply-rhs (bindings rhs)
@@ -194,7 +217,21 @@
   (if (null conditions)
       (values)
       (let* ((condition (car conditions))
-	     (field (car condition))
-	     (a-value (cadr condition)))
-	(setf (slot-value token field) a-value)
-	(apply-conditions-in-token (cdr conditions) token))))
+	     (op (car condition))
+	     (field (cadr condition))
+	     (a-value (caddr condition)))
+	(cond ((equal op '=) (modify-value field a-value token (cdr conditions)))
+	      ((equal op '+) (add-value field a-value token (cdr conditions))))
+	
+	)))
+
+(defun modify-value (field new-value token rest-conditions)
+  (progn
+   (setf (slot-value token field) new-value)
+   (apply-conditions-in-token rest-conditions token)))
+
+
+(defun add-value (field new-value token rest-conditions)
+  (let ((old-values (slot-value token field)))
+    (setf (slot-value token field) (concatenate 'string old-values "|" new-value))
+    (apply-conditions-in-token rest-conditions token)))
