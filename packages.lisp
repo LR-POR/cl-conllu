@@ -12,6 +12,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 
+;;;; package.lisp
+
+
 (defpackage :cl-conllu
   (:use :cl :cl-ppcre :split-sequence)
   (:export
@@ -52,3 +55,8 @@
    #:sentence-tokens
    #:sentence-mtokens
    #:sentence-equal))
+
+
+(defpackage #:conll-prolog
+  (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
+
