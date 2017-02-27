@@ -20,6 +20,7 @@
   :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
   :depends-on (#:cl-ppcre
+               #:uuid
 	       #:alexandria
 	       #:split-sequence)
   :components ((:file "packages")

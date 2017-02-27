@@ -22,6 +22,8 @@
 							    (format nil "~A" str))) "_"))
 
 (defun make-id (context prefix id)
+  (unless id
+    (setf id (uuid:make-v4-uuid)))
   (if context 
       (format nil "c~a_~a~a" (toprologid context) (toprologid prefix) (toprologid id))
       (format nil "~a~a" (toprologid prefix) (toprologid id))))
