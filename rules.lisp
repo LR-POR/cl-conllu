@@ -11,8 +11,8 @@
 ;; pattern    ::= (var condition+)
 ;; var        ::= ?.*
 ;; condition  ::= (op field expression)
-;; op rls     ::= (= equal   ~ member   % or)
-;; op rhs     ::= (= replace   + add)
+;; op rls     ::= (= equal   ~ regex   % member)
+;; op rhs     ::= (! set   + add)
 ;;
 ;; expression ::= string | regex
 ;;
@@ -72,7 +72,7 @@
   (if (null rls)
       var-list
       (let ((var (caar rls)))
-	(if (or (and  (variable-p var) (not (member var var-list))) (eq '* var))
+	(if (or (and  (variable-p var) (not (member var var-list))) (eq '* var)  (eq '? var))
 	    (rls-vars (cdr rls) (cons var var-list))
 	    nil))))
 
@@ -102,7 +102,7 @@
 
 (defun intern-pattern (pattern)
   (if (atom pattern)
-      (list pattern)
+      (list (intern (symbol-name pattern) :cl-conllu))
       (mapcar
        #'(lambda (condition) (if (atom condition)
 				 condition
@@ -168,8 +168,12 @@
 	((and (eq '* (caar rls)) (match-token (car tokens) (cdadr rls)))
 	 (match? (cdr tokens) (cddr rls) (append bindings  (list (caadr rls) (car tokens)))))
 	((eq '* (caar rls)) (match? (cdr tokens) rls bindings))
+	((equal '? (caar rls))
+	 (if (match-token (car tokens) (cdadr rls))
+	     (match? (cdr tokens) (cddr rls) (append bindings (list (caadr rls) (car tokens))))
+	     (match? tokens (cddr rls) bindings)))
 	((match-token (car tokens) (cdar rls))
-	 (match? (cdr tokens) (cdr rls) (append bindings  (list (caar rls) (car tokens)))))))
+	 (match? (cdr tokens) (cdr rls) (append bindings (list (caar rls) (car tokens)))))))
 
 
 (defun match-token (token pattern)
@@ -179,9 +183,9 @@
 	     (op (car condition))
 	     (field  (cadr condition))
 	     (regex (caddr condition)))
-	(cond ((equal op '=) (equal-test field regex (cdr pattern) token))
-	      ((equal op '~) (member-test field regex (cdr pattern) token))
-	      ((equal op '%) (or-test field regex (cdr pattern) token))))))
+	(cond ((equal op '=) (equal-op field regex (cdr pattern) token))
+	      ((equal op '~) (regex-op field regex (cdr pattern) token))
+	      ((equal op '%) (member-op field regex (cdr pattern) token))))))
 	
 
 (defun equal-op (field regex rest-pattern token)
@@ -190,16 +194,17 @@
       nil))
 
 
-(defun member-op (field regex rest-pattern token)
+(defun regex-op (field regex rest-pattern token)
   (if (cl-ppcre:scan regex (slot-value token field))
       (match-token token rest-pattern)
       nil))
 
 
-(defun or-op (field regex rest-pattern token)
-  (if (cl-ppcre:scan regex (slot-value token field))
-      (match-token token rest-pattern)
-      nil))
+(defun member-op (field elment rest-pattern token)
+  (let ((string-list (cl-ppcre:split "[|]" (slot-value token field))))
+    (if (member element  string-list)
+	(match-token token rest-pattern)
+	nil)))
 
 
 (defun apply-rhs (bindings rhs)
@@ -220,7 +225,7 @@
 	     (op (car condition))
 	     (field (cadr condition))
 	     (a-value (caddr condition)))
-	(cond ((equal op '=) (modify-value field a-value token (cdr conditions)))
+	(cond ((equal op '!) (modify-value field a-value token (cdr conditions)))
 	      ((equal op '+) (add-value field a-value token (cdr conditions))))
 	
 	)))

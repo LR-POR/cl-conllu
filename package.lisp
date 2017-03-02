@@ -49,16 +49,4 @@
    #:sentence-tokens
    #:sentence-mtokens
 
-   #:corte-e-costura
-   #:rls
-   #:read-rules
-   #:match-token
-   #:match?
-   #:intern-rule
-   #:apply-rule-in-tokens
-   #:apply-rules-in-sentence
-   #:apply-rules-in-sentence-aux
-   #:apply-rule-in-sentence
-   #:valid-vars
-   #:intern-rule
-   #:add-value))
+   #:corte-e-costura ))
