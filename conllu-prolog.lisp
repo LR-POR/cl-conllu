@@ -55,9 +55,9 @@
     (dolist (feat features)
       (let ((k-v (split-sequence #\= feat)))
         (when (= 2 (length k-v))
-          (emit-prolog (car k-v) (format nil "nlp_~a(~a,~a,~a)." (car k-v)  sentence-id word-index-id (prolog-string (cadr k-v) nil))))
+          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a,~a)." (car k-v)  sentence-id word-index-id (prolog-string (cadr k-v) nil))))
         (when (= 1 (length k-v))
-          (emit-prolog (car k-v) (format nil "nlp_~a(~a,~a)." (car k-v) sentence-id word-index-id)))))))
+          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a)." (car k-v) sentence-id word-index-id)))))))
 
 (defun process-tokens (context sentence-id token)
   (let ((word-index-id (make-id context "i" (token-id token)))
