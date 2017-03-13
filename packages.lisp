@@ -54,14 +54,11 @@
    #:sentence-meta
    #:sentence-tokens
    #:sentence-mtokens
-<<<<<<< HEAD:package.lisp
+   #:sentence-equal
 
    #:corte-e-costura ))
-=======
-   #:sentence-equal))
+  
 
 
 (defpackage #:conll-prolog
   (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
-
->>>>>>> master:packages.lisp
