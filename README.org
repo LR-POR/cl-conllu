@@ -2,8 +2,10 @@
 
 We have already the basic funcionalities:
 
-1. load and save conllu files.
-2. compare list of sentences.
+1. load and save conllu files;
+2. compare list of sentences;
+3. export CoNLL-U as RDF;
+4. export CoNLL-U as Prolog.
 
 * Web Interface
 

@@ -12,23 +12,27 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 
+;;;; package.lisp
+
+
 (defpackage :cl-conllu
   (:use :cl :cl-ppcre :split-sequence :cl-log)
   (:export
    #:sentence-meta-value
    #:sentence-valid?
    #:make-sentence
+   #:sentence->text
+   #:read-conllu-from-stream
    #:read-conllu
    #:write-conllu
-   #:sentence->text
-   #:sentence-valid?
-   #:read-conllu-from-stream
-   #:write-sentence
-   #:sentence->deep
-   #:write-conllu-to-stream
+   #:write-conllu-to-stream   
    #:levenshtein
    #:diff
+   #:insert-token
+   #:remove-token
+   #:adjust-sentence
 
+   #:token
    #:token-id
    #:token-form
    #:token-lemma
@@ -40,13 +44,24 @@
    #:token-deps
    #:token-misc
 
+   #:mtoken
    #:mtoken-start
    #:mtoken-end
    #:mtoken-form
-   
+
+   #:sentence
    #:sentence-start
    #:sentence-meta
    #:sentence-tokens
    #:sentence-mtokens
+<<<<<<< HEAD:package.lisp
 
    #:corte-e-costura ))
+=======
+   #:sentence-equal))
+
+
+(defpackage #:conll-prolog
+  (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
+
+>>>>>>> master:packages.lisp

@@ -15,10 +15,11 @@
 
 (asdf:defsystem #:cl-conllu
   :serial t
-  :version "0.0.2"
+  :version "0.1"
   :description "Common Lisp corpus conllu utilities"
   :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
+<<<<<<< HEAD
   :depends-on (#:cl-ppcre #:alexandria #:cl-log :split-sequence)
   :components ((:file "package")
 	       (:file "data"       :depends-on ("package"))
@@ -26,3 +27,16 @@
 	       (:file "utils"      :depends-on ("data"))
 	       (:file "rdf"        :depends-on ("data"))
 	       (:file "rules"      :depends-on ("utils" "data"))))
+=======
+  :depends-on (#:cl-ppcre
+               #:uuid
+	       #:alexandria
+	       #:split-sequence)
+  :components ((:file "packages")
+	       (:file "data"          :depends-on ("packages"))
+	       (:file "read-write"    :depends-on ("data"))
+	       (:file "utils"         :depends-on ("data"))
+	       (:file "rdf"           :depends-on ("data"))
+	       (:file "command-line"  :depends-on ("data"))
+	       (:file "conllu-prolog" :depends-on ("data"))))
+>>>>>>> master
