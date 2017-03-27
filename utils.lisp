@@ -69,3 +69,36 @@
 	lst)))
 
 
+(defun non-projective? (sentence)
+  "Checks if sentence's tree is projective."
+  ;; Puts every undirected pair into a list
+  ;; Sorts list
+  ;; check crosses with a stack of pairs and passing through the list
+  (let ((pairs nil))
+    (mapc
+     #'(lambda (tk) (push (if (< (token-id tk)
+				 (token-head tk))
+			      (list (token-id tk)
+				    (token-head tk))
+			      (list (token-head tk)
+				    (token-id tk)))
+			  pairs))
+     (sentence-tokens sentence))
+    (let ((interval
+	   ;; Stack of intervals
+	   (list
+	    (list 0 (sentence-size sentence)))))
+      (labels ((filter-interval (pair)
+		 (when (eq (first pair)
+			   (second (car interval)))
+		   (pop interval)
+		   (filter-interval interval))))
+	(dolist (pair pairs)
+	  (filter-interval pair)
+	  (if (> (second pair)
+		 (second (car interval)))
+	      ;; Not projective!
+	      (list (car interval) pair)
+	      ;; No violation
+	      (push pair interval)))))))
+
