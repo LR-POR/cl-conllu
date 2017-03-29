@@ -70,9 +70,20 @@
 
 
 (defun non-projective? (sentence)
-  "Checks if sentence's tree is projective."
+  "Verifies if a sentence tree is projective. Intuitively, this means
+  that, keeping word order, there's no two dependency arcs that cross.
+ 
+   More formally, let i -> j mean that j's head is node i. Let '->*'
+   be the transitive closure of '->'.
+
+   A tree if projective when, for each node i, j: if i -> j, then for
+   each node k between i and j (i < k < j or j < k < i), i ->* k.
+
+   References:
+    - Nivre, Joakim; Inductive Dependency Parsing, 2006
+    - https://en.wikipedia.org/wiki/Discontinuity_(linguistics)"
   ;; Puts every undirected pair into a list
-  ;; Sorts list
+  ;; Sorts list of pairs
   ;; check crosses with a stack of pairs and passing through the list
   (let ((pairs nil))
     (mapc
@@ -84,6 +95,24 @@
 				    (token-id tk)))
 			  pairs))
      (sentence-tokens sentence))
+    (format t "~a~%" pairs)
+    (setf pairs
+	  (sort pairs
+		#'(lambda (pair-1 pair-2)
+		    (cond
+		      ((< (first pair-1)
+			  (first pair-2))
+		       t)
+		      ((= (first pair-1)
+			  (first pair-2))
+		       (if (< (second pair-1)
+			      (second pair-2))
+			   t
+			   nil))
+		      ((> (first pair-1)
+			  (first pair-2))
+		       nil)))))
+    (format t "~a" pairs)
     (let ((interval
 	   ;; Stack of intervals
 	   (list
