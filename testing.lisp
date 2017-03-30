@@ -15,14 +15,18 @@
 
 (let ((wrong-sent (car (read-conllu "test/test-adjust.conllu")))
       (right-sent (car (read-conllu "test/test-adjust-output.conllu"))))
-  (is
-   (adjust-sentence wrong-sent)
-   right-sent
-   :test #'sentence-equal))
+  (subtest "adjust-sentence"
+    (is
+     (adjust-sentence wrong-sent)
+     right-sent
+     :test #'sentence-equal)))
 
-(let ((sentence (car (read-conllu "test/test-adjust-output.conllu"))))
+(let ((sentence-1 (car (read-conllu "test/test-adjust-output.conllu")))
+      (sentence-2 (car (read-conllu "test/nonprojective-test.conllu"))))
   (subtest "Projective and nonprojective sentences"
 	   (is nil
-	       (non-projective? sentence))))
+	       (non-projective? sentence-1))
+	   (is '((2 5) (4 8))
+	       (non-projective? sentence-2))))
 
 (finalize)

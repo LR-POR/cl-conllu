@@ -85,6 +85,9 @@
   ;; Puts every undirected pair into a list
   ;; Sorts list of pairs
   ;; check crosses with a stack of pairs and passing through the list
+  ;; --
+  ;; formats are only for debugging
+  ;; computational complexity is bounded by sorting (not better than O(n log(n)))
   (let ((pairs nil))
     (mapc
      #'(lambda (tk) (push (if (< (token-id tk)
@@ -95,7 +98,7 @@
 				    (token-id tk)))
 			  pairs))
      (sentence-tokens sentence))
-    (format t "~a~%" pairs)
+     ;; (format t "~a~%" pairs)
     (setf pairs
 	  (sort pairs
 		#'(lambda (pair-1 pair-2)
@@ -105,29 +108,34 @@
 		       t)
 		      ((= (first pair-1)
 			  (first pair-2))
-		       (if (< (second pair-1)
+		       (if (> (second pair-1)
 			      (second pair-2))
 			   t
 			   nil))
 		      ((> (first pair-1)
 			  (first pair-2))
 		       nil)))))
-    (format t "~a" pairs)
+     ;; (format t "~a~%" pairs)
     (let ((interval
 	   ;; Stack of intervals
 	   (list
 	    (list 0 (sentence-size sentence)))))
       (labels ((filter-interval (pair)
-		 (when (eq (first pair)
+		 (when (>= (first pair)
 			   (second (car interval)))
+ 		   ;; (format t "Filtered: ~a~%" (pop interval)) ;; if uncommenting this, comment line below
 		   (pop interval)
-		   (filter-interval interval))))
+		   (filter-interval pair))))
 	(dolist (pair pairs)
+ 	  ;; (format t "Pair: ~% ~a ~% Stack: ~% ~a ~%--~%" pair interval)
 	  (filter-interval pair)
-	  (if (> (second pair)
-		 (second (car interval)))
+	  (if (and
+	       (> (first pair)
+		  (first (car interval)))
+	       (> (second pair)
+		  (second (car interval))))
 	      ;; Not projective!
-	      (list (car interval) pair)
+	      (return (list (car interval) pair))
 	      ;; No violation
 	      (push pair interval)))))))
 
