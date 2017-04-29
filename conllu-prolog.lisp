@@ -37,15 +37,21 @@
 
 (defparameter *clauses* nil)
 
+(defparameter *dependencies* nil)
+
 (defun emit-prolog (clause text)
   (push text (gethash clause *clauses*)))
 
 (defun write-prolog (out)
   (format out "%% -*- prolog -*-~%")
+  (format out ":- dynamic nlp_dependency/4.~%")
   (maphash (lambda (k clauses) 
              (format out "~%")
              (format out "%% ~a~%" k)
-             (dolist (c clauses) (format out "~a~%" c))) *clauses*))
+             (dolist (c clauses) (format out "~a~%" c))) *clauses*)
+  (maphash (lambda (k v)
+             (format out "nlp_~a(S,T1,T2) :- nlp_dependency(S,T1,T2,~a).~%" k v))
+           *dependencies*))
 
 (defun prolog-string (str &optional (downcase t))
   (format nil "'~a'" (cl-ppcre:regex-replace-all "([\'\\\\])" (if downcase (string-downcase str) str) '("\\" :match))))
@@ -80,7 +86,8 @@
     (emit-prolog "pos" (format nil "nlp_pos(~a,~a,'~a')." sentence-id word-index-id (token-upostag token)))
     (if (is-root dep-rel)
         (emit-prolog "root" (format nil "nlp_sent_root(~a,~a)." sentence-id word-index-id))
-        (emit-prolog dep-rel (format nil "nlp_~a(~a,~a,~a)." (clean-dep-rel dep-rel) sentence-id word-index-id head-id)))))
+        (unless (gethash (clean-dep-rel dep-rel) *dependencies*)
+          (setf (gethash (clean-dep-rel dep-rel) *dependencies*) (prolog-string dep-rel))))))
 
 (defun clean-whitespace (line)
   (string-trim '(#\space #\tab) line))
@@ -90,6 +97,7 @@
 
 (defun convert-filename (context filename-in filename-out)
   (setf *clauses* (make-hash-table :test #'equal))
+  (setf *dependencies* (make-hash-table :test #'equal))
   (let ((sentences (read-conllu filename-in)))
     (dolist (s sentences)
       (let ((sid (make-id context "s" (sentence-meta-value s "sent_id"))))

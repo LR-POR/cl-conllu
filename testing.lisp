@@ -2,6 +2,7 @@
 ;;
 (ql:quickload :cl-conllu)
 (ql:quickload :prove)
+(setf prove:*enable-colors* t)
 
 (defpackage my-test
   (:use :cl
@@ -10,13 +11,22 @@
 
 (in-package :my-test)
 
-(plan 1)
+(plan 2)
 
 (let ((wrong-sent (car (read-conllu "test/test-adjust.conllu")))
       (right-sent (car (read-conllu "test/test-adjust-output.conllu"))))
-  (is
-   (adjust-sentence wrong-sent)
-   right-sent
-   :test #'sentence-equal))
-  
+  (subtest "adjust-sentence"
+    (is
+     (adjust-sentence wrong-sent)
+     right-sent
+     :test #'sentence-equal)))
+
+(let ((sentence-1 (car (read-conllu "test/test-adjust-output.conllu")))
+      (sentence-2 (car (read-conllu "test/nonprojective-test.conllu"))))
+  (subtest "Projective and nonprojective sentences"
+	   (is nil
+	       (non-projective? sentence-1))
+	   (is '((2 5) (4 8))
+	       (non-projective? sentence-2))))
+
 (finalize)

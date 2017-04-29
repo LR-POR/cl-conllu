@@ -31,6 +31,7 @@
    #:insert-token
    #:remove-token
    #:adjust-sentence
+   #:non-projective?
 
    #:token
    #:token-id

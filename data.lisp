@@ -63,6 +63,9 @@
 (defun sentence-id (sentence)
   (sentence-meta-value sentence "sent_id"))
 
+(defun sentence-text (sentence)
+  (sentence-meta-value sentence "text"))
+
 
 (defun sentence->text (sentence)
   (labels ((forma (obj lst)

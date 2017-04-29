@@ -1,0 +1,10 @@
+# text = John saw a dog yesterday which was happy.
+1	John	John	PROPN	_	_	2	nsubj	_	_
+2	saw	see	VERB	_	_	0	root	_	_
+3	a	a	DET	_	_	4	det	_	_
+4	dog	dog	NOUN	_	_	2	obj	_	_
+5	yesterday	yesterday	ADV	_	_	2	advmod	_	_
+6	which	which	PRON	_	_	8	nsubj	_	_
+7	was	be	AUX	_	_	8	cop	_	_
+8	happy	happy	ADJ	_	_	4	acl	_	_
+9	.	.	PUNCT	_	_	2	punct	_	_
