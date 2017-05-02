@@ -10,6 +10,46 @@
 ;; check if same words (by id and form) (it should be same POS, and same Features, but this won't affect)
 ;; run evaluation
 
+(defvar *deprel-value-list*
+  '("nsubj"
+    "obj"
+    "iobj"
+    "csubj"
+    "ccomp"
+    "xcomp"
+    "obl"
+    "vocative"
+    "expl"
+    "dislocated"
+    "advcl"
+    "advmod"
+    "discourse"
+    "aux"
+    "cop"
+    "mark"
+    "nmod"
+    "appos"
+    "nummod"
+    "acl"
+    "amod"
+    "det"
+    "clf"
+    "case"
+    "conj"
+    "cc"
+    "fixed"
+    "flat"
+    "compound"
+    "list"
+    "parataxis"
+    "orphan"
+    "goeswith"
+    "reparandum"
+    "punct"
+    "root"
+    "dep")
+  "List of the 37 universal syntactic relations in UD.")
+
 (defun mappend (function list)
   "Receives a function and a list of lists and returns the appended
   result of the aplication of the function to each list."
@@ -34,14 +74,14 @@
    (every #'identity
 	  (mapcar
 	   #'(lambda (tk1 tk2)
-	       (and (eq (token-id tk1)
+	       (and (equal (token-id tk1)
 			(token-id tk2))
-		    (eq (token-form tk1)
+		    (equal (token-form tk1)
 			(token-form tk2))))
 	   (sentence-tokens sent1)
 	   (sentence-tokens sent2)))
    ()
-   "Error: Sentence words do not match. The sentence pair is: ~a, ~a~%"
+   "Error: Sentence words do not match. The sentence pair ID is: ~a, ~a~%"
    (sentence-id sent1)
    (sentence-id sent2))
   (assert
@@ -52,14 +92,17 @@
   (remove-if
    (lambda (x)
      (and (or (not head-error)
-	      (eq (token-head (first x))
+	      (equal (token-head (first x))
 		  (token-head (second x))))
 	  (or (not label-error)
-	      (eq (token-deprel (first x))
+	      (equal (token-deprel (first x))
 		  (token-deprel (second x))))))
-   (sentence-tokens sent1)))
+   (mapcar
+    #'list
+    (sentence-tokens sent1)
+    (sentence-tokens sent2))))
 
-(defun attachment-score (list-sent1 list-sent2 &key labeled)
+(defun attachment-score (list-sent1 list-sent2 &key (labeled nil))
   "Attachment score by word (micro-average).
 
    The attachment score is the percentage of words that have correct
@@ -84,7 +127,9 @@
 		       list-sent2)
 		 :key #'length
 		 :initial-value 0)))
-    (/ (float wrong-words) total-words)))
+    (/ (- total-words
+	  (float wrong-words))
+       total-words)))
 
 (defun attachment-score-sentence (list-sent1 list-sent2 &key labeled)
   "Attachment score by sentence (macro-average).
@@ -113,7 +158,9 @@
 		       1 			; There's at least one wrong word
 		       0))			; There's no wrong word
 	  :initial-value 0)))
-    (/ (float wrong-sentences) total-sentences)))
+    (/ (- total-sentences
+	  (float wrong-sentences))
+       total-sentences)))
 
 (defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t))
   "Restricted to words which are originally of syntactical class
@@ -132,7 +179,7 @@
 	 (length
 	  (remove-if-not
 	   #'(lambda (x)
-	       (eq x deprel))
+	       (equal x deprel))
 	   (mappend #'sentence-tokens
 		    list-sent2)
 	   :key #'token-deprel)))
@@ -140,7 +187,7 @@
 	 (length
 	  (remove-if-not
 	   #'(lambda (x)
-	       (eq x deprel))
+	       (equal x deprel))
 	   (mapcar
 	    #'(lambda (sent1 sent2)
 		(disagreeing-words
@@ -172,7 +219,7 @@
 	 (length
 	  (remove-if-not
 	   #'(lambda (x)
-	       (eq x deprel))
+	       (equal x deprel))
 	   (mappend #'sentence-tokens
 		    list-sent1)
 	   :key #'token-deprel)))
@@ -180,7 +227,7 @@
 	 (length
 	  (remove-if-not
 	   #'(lambda (x)
-	       (eq x deprel))
+	       (equal x deprel))
 	   (mapcar
 	    #'(lambda (sent1 sent2)
 		(disagreeing-words
@@ -195,5 +242,41 @@
     (/ (float (- classified-words wrong-words))
        classified-words)))
 
-;; (defun confusion-matrix (list-sent1 list-sent2
 ;; compare to baseline (random considering incidence of each class)
+(defun confusion-matrix (list-sent1 list-sent2)
+  (let* ((M (make-hash-table :test #'equal))
+	 (all-words-pair-list
+	  (mapcar
+	   #'list
+	   (mappend #'sentence-tokens list-sent1)
+	   (mappend #'sentence-tokens list-sent2)))
+	 (N (coerce (length all-words-pair-list) 'float)))
+    (assert
+     (every #'identity
+	    (mapcar
+	     #'(lambda (pair)
+		 (let ((tk1 (first pair))
+		       (tk2 (second pair)))
+		   (and (equal (token-id tk1)
+			       (token-id tk2))
+			(equal (token-form tk1)
+			       (token-form tk2)))))
+	     all-words-pair-list))
+     ()
+     "Error: Sentence words do not match.")
+    
+    (dolist (rel1 *deprel-value-list*)
+      (dolist (rel2 *deprel-value-list*)
+	(setf (gethash `(,rel1 ,rel2) M) 0)))
+    
+    (dolist (pair all-words-pair-list)
+      (incf (gethash
+	     (mapcar #'token-deprel
+		     pair)
+	     M)))
+    
+    (dolist (rel1 *deprel-value-list* M)
+      (dolist (rel2 *deprel-value-list*)
+	(setf (gethash `(,rel1 ,rel2) M)
+	      (/ (gethash `(,rel1 ,rel2) M)
+		 N))))))
