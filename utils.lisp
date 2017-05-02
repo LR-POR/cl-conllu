@@ -87,7 +87,7 @@
   ;; check crosses with a stack of pairs and passing through the list
   ;; --
   ;; formats are only for debugging
-  ;; computational complexity is bounded by sorting (not better than O(n log(n)))
+  ;; computational complexity is bounded by sorting (Omega(n log(n)))
   (let ((pairs nil))
     (mapc
      #'(lambda (tk) (push (if (< (token-id tk)
