@@ -15,7 +15,7 @@
   result of the aplication of the function to each list."
   (apply #'append (mapcar function list)))
 
-(defun disag-words (sent1 sent2 &key (head-error t) (label-error t))
+(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t))
   "Returns a list of disagreements in dependency parsing (either head
    or label):
 
@@ -31,7 +31,7 @@
    We assume that sent1 is the classified result and sent2 is the
    golden (correct) sentence."
   (assert
-   (every #'(lambda (x) (eq x t))
+   (every #'identity
 	  (mapcar
 	   #'(lambda (tk1 tk2)
 	       (and (eq (token-id tk1)
@@ -60,18 +60,26 @@
    (sentence-tokens sent1)))
 
 (defun attachment-score (list-sent1 list-sent2 &key labeled)
-  "Attachment score by word (micro-average)."
+  "Attachment score by word (micro-average).
+
+   The attachment score is the percentage of words that have correct
+   arcs to their heads.
+
+   The unlabeled attachment score (UAS) considers only who is the head
+   of the token, while the labeled attachment score (LAS) considers
+   both the head and the arc label (dependency label / syntactic class).
+
+   References:
+     - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
   (let ((total-words
 	 (reduce #'+
 		 list-sent1
-		 :key #'(lambda (x)
-			  (length
-			   (sentence-tokens x)))
+		 :key #'sentence-size
 		 :initial-value 0))
 	(wrong-words
 	 (reduce #'+
 		 (mapcar #'(lambda (x y)
-			   (disag-words x y :label-error labeled))
+			   (disagreeing-words x y :label-error labeled))
 		       list-sent1
 		       list-sent2)
 		 :key #'length
@@ -79,7 +87,17 @@
     (/ (float wrong-words) total-words)))
 
 (defun attachment-score-sentence (list-sent1 list-sent2 &key labeled)
-  "Attachment score by sentence (macro-average)."
+  "Attachment score by sentence (macro-average).
+
+   The attachment score is the percentage of words that have correct
+   arcs to their heads.
+
+   The unlabeled attachment score (UAS) considers only who is the head
+   of the token, while the labeled attachment score (LAS) considers
+   both the head and the arc label (dependency label / syntactic class).
+
+   References:
+     - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
   (let ((total-sentences
 	 (length list-sent1))
 	(wrong-sentences
@@ -87,7 +105,7 @@
 	  #'+
 	  (mapcar
 	   #'(lambda (x y)
-	       (disag-words x y :label-error labeled))
+	       (disagreeing-words x y :label-error labeled))
 	   list-sent1
 	   list-sent2)
 	  :key #'(lambda (wrong-words)
@@ -125,7 +143,7 @@
 	       (eq x deprel))
 	   (mapcar
 	    #'(lambda (sent1 sent2)
-		(disag-words
+		(disagreeing-words
 		 sent1 sent2
 		 :head-error head-error
 		 :label-error label-error))
@@ -165,7 +183,7 @@
 	       (eq x deprel))
 	   (mapcar
 	    #'(lambda (sent1 sent2)
-		(disag-words
+		(disagreeing-words
 		 sent1 sent2
 		 :head-error head-error
 		 :label-error label-error))
