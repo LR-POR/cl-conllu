@@ -254,6 +254,9 @@
 
 ;; compare to baseline (random considering incidence of each class)
 (defun confusion-matrix (list-sent1 list-sent2)
+  "Returns a hash table where keys are lists (deprel1 deprel2) and
+values are fraction of classifications as deprel1 of a word that
+originally was deprel2."
   (let* ((M (make-hash-table :test #'equal))
 	 (all-words-pair-list
 	  (mapcar
@@ -290,3 +293,11 @@
 	(setf (gethash `(,rel1 ,rel2) M)
 	      (/ (gethash `(,rel1 ,rel2) M)
 		 N))))))
+
+(defun format-matrix (matrix)
+  (let ((M (alexandria:hash-table-alist matrix)))
+	     (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
+	     (dolist (dep1 *deprel-value-list*)
+	       (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) M :key #'(lambda (x) (first (car x)))))))
+		 (format t "~{~15a |~^ ~}~%"
+			 (cons dep1 (mapcar #'(lambda (x) (cdr x)) L)))))))
