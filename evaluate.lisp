@@ -188,19 +188,24 @@
 	  (remove-if-not
 	   #'(lambda (x)
 	       (equal x deprel))
-	   (mapcar
-	    #'(lambda (sent1 sent2)
-		(disagreeing-words
-		 sent1 sent2
-		 :head-error head-error
-		 :label-error label-error))
-	    list-sent1
-	    list-sent2)
+	   (mappend
+	    #'identity
+	    (mapcar
+	     #'(lambda (sent1 sent2)
+		 (disagreeing-words
+		  sent1 sent2
+		  :head-error head-error
+		  :label-error label-error))
+	     list-sent1
+	     list-sent2))
 	   :key #'(lambda (disag-pair)
 		    (token-deprel
 		     (second disag-pair)))))))
-    (/ (float (- total-words wrong-words))
-       total-words)))
+    (if (eq total-words
+	    0)
+	nil
+	(/ (float (- total-words wrong-words))
+	   total-words))))
 
 (defun precision (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t))
   "Restricted to words which are originally of syntactical class
@@ -228,19 +233,24 @@
 	  (remove-if-not
 	   #'(lambda (x)
 	       (equal x deprel))
-	   (mapcar
-	    #'(lambda (sent1 sent2)
-		(disagreeing-words
-		 sent1 sent2
-		 :head-error head-error
-		 :label-error label-error))
-	    list-sent1
-	    list-sent2)
+	   (mappend
+	    #'identity
+	    (mapcar
+	     #'(lambda (sent1 sent2)
+		 (disagreeing-words
+		  sent1 sent2
+		  :head-error head-error
+		  :label-error label-error))
+	     list-sent1
+	     list-sent2))
 	   :key #'(lambda (disag-pair)
 		    (token-deprel
 		     (first disag-pair)))))))
-    (/ (float (- classified-words wrong-words))
-       classified-words)))
+    (if (eq classified-words
+	    0)
+	nil
+	(/ (float (- classified-words wrong-words))
+	   classified-words))))
 
 ;; compare to baseline (random considering incidence of each class)
 (defun confusion-matrix (list-sent1 list-sent2)
