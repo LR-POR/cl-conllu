@@ -55,7 +55,7 @@
   result of the aplication of the function to each list."
   (apply #'append (mapcar function list)))
 
-(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t))
+(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t) (remove-punct nil))
   "Returns a list of disagreements in dependency parsing (either head
    or label):
 
@@ -91,18 +91,23 @@
    "Error: At least one error must be used!")
   (remove-if
    (lambda (x)
-     (and (or (not head-error)
-	      (equal (token-head (first x))
+     (or
+      (and remove-punct
+	   (equal (token-upostag (first x))
+		  "PUNCT"))
+      (and      
+       (or (not head-error)
+	   (equal (token-head (first x))
 		  (token-head (second x))))
-	  (or (not label-error)
-	      (equal (token-deprel (first x))
-		  (token-deprel (second x))))))
+       (or (not label-error)
+	   (equal (token-deprel (first x))
+		  (token-deprel (second x)))))))
    (mapcar
     #'list
     (sentence-tokens sent1)
     (sentence-tokens sent2))))
 
-(defun attachment-score (list-sent1 list-sent2 &key (labeled nil))
+(defun attachment-score (list-sent1 list-sent2 &key (labeled nil) (remove-punct nil))
   "Attachment score by word (micro-average).
 
    The attachment score is the percentage of words that have correct
@@ -122,7 +127,7 @@
 	(wrong-words
 	 (reduce #'+
 		 (mapcar #'(lambda (x y)
-			   (disagreeing-words x y :label-error labeled))
+			   (disagreeing-words x y :label-error labeled :remove-punct remove-punct))
 		       list-sent1
 		       list-sent2)
 		 :key #'length
@@ -295,9 +300,8 @@ originally was deprel2."
 		 N))))))
 
 (defun format-matrix (matrix)
-  (let ((M (alexandria:hash-table-alist matrix)))
-	     (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
-	     (dolist (dep1 *deprel-value-list*)
-	       (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) M :key #'(lambda (x) (first (car x)))))))
-		 (format t "~{~15a |~^ ~}~%"
-			 (cons dep1 (mapcar #'(lambda (x) (cdr x)) L)))))))
+  (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
+  (dolist (dep1 *deprel-value-list*)
+    (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) matrix :key #'(lambda (x) (first (car x)))))))
+      (format t "~{~15a |~^ ~}~%"
+	      (cons dep1 (mapcar #'(lambda (x) (cdr x)) L))))))
