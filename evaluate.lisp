@@ -55,7 +55,7 @@
   result of the aplication of the function to each list."
   (apply #'append (mapcar function list)))
 
-(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t) (remove-punct nil))
+(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t) (remove-punct nil) (simple-deprel nil))
   "Returns a list of disagreements in dependency parsing (either head
    or label):
 
@@ -70,42 +70,46 @@
 
    We assume that sent1 is the classified result and sent2 is the
    golden (correct) sentence."
-  (assert
-   (every #'identity
-	  (mapcar
-	   #'(lambda (tk1 tk2)
-	       (and (equal (token-id tk1)
-			(token-id tk2))
-		    (equal (token-form tk1)
-			(token-form tk2))))
-	   (sentence-tokens sent1)
-	   (sentence-tokens sent2)))
-   ()
-   "Error: Sentence words do not match. The sentence pair ID is: ~a, ~a~%"
-   (sentence-id sent1)
-   (sentence-id sent2))
-  (assert
-   (or head-error
-       label-error)
-   ()
-   "Error: At least one error must be used!")
-  (remove-if
-   (lambda (x)
-     (or
-      (and remove-punct
-	   (equal (token-upostag (first x))
-		  "PUNCT"))
-      (and      
-       (or (not head-error)
-	   (equal (token-head (first x))
-		  (token-head (second x))))
-       (or (not label-error)
-	   (equal (token-deprel (first x))
-		  (token-deprel (second x)))))))
-   (mapcar
-    #'list
-    (sentence-tokens sent1)
-    (sentence-tokens sent2))))
+  (labels ((token-deprel-chosen (tk)
+			       (if simple-deprel
+				   (token-simple-deprel tk)
+				   (token-deprel tk))))
+    (assert
+     (every #'identity
+	    (mapcar
+	     #'(lambda (tk1 tk2)
+		 (and (equal (token-id tk1)
+			     (token-id tk2))
+		      (equal (token-form tk1)
+			     (token-form tk2))))
+	     (sentence-tokens sent1)
+	     (sentence-tokens sent2)))
+     ()
+     "Error: Sentence words do not match. The sentence pair ID is: ~a, ~a~%"
+     (sentence-id sent1)
+     (sentence-id sent2))
+    (assert
+     (or head-error
+	 label-error)
+     ()
+     "Error: At least one error must be used!")
+    (remove-if
+     (lambda (x)
+       (or
+	(and remove-punct
+	     (equal (token-upostag (first x))
+		    "PUNCT"))
+	(and      
+	 (or (not head-error)
+	     (equal (token-head (first x))
+		    (token-head (second x))))
+	 (or (not label-error)
+	     (equal (token-deprel-chosen (first x))
+		    (token-deprel-chosen (second x)))))))
+     (mapcar
+      #'list
+      (sentence-tokens sent1)
+      (sentence-tokens sent2)))))
 
 (defun attachment-score (list-sent1 list-sent2 &key (labeled nil) (remove-punct nil))
   "Attachment score by word (micro-average).
@@ -136,7 +140,7 @@
 	  (float wrong-words))
        total-words)))
 
-(defun attachment-score-sentence (list-sent1 list-sent2 &key labeled)
+(defun attachment-score-sentence (list-sent1 list-sent2 &key labeled (remove-punct nil))
   "Attachment score by sentence (macro-average).
 
    The attachment score is the percentage of words that have correct
@@ -155,7 +159,9 @@
 	  #'+
 	  (mapcar
 	   #'(lambda (x y)
-	       (disagreeing-words x y :label-error labeled))
+	       (disagreeing-words x y
+				  :label-error labeled
+				  :remove-punct remove-punct))
 	   list-sent1
 	   list-sent2)
 	  :key #'(lambda (wrong-words)
@@ -167,7 +173,7 @@
 	  (float wrong-sentences))
        total-sentences)))
 
-(defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t))
+(defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
   "Restricted to words which are originally of syntactical class
   (dependency type to head) `deprel`, returns the recall:
    the number of true positives divided by the number of words
@@ -175,90 +181,98 @@
 
    head-error and label-error define what is considered an error (a
    false negative)"
-  (assert
-   (or head-error
-       label-error)
-   ()
-   "Error: At least one error must be used!")
-  (let ((total-words
-	 (length
-	  (remove-if-not
-	   #'(lambda (x)
-	       (equal x deprel))
-	   (mappend #'sentence-tokens
-		    list-sent2)
-	   :key #'token-deprel)))
-	(wrong-words
-	 (length
-	  (remove-if-not
-	   #'(lambda (x)
-	       (equal x deprel))
-	   (mappend
-	    #'identity
-	    (mapcar
-	     #'(lambda (sent1 sent2)
-		 (disagreeing-words
-		  sent1 sent2
-		  :head-error head-error
-		  :label-error label-error))
-	     list-sent1
-	     list-sent2))
-	   :key #'(lambda (disag-pair)
-		    (token-deprel
-		     (second disag-pair)))))))
-    (if (eq total-words
-	    0)
-	nil
-	(/ (float (- total-words wrong-words))
-	   total-words))))
+  (labels ((token-deprel-chosen (tk)
+	     (if simple-deprel
+		 (token-simple-deprel tk)
+		 (token-deprel tk))))
+    (assert
+     (or head-error
+	 label-error)
+     ()
+     "Error: At least one error must be used!")
+    (let ((total-words
+	   (length
+	    (remove-if-not
+	     #'(lambda (x)
+		 (equal x deprel))
+	     (mappend #'sentence-tokens
+		      list-sent2)
+	     :key #'token-deprel-chosen)))
+	  (wrong-words
+	   (length
+	    (remove-if-not
+	     #'(lambda (x)
+		 (equal x deprel))
+	     (mappend
+	      #'identity
+	      (mapcar
+	       #'(lambda (sent1 sent2)
+		   (disagreeing-words
+		    sent1 sent2
+		    :head-error head-error
+		    :label-error label-error))
+	       list-sent1
+	       list-sent2))
+	     :key #'(lambda (disag-pair)
+		      (token-deprel-chosen
+		       (second disag-pair)))))))
+      (if (eq total-words
+	      0)
+	  nil
+	  (/ (float (- total-words wrong-words))
+	     total-words)))))
 
-(defun precision (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t))
-  "Restricted to words which are originally of syntactical class
+(defun precision (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
+  "Restricted to words which are classified as of syntactical class
    (dependency type to head) `deprel`, returns the precision:
    the number of true positives divided by the number of words
    predicted positive (that is, predicted as of class `deprel`).
 
    head-error and label-error define what is considered an error (a
    false positive)"
-  (assert
-   (or head-error
-       label-error)
-   ()
-   "Error: At least one error must be used!")
-  (let ((classified-words
-	 (length
-	  (remove-if-not
-	   #'(lambda (x)
-	       (equal x deprel))
-	   (mappend #'sentence-tokens
-		    list-sent1)
-	   :key #'token-deprel)))
-	(wrong-words
-	 (length
-	  (remove-if-not
-	   #'(lambda (x)
-	       (equal x deprel))
-	   (mappend
-	    #'identity
-	    (mapcar
-	     #'(lambda (sent1 sent2)
-		 (disagreeing-words
-		  sent1 sent2
-		  :head-error head-error
-		  :label-error label-error))
-	     list-sent1
-	     list-sent2))
-	   :key #'(lambda (disag-pair)
-		    (token-deprel
-		     (first disag-pair)))))))
-    (if (eq classified-words
-	    0)
-	nil
-	(/ (float (- classified-words wrong-words))
-	   classified-words))))
+  (labels ((token-deprel-chosen (tk)
+	     (if simple-deprel
+		 (token-simple-deprel tk)
+		 (token-deprel tk))))
+    (assert
+     (or head-error
+	 label-error)
+     ()
+     "Error: At least one error must be used!")
+    (let ((classified-words
+	   (length
+	    (remove-if-not
+	     #'(lambda (x)
+		 (equal x deprel))
+	     (mappend #'sentence-tokens
+		      list-sent1)
+	     :key #'token-deprel-chosen)))
+	  (wrong-words
+	   (length
+	    (remove-if-not
+	     #'(lambda (x)
+		 (equal x deprel))
+	     (mappend
+	      #'identity
+	      (mapcar
+	       #'(lambda (sent1 sent2)
+		   (disagreeing-words
+		    sent1 sent2
+		    :head-error head-error
+		    :label-error label-error))
+	       list-sent1
+	       list-sent2))
+	     :key #'(lambda (disag-pair)
+		      (token-deprel-chosen
+		       (first disag-pair)))))))
+      (if (eq classified-words
+	      0)
+	  nil
+	  (/ (float (- classified-words wrong-words))
+	     classified-words)))))
 
 ;; compare to baseline (random considering incidence of each class)
-(defun confusion-matrix (list-sent1 list-sent2)
+(defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
   "Returns a hash table where keys are lists (deprel1 deprel2) and
 values are fraction of classifications as deprel1 of a word that
 originally was deprel2."
@@ -286,22 +300,38 @@ originally was deprel2."
     (dolist (rel1 *deprel-value-list*)
       (dolist (rel2 *deprel-value-list*)
 	(setf (gethash `(,rel1 ,rel2) M) 0)))
+    ;; (format t "Setted everything to 0~%")
     
     (dolist (pair all-words-pair-list)
+      ;; (format t "Increasing ~a~%"
+      ;; 	      (mapcar #'token-simple-deprel
+      ;; 		     pair))
       (incf (gethash
-	     (mapcar #'token-deprel
+	     (mapcar #'token-simple-deprel
 		     pair)
 	     M)))
-    
-    (dolist (rel1 *deprel-value-list* M)
-      (dolist (rel2 *deprel-value-list*)
-	(setf (gethash `(,rel1 ,rel2) M)
-	      (/ (gethash `(,rel1 ,rel2) M)
-		 N))))))
+
+    (if normalize
+	(dolist (rel1 *deprel-value-list* M)
+	  (dolist (rel2 *deprel-value-list*)
+	    (if (not
+		 (eq 0
+		     (gethash `(,rel1 ,rel2) M)))
+		(setf (gethash `(,rel1 ,rel2) M)
+		      (/ (gethash `(,rel1 ,rel2) M)
+			 N))))))
+    M))
 
 (defun format-matrix (matrix)
-  (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
-  (dolist (dep1 *deprel-value-list*)
-    (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) matrix :key #'(lambda (x) (first (car x)))))))
-      (format t "~{~15a |~^ ~}~%"
-	      (cons dep1 (mapcar #'(lambda (x) (cdr x)) L))))))
+  (let ((M (alexandria:hash-table-alist matrix)))
+    (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
+    (dolist (dep1 *deprel-value-list*)
+      (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) M :key #'(lambda (x) (first (car x)))))))
+	(format t "~{~15a |~^ ~}~%"
+		(cons dep1 (mapcar #'(lambda (x) (cdr x)) L)))))))
+
+(defun simple-deprel (deprel)
+  (car (ppcre:split ":" deprel)))
+
+(defun token-simple-deprel (token)
+  (simple-deprel (token-deprel token)))
