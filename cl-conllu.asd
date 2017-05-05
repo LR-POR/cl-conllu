@@ -19,9 +19,11 @@
   :description "Common Lisp corpus conllu utilities"
   :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
+
   :depends-on (#:cl-ppcre
                #:uuid
 	       #:alexandria
+	       #:cl-log
 	       #:split-sequence)
   :components ((:file "packages")
 	       (:file "data"          :depends-on ("packages"))
@@ -29,4 +31,5 @@
 	       (:file "utils"         :depends-on ("data"))
 	       (:file "rdf"           :depends-on ("data"))
 	       (:file "command-line"  :depends-on ("data"))
+	       (:file "rules"         :depends-on ("utils" "data"))
 	       (:file "conllu-prolog" :depends-on ("data"))))
