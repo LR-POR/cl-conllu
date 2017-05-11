@@ -111,7 +111,7 @@
       (sentence-tokens sent1)
       (sentence-tokens sent2)))))
 
-(defun attachment-score (list-sent1 list-sent2 &key (labeled nil) (remove-punct nil))
+(defun attachment-score (list-sent1 list-sent2 &key (labeled nil) (remove-punct nil) (simple-deprel nil))
   "Attachment score by word (micro-average).
 
    The attachment score is the percentage of words that have correct
@@ -131,7 +131,8 @@
 	(wrong-words
 	 (reduce #'+
 		 (mapcar #'(lambda (x y)
-			   (disagreeing-words x y :label-error labeled :remove-punct remove-punct))
+			     (disagreeing-words x y :label-error labeled :remove-punct remove-punct
+						:simple-deprel simple-deprel))
 		       list-sent1
 		       list-sent2)
 		 :key #'length
