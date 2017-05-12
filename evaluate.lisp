@@ -141,7 +141,7 @@
 	  (float wrong-words))
        total-words)))
 
-(defun attachment-score-sentence (list-sent1 list-sent2 &key labeled (remove-punct nil))
+(defun attachment-score-sentence (list-sent1 list-sent2 &key labeled (remove-punct nil) (simple-deprel t))
   "Attachment score by sentence (macro-average).
 
    The attachment score is the percentage of words that have correct
@@ -162,7 +162,8 @@
 	   #'(lambda (x y)
 	       (disagreeing-words x y
 				  :label-error labeled
-				  :remove-punct remove-punct))
+				  :remove-punct remove-punct
+				  :simple-deprel simple-deprel))
 	   list-sent1
 	   list-sent2)
 	  :key #'(lambda (wrong-words)
@@ -272,7 +273,55 @@
 	  (/ (float (- classified-words wrong-words))
 	     classified-words)))))
 
-;; compare to baseline (random considering incidence of each class)
+(defun projectivity-accuracy (list-sent1 list-sent2)
+  (let ((N (length list-sent1))
+	(correct 0))
+    (mapcar
+     #'(lambda (x y)
+       (if (eq (non-projective? x)
+	       (non-projective? y))
+	   (incf correct)))
+     list-sent1
+     list-sent2)
+    (/ (float correct)
+       N)))
+
+(defun projectivity-precision (list-sent1 list-sent2)
+  (let ((number-of-positives
+	 (length (remove-if-not
+		  #'non-projective?
+		  list-sent1)))
+	(true-positives 0))
+    (mapcar
+     #'(lambda (x y)
+	 (if (and
+	      (eq (non-projective? x) t)
+	      (eq (non-projective? y) t))
+	     (incf true-positives)))
+     list-sent1
+     list-sent2)
+    (/ (float true-positives)
+       number-of-positives)))
+
+(defun projectivity-recall (list-sent1 list-sent2)
+  (let ((number-of-projectives
+	 (length (remove-if-not
+		  #'non-projective?
+		  list-sent2)))
+	(true-positives 0))
+    (mapcar
+     #'(lambda (x y)
+       (if (and
+	    (eq (non-projective? x) t)
+	    (eq (non-projective? y) t))
+	   (incf true-positives)))
+     list-sent1
+     list-sent2)
+    (/ (float true-positives)
+       number-of-projectives)))
+
+
+;; compare to baseline? (random considering incidence of each class)
 (defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
   "Returns a hash table where keys are lists (deprel1 deprel2) and
 values are fraction of classifications as deprel1 of a word that
