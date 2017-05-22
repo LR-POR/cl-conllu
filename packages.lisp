@@ -60,6 +60,8 @@
    #:corte-e-costura ))
   
 
-
 (defpackage #:conll-prolog
   (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
+
+(defpackage #:conllu-esg
+  (:use #:cl #:cl-conllu))
