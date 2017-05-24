@@ -300,8 +300,11 @@
 	     (incf true-positives)))
      list-sent1
      list-sent2)
-    (/ (float true-positives)
-       number-of-positives)))
+    (if (eq 0
+	    number-of-positives)
+	nil
+	(/ (float true-positives)
+	   number-of-positives))))
 
 (defun projectivity-recall (list-sent1 list-sent2)
   (let ((number-of-projectives
