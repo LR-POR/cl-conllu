@@ -156,12 +156,17 @@
    as given: it's ID will be the same (place where it'll be inserted)
    but it's head should point to id value prior to the insertion. It
    changes the sentence object passed."
-  (with-slots (tokens) sentence
+  (with-slots (tokens mtokens) sentence
     (dolist (token tokens)
       (if (>= (token-id token) (token-id new-token))
 	  (incf (token-id token)))
       (if (>= (token-head token) (token-id new-token))
 	  (incf (token-head token))))
+    (dolist (mtoken mtokens)
+      (if (>= (mtoken-start mtoken) (token-id new-token))
+	  (incf (mtoken-start mtoken)))
+      (if (>= (mtoken-end mtoken) (token-id new-token))
+	  (incf (mtoken-end mtoken))))
     (if (>= (token-head new-token)
 	    (token-id new-token))
 	(incf (token-head new-token)))
@@ -186,13 +191,19 @@
 	     (values sentence nil))
 	    ((or (null to-remove) childs)
 	     (values sentence nil))
-	    (t (dolist (token (sentence-tokens sentence))
-		 (if (> (token-id token) id)
-		     (decf (token-id token)))
-		 (if (> (token-head token) id)
-		     (decf (token-head token))))
-	       (setf tokens (remove to-remove tokens))
-	       (values sentence t))))))
+	    (t
+	     (dolist (token (sentence-tokens sentence))
+	       (if (> (token-id token) id)
+		   (decf (token-id token)))
+	       (if (> (token-head token) id)
+		   (decf (token-head token))))
+	     (dolist (mtoken (sentence-mtokens sentence))
+	       (if (> (mtoken-start mtoken) id)
+		   (decf (mtoken-start mtoken)))
+	       (if (> (mtoken-end mtoken) id)
+		   (decf (mtoken-end mtoken))))
+	     (setf tokens (remove to-remove tokens))
+	     (values sentence t))))))
 
 
 (defun set-head (sentence id new-head &optional deprel)

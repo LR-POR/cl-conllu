@@ -1,0 +1,12 @@
+# text = After they ate lunch, Mary, John, and Bill went walking.
+1	After	after	subjconj	_	timesc	10	vsubconj	s:after2 a:3
+2	they	they	noun	_	pron pl def nom perspron	3	subj(n)	s:they a:
+3	ate	eat	verb	_	vfin vpast pl vsubj ansb vconsume (nform eating) (ernform eater)	1	sccomp(bfin)	s:eat1 a:2,4,u
+4	lunch	lunch	noun	_	cn sg tonoun massn sbst ent (latrwd 0.032630)	3	obj(n)	s:lunch1 a:u
+5	Mary	Mary	noun	_	propn sg f h physobj anim rlent gname capped liv ent relative	6	lconj	s:Mary1 a:
+6	,	,	noun	_	propn pl m h anim gname cord f liv physobj ent relative	10	subj(n)	s:, a:
+7	John	John	noun	_	propn sg m h physobj abst anim rlent cognsa gname sname capped monarch liv ent hdofstate communicator leader comm	8	lconj	s:John1 a:
+8	and	and	noun	_	propn pl m h anim gname cord	6	rconj	s:and1 a:
+9	Bill	Bill	noun	_	propn sg m h anim gname capped	8	rconj	s:Bill1 a:
+10	went	go	verb	_	vfin vpast pl vsubj vmove (nform going go-ahead) (ernform goer)	0	top	s:go2 a:6,11
+11	walking	walk	verb	_	ving vmove (nform walkout walking walking walkabout walk-through walk-in walk) (ernform walkover walker)	10	comp(ing)	s:walk2 a:6,u,u,u

@@ -16,7 +16,7 @@
 
 
 (defpackage :cl-conllu
-  (:use :cl :cl-ppcre :split-sequence)
+  (:use :cl :cl-ppcre :split-sequence :cl-log)
   (:export
    #:sentence-meta-value
    #:sentence-valid?
@@ -55,9 +55,13 @@
    #:sentence-meta
    #:sentence-tokens
    #:sentence-mtokens
-   #:sentence-equal))
+   #:sentence-equal
 
+   #:corte-e-costura ))
+  
 
 (defpackage #:conll-prolog
   (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
 
+(defpackage #:conllu-esg
+  (:use #:cl #:cl-conllu))
