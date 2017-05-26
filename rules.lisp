@@ -2,10 +2,6 @@
 (in-package :cl-conllu)
 
 
-;; CORTE E COSTURA =  a:[pos=VERB] b:[lemma= "co.*"] => b:[pos="PART"]
-
-;; Nossas regras:
-;;
 ;; rule       ::= => rls rhs
 ;; rls, rhs   ::= (pattern+)
 ;; pattern    ::= (var condition+)
@@ -21,11 +17,9 @@
 ;;     ((b (= pos "PART"))))
 
 
-
-
 ;; START
 
-(defun corte-e-costura (conllu-file rules-file new-conllu-file log-file &key recursive)
+(defun apply-rules (conllu-file rules-file new-conllu-file log-file &key recursive)
   (setf (cl-log:log-manager)
 	(make-instance 'cl-log:log-manager :message-class 'cl-log:formatted-message))
   (cl-log:start-messenger 'cl-log:text-file-messenger

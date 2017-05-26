@@ -1,4 +1,4 @@
-;; Copyright 2016 IBM
+>;; Copyright 2016 IBM
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@
    #:sentence-mtokens
    #:sentence-equal
 
-   #:corte-e-costura ))
+   #:apply-rules))
   
 
 (defpackage #:conll-prolog
