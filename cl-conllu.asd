@@ -24,7 +24,8 @@
                #:uuid
 	       #:alexandria
 	       #:cl-log
-	       #:split-sequence)
+	       #:split-sequence
+               #:xmls)
   :components ((:file "packages")
 	       (:file "data"          :depends-on ("packages"))
 	       (:file "read-write"    :depends-on ("data"))
@@ -32,4 +33,5 @@
 	       (:file "rdf"           :depends-on ("data"))
 	       (:file "command-line"  :depends-on ("data"))
 	       (:file "rules"         :depends-on ("utils" "data"))
+               (:file "esg"           :depends-on ("data"))
 	       (:file "conllu-prolog" :depends-on ("data"))))
