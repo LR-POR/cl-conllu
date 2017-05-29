@@ -32,8 +32,10 @@
   (mapcar (lambda (line)
 	    (let* ((cl (string-trim '(#\# #\Space #\Tab) line))
 		   (pos (position #\= cl)))
-	      (cons (subseq cl 0 (1- pos))
-		    (subseq cl (+ 2 pos)))))
+              (if pos
+                  (cons (subseq cl 0 (1- pos))
+                        (subseq cl (+ 2 pos)))
+                  (cons cl nil))))
 	  lines))
 
 
@@ -127,7 +129,9 @@
 
 (defun write-sentence (sentence stream)
   (mapcar (lambda (pair)
-	    (format stream "# ~a = ~a~%" (car pair) (cdr pair)))
+            (if (cdr pair)
+                (format stream "# ~a = ~a~%" (car pair) (cdr pair))
+                (format stream "# ~a~%" (car pair))))
 	  (sentence-meta sentence))
   (with-slots (tokens mtokens) sentence
     (setf mtokens (sort mtokens #'<= :key #'mtoken-start))
