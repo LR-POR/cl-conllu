@@ -102,7 +102,7 @@
     (dolist (s sentences)
       (let ((sid (make-id context "s" (sentence-meta-value s "sent_id"))))
         (dolist (metadata (sentence-meta s))
-          (emit-prolog (format nil "sentence_~a" (car metadata)) (format nil "nlp_sentence_~a(~a,~a)." (car metadata) sid (prolog-string (cdr metadata) nil))))
+          (emit-prolog (format nil "sentence_~a" (car metadata)) (format nil "nlp_sentence_~a(~a,~a)." (toprologid (car metadata)) sid (prolog-string (cdr metadata) nil))))
         (emit-prolog "sentence" (format nil "nlp_sentence(~a)." sid))
         (dolist (tk (sentence-tokens s))
           (process-tokens context sid tk)))))
