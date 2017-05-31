@@ -11,15 +11,18 @@
 ;; op rhs     ::= (! set   + add)
 ;;
 ;; expression ::= string | regex
-;;
-;; (=> ((a (= pos "VERB") (lemma "co.*"))
-;;      (b (lemma "de.*")))
-;;     ((b (= pos "PART"))))
+
+
+;; Example:
+;; (=> ((?a (= upostag "VERB") (~ lemma "co.*"))
+;;      (?b (= lemma "de")))
+;;     ((?b (! upostag "PREP")
+;; 	 (+ feats "Mod=True"))))
 
 
 ;; START
 
-(defun apply-rules (conllu-file rules-file new-conllu-file log-file &key recursive)
+(defun apply-rules-from-files (conllu-file rules-file new-conllu-file log-file &key recursive)
   (setf (cl-log:log-manager)
 	(make-instance 'cl-log:log-manager :message-class 'cl-log:formatted-message))
   (cl-log:start-messenger 'cl-log:text-file-messenger
@@ -28,8 +31,6 @@
 	(rules (read-rules rules-file)))
     (apply-rules sentences rules recursive)
     (write-conllu sentences new-conllu-file)))
-
-
 
 
 ;;acessores e leitor de regras

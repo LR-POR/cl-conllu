@@ -57,7 +57,8 @@
    #:sentence-mtokens
    #:sentence-equal
 
-   #:apply-rules))
+   #:apply-rules
+   #:apply-rules-from-files))
   
 
 (defpackage #:conll-prolog
