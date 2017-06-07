@@ -1,6 +1,4 @@
-#!/usr/local/bin/sbcl --script
-
-;; not workign on Mac OS!!
+#!/usr/bin/env /usr/local/bin/sbcl --script
 
 (load (merge-pathnames ".sbclrc" (user-homedir-pathname)))
 
