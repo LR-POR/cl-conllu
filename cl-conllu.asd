@@ -24,6 +24,7 @@
                #:uuid
 	       #:alexandria
 	       #:cl-log
+               #:uuid
 	       #:split-sequence
                #:xmls)
   :components ((:file "packages")
