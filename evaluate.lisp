@@ -283,8 +283,10 @@
 	   (incf correct)))
      list-sent1
      list-sent2)
-    (/ (float correct)
-       N)))
+    (if (eq N 0)
+	nil
+	(/ (float correct)
+	   N))))
 
 (defun projectivity-precision (list-sent1 list-sent2)
   (let ((number-of-positives
@@ -314,14 +316,17 @@
 	(true-positives 0))
     (mapcar
      #'(lambda (x y)
-       (if (and
-	    (eq (non-projective? x) t)
-	    (eq (non-projective? y) t))
-	   (incf true-positives)))
+	 (if (and
+	      (eq (non-projective? x) t)
+	      (eq (non-projective? y) t))
+	     (incf true-positives)))
      list-sent1
      list-sent2)
-    (/ (float true-positives)
-       number-of-projectives)))
+    (if (eq 0
+	    number-of-projectives)
+	nil
+	(/ (float true-positives)
+	   number-of-projectives))))
 
 
 ;; compare to baseline? (random considering incidence of each class)
