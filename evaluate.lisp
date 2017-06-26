@@ -329,7 +329,6 @@
 	   number-of-projectives))))
 
 
-;; compare to baseline? (random considering incidence of each class)
 (defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
   "Returns a hash table where keys are lists (deprel1 deprel2) and
 values are fraction of classifications as deprel1 of a word that
@@ -358,12 +357,8 @@ originally was deprel2."
     (dolist (rel1 *deprel-value-list*)
       (dolist (rel2 *deprel-value-list*)
 	(setf (gethash `(,rel1 ,rel2) M) 0)))
-    ;; (format t "Setted everything to 0~%")
     
     (dolist (pair all-words-pair-list)
-      ;; (format t "Increasing ~a~%"
-      ;; 	      (mapcar #'token-simple-deprel
-      ;; 		     pair))
       (incf (gethash
 	     (mapcar #'token-simple-deprel
 		     pair)
