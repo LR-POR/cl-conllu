@@ -7,6 +7,12 @@
 ;; https://groups.google.com/forum/#!topic/comp.lang.lisp/NrMe2NmcCLU
 ;; https://goo.gl/KjclLT
 
+(defun mappend (function list)
+  "Receives a function and a list of lists and returns the appended
+   result of the aplication of the function to each list."
+  (apply #'append (mapcar function list)))
+
+
 (defun levenshtein (s1 s2 &key test)
   (let* ((width (1+ (length s1)))
 	 (height (1+ (length s2)))
@@ -123,11 +129,9 @@
       (labels ((filter-interval (pair)
 		 (when (>= (first pair)
 			   (second (car interval)))
- 		   ;; (format t "Filtered: ~a~%" (pop interval)) ;; if uncommenting this, comment line below
 		   (pop interval)
 		   (filter-interval pair))))
 	(dolist (pair pairs)
- 	  ;; (format t "Pair: ~% ~a ~% Stack: ~% ~a ~%--~%" pair interval)
 	  (filter-interval pair)
 	  (if (and
 	       (> (first pair)

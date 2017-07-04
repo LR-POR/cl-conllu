@@ -1,14 +1,13 @@
 
 (in-package :cl-conllu)
 
+;; Functions for evaluating parsers: comparing the conllu output of a
+;; parser with a golden parse file Comparisons below are for
+;; dependency only (arcs and labels)
 
-;; Functions for evaluating parsers: comparing the conllu output of a parser with a golden parse file
-;; Comparisons below are for dependency only (arcs and labels)
-
-
-;; two sentence objects
-;; check if same words (by id and form) (it should be same POS, and same Features, but this won't affect)
-;; run evaluation
+;; two sentence objects check if same words (by id and form) (it
+;; should be same POS, and same Features, but this won't affect) run
+;; evaluation
 
 (defvar *deprel-value-list*
   '("nsubj"
@@ -50,12 +49,9 @@
     "dep")
   "List of the 37 universal syntactic relations in UD.")
 
-(defun mappend (function list)
-  "Receives a function and a list of lists and returns the appended
-  result of the aplication of the function to each list."
-  (apply #'append (mapcar function list)))
 
-(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t) (remove-punct nil) (simple-deprel nil))
+(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t)
+					(remove-punct nil) (simple-deprel nil))
   "Returns a list of disagreements in dependency parsing (either head
    or label):
 
@@ -111,7 +107,8 @@
       (sentence-tokens sent1)
       (sentence-tokens sent2)))))
 
-(defun attachment-score (list-sent1 list-sent2 &key (labeled nil) (remove-punct nil) (simple-deprel nil))
+(defun attachment-score (list-sent1 list-sent2 &key (labeled nil)
+						 (remove-punct nil) (simple-deprel nil))
   "Attachment score by word (micro-average).
 
    The attachment score is the percentage of words that have correct
@@ -224,7 +221,8 @@
 	  (/ (float (- total-words wrong-words))
 	     total-words)))))
 
-(defun precision (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
+(defun precision (list-sent1 list-sent2 deprel &key (head-error nil)
+						 (label-error t) (simple-deprel nil))
   "Restricted to words which are classified as of syntactical class
    (dependency type to head) `deprel`, returns the precision:
    the number of true positives divided by the number of words
@@ -375,16 +373,20 @@ originally was deprel2."
 			 N))))))
     M))
 
+
 (defun format-matrix (matrix)
   (let ((M (alexandria:hash-table-alist matrix)))
     (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
     (dolist (dep1 *deprel-value-list*)
-      (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) M :key #'(lambda (x) (first (car x)))))))
+      (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) M
+				       :key #'(lambda (x) (first (car x)))))))
 	(format t "~{~15a |~^ ~}~%"
 		(cons dep1 (mapcar #'(lambda (x) (cdr x)) L)))))))
 
+
 (defun simple-deprel (deprel)
   (car (ppcre:split ":" deprel)))
+
 
 (defun token-simple-deprel (token)
   (simple-deprel (token-deprel token)))
