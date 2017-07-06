@@ -26,6 +26,7 @@
    #:read-file
    #:read-directory
    #:read-conllu
+   #:query
    #:write-conllu
    #:write-conllu-to-stream   
    #:levenshtein
