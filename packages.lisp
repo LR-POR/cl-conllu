@@ -22,7 +22,9 @@
    #:sentence-valid?
    #:make-sentence
    #:sentence->text
-   #:read-conllu-from-stream
+   #:read-stream
+   #:read-file
+   #:read-directory
    #:read-conllu
    #:write-conllu
    #:write-conllu-to-stream   

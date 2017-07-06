@@ -56,12 +56,28 @@
 		     :meta (funcall fn-meta meta) :mtokens mtokens))))
 
 
-(defun read-conllu (filename &key (fn-meta #'collect-meta))
-  (with-open-file (in filename)
-    (read-conllu-from-stream in :fn-meta fn-meta)))
+(defun read-conllu (input &key (fn-meta #'collect-meta))
+  (etypecase input
+    (pathname
+     (if (pathname-name (probe-file input))
+	 (read-file input :fn-meta fn-meta)
+	 (read-directory (merge-pathnames input (parse-namestring "*.conllu"))
+			 :fn-meta fn-meta)))
+    (string   (read-conllu (parse-namestring input) :fn-meta fn-meta))
+    (stream   (read-stream input :fn-meta fn-meta))))
 
 
-(defun read-conllu-from-stream (stream &key (fn-meta #'collect-meta))
+(defun read-directory (path &key (fn-meta #'collect-meta))
+  (reduce (lambda (l n) (append l (cl-conllu:read-file n :fn-meta fn-meta)))
+	  (directory path) :initial-value nil))
+
+
+(defun read-file (path &key (fn-meta #'collect-meta))
+  (with-open-file (in path)
+    (read-stream in :fn-meta fn-meta)))
+
+
+(defun read-stream (stream &key (fn-meta #'collect-meta))
   (macrolet ((flush-line ()
 	       `(setq line (read-line stream nil nil)
 		      lineno (+ lineno 1))))
