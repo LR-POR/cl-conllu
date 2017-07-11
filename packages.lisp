@@ -17,52 +17,58 @@
 
 (defpackage :cl-conllu
   (:use :cl :cl-ppcre :split-sequence :cl-log)
-  (:export
-   #:sentence-meta-value
-   #:sentence-valid?
-   #:make-sentence
-   #:sentence->text
-   #:read-stream
-   #:read-file
-   #:read-directory
-   #:read-conllu
-   #:query
-   #:write-conllu
-   #:write-conllu-to-stream   
-   #:levenshtein
-   #:diff
-   #:insert-token
-   #:remove-token
-   #:adjust-sentence
-   #:non-projective?
+  (:export #:sentence-meta-value
+	   #:sentence-valid?
+	   #:make-sentence
+	   #:sentence->text
+	   #:read-stream
+	   #:read-file
+	   #:read-directory
+	   #:read-conllu
+	   #:query
+	   #:write-conllu
+	   #:write-conllu-to-stream   
+	   #:levenshtein
+	   #:diff
+	   #:insert-token
+	   #:remove-token
+	   #:adjust-sentence
+	   #:non-projective?
 
-   #:token
-   #:token-id
-   #:token-form
-   #:token-lemma
-   #:token-upostag
-   #:token-xpostag
-   #:token-feats
-   #:token-head
-   #:token-deprel
-   #:token-deps
-   #:token-misc
+	   #:token
+	   #:token-id
+	   #:token-form
+	   #:token-lemma
+	   #:token-upostag
+	   #:token-xpostag
+	   #:token-feats
+	   #:token-head
+	   #:token-deprel
+	   #:token-deps
+	   #:token-misc
 
-   #:mtoken
-   #:mtoken-start
-   #:mtoken-end
-   #:mtoken-form
+	   #:mtoken
+	   #:mtoken-start
+	   #:mtoken-end
+	   #:mtoken-form
 
-   #:sentence
-   #:sentence-start
-   #:sentence-meta
-   #:sentence-tokens
-   #:sentence-mtokens
-   #:sentence-equal
+	   #:sentence
+	   #:sentence-start
+	   #:sentence-meta
+	   #:sentence-tokens
+	   #:sentence-mtokens
+	   #:sentence-equal
 
-   #:apply-rules
-   #:apply-rules-from-files))
+	   #:apply-rules
+	   #:apply-rules-from-files))
   
 
-(defpackage #:conll-prolog
+(defpackage #:conllu-prolog
   (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
+
+(defpackage #:conllu-palavras
+  (:use #:cl #:cl-conllu))
+
+(defpackage #:conllu-visualize
+  (:use #:cl #:cl-conllu)
+  (:export #:tree-sentence))

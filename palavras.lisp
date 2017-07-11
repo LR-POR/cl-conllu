@@ -1,0 +1,56 @@
+
+(in-package :conllu-palavras)
+
+(defun convert (file)
+  (let ((in nil)
+	(sent '())
+	(sents '()))
+    (with-open-file (stream file)
+	    (do ((line (read-line stream nil)
+		       (read-line stream nil)))
+		((null line))
+	      (if (equal line "<ß>")
+		  (setf in 1)
+		  (if (equal line "</ß>")
+		      (progn (setf sents (append sents
+						 (list (mapcar (lambda (x) (lines->token x)) sent))))
+			     (setf in nil)			     
+			     (setf sent '()))
+		      (if in
+			  (setf sent (append sent (list line))))))))
+    sents))
+
+(defun lines->token (line)
+  (let* ((tk (make-instance 'token))
+	 (dirty-tags (cl-ppcre:split " +" line))
+	 (tags (remove-if (lambda (x)
+			     (cl-ppcre:scan "(?<=<)(.*)(?=>)" x))
+			   dirty-tags)))
+    (if (equal 2 (length tags))
+	(let  ((id (cl-ppcre:scan-to-strings "(?<=#)(.*)(?=->)" (car (cdr tags))))
+	       (form (cl-ppcre:scan-to-strings "(?<=^.{1}).*" (car tags)))
+	       (head (cl-ppcre:scan-to-strings "(?<=->)(.*)" (car (cdr tags)))))
+	  (setf (slot-value tk 'CL-CONLLU::ID) id)
+	  (setf (slot-value tk 'CL-CONLLU::FORM) form)
+	  (setf (slot-value tk 'CL-CONLLU::LEMMA) form)
+	  (setf (slot-value tk 'CL-CONLLU::UPOSTAG) "PUNCT")
+	  (setf (slot-value tk 'CL-CONLLU::XPOSTAG) "PU|@PU")
+	  (setf (slot-value tk 'CL-CONLLU::DEPREL) "punct")
+	  tk)
+	(let ((id (cl-ppcre:scan-to-strings "(?<=#)(.*)(?=->)" (car (last tags))))
+	      (form (car tags))
+	      (lemma (cl-ppcre:scan-to-strings "(?<=^.{2}).*(?=\])" (cadr tags)))
+	      (upostag (caddr tags))
+	      (head (cl-ppcre:scan-to-strings "(?<=->)(.*)" (car (last tags)))))
+	  (setf (slot-value tk 'CL-CONLLU::ID) id)
+	  (setf (slot-value tk 'CL-CONLLU::FORM) form)
+	  (setf (slot-value tk 'CL-CONLLU::LEMMA) lemma)
+	  (setf (slot-value tk 'CL-CONLLU::UPOSTAG) upostag)
+	  (setf (slot-value tk 'CL-CONLLU::HEAD) head)
+	  tk))))
+
+
+
+
+;; (convert "/Users/hmuniz/Desktop/100.dep")
+

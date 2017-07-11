@@ -35,4 +35,6 @@
 	       (:file "rdf"           :depends-on ("data"))
 	       (:file "command-line"  :depends-on ("data"))
 	       (:file "rules"         :depends-on ("utils" "data"))
-	       (:file "conllu-prolog" :depends-on ("data"))))
+	       (:file "conllu-prolog" :depends-on ("data"))
+	       (:file "palavras"      :depends-on ("data"))
+	       (:file "tree"          :depends-on ("data"))))

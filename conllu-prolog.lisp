@@ -14,7 +14,7 @@
 
 ;;;; conll-prolog.lisp
 
-(in-package #:conll-prolog)
+(in-package #:conllu-prolog)
 
 (defun toprologid (str)
   (cl-ppcre:regex-replace-all "[^A-Za-z0-9_]"
@@ -54,14 +54,16 @@
            *dependencies*))
 
 (defun prolog-string (str &optional (downcase t))
-  (format nil "'~a'" (cl-ppcre:regex-replace-all "([\'\\\\])" (if downcase (string-downcase str) str) '("\\" :match))))
+  (format nil "'~a'" (cl-ppcre:regex-replace-all "([\'\\\\])" (if downcase (string-downcase str) str)
+						 '("\\" :match))))
 
 (defun process-features (sentence-id word-index-id feats-str)
   (let ((features (split-sequence #\| feats-str)))
     (dolist (feat features)
       (let ((k-v (split-sequence #\= feat)))
         (when (= 2 (length k-v))
-          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a,~a)." (car k-v)  sentence-id word-index-id (prolog-string (cadr k-v) nil))))
+          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a,~a)." (car k-v)  sentence-id word-index-id
+					 (prolog-string (cadr k-v) nil))))
         (when (= 1 (length k-v))
           (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a)." (car k-v) sentence-id word-index-id)))))))
 
@@ -102,13 +104,14 @@
     (dolist (s sentences)
       (let ((sid (make-id context "s" (sentence-meta-value s "sent_id"))))
         (dolist (metadata (sentence-meta s))
-          (emit-prolog (format nil "sentence_~a" (car metadata)) (format nil "nlp_sentence_~a(~a,~a)." (toprologid (car metadata)) sid (prolog-string (cdr metadata) nil))))
+          (emit-prolog (format nil "sentence_~a" (car metadata))
+		       (format nil "nlp_sentence_~a(~a,~a)." (toprologid (car metadata)) sid
+			       (prolog-string (cdr metadata) nil))))
         (emit-prolog "sentence" (format nil "nlp_sentence(~a)." sid))
         (dolist (tk (sentence-tokens s))
           (process-tokens context sid tk)))))
   (with-open-file (fout filename-out :direction :output :if-exists :supersede)
     (write-prolog fout)))
 
-;;
+
 ;; (convert-filename "sample" "repos/conll-prolog/complex.conll" "complex.pl")
-;;
