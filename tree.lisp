@@ -1,13 +1,10 @@
-(in-package :cl-conllu)
-
-(defun tree-sentences (sentences)
-  (mapcar #'(lambda (sent) (tree-sentence sent)) sentences)
-  (values))
+(in-package :conllu-visualize)
 
 
 (defun tree-sentence (sentence)
   (mapcar #'meta-sentence (sentence-meta sentence))
-  (make-tree sentence))
+  (make-tree sentence)
+  (values))
 
 
 (defun meta-sentence (meta-sent)
@@ -23,7 +20,7 @@
     (format t "─┮ ~%")
     (make-root-lines tks root lines spaces)
     (make-branchs root (children root tks) tks len-tks lines spaces)
-    (mapcar #'(lambda (line) (format t "~a ~%" line)) lines)))
+    (mapc #'(lambda (line) (format t "~a ~%" line)) lines)))
 
 
 (defun make-branchs (father children tokens len-tokens lines spaces)
@@ -41,7 +38,8 @@
 		    (draw-father index lines spaces (equal bot index) (equal top index) node max-s)
 		    (if (member node children)
 			(progn
-			  (draw-descendent index lines spaces (equal bot index) (equal top index) max-s)
+			  (draw-descendent index lines spaces (equal bot index)
+					   (equal top index) max-s)
 			  (if (is-not-just-a-leaf (+ 1 index) tokens)
 			      (push node to-do)
 			      (draw-node index lines spaces node)))
@@ -140,8 +138,4 @@
 (defun add (lines spaces id text)
   (setf (nth id lines) text)
   (setf (nth id spaces) (length text)))
-
-
-;(ql:quickload :cl-conllu)
-;(cl-conllu:tree-sentences (cl-conllu:read-conllu "/Users/hmuniz/Desktop/file-2.conllu"))
 
