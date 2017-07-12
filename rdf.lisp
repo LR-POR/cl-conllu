@@ -86,7 +86,8 @@
   (unless (unspecified-field? features)
     (format nil "~{ ~a~^;~}" 
             (mapcar (lambda (f)
-                      (destructuring-bind (name value) (split-sequence #\= f :count 2)
+                      (destructuring-bind (name value)
+			  (split-sequence #\= f :count 2)
                         (if value-as-literal
                             (format nil "~a ~a" (make-featurename name) (make-literal value))
                             (format nil "~a conll:~a" (make-featurename name) value)))) 
@@ -113,7 +114,7 @@
           (head (make-token-id id (slot-value tk 'head)))
           (deprel (slot-value tk 'deprel))
           (deps (slot-value tk 'deps))
-          (misc (make-features-bnode (slot-value tk 'misc) t)))
+          (misc (slot-value tk 'misc)))
       (format stream "conll:~a a conll:Token .~%" tid)
       (format stream "conll:~a conll:sentence conll:~a .~%" tid id)
 
@@ -134,9 +135,10 @@
         ;; (format stream "~a" (make-features (slot-value tk 'feats)))
         (format stream "conll:~a conll:features [ ~a ] .~%" tid feats))
 
-      (when misc
+      (unless (unspecified-field? misc) 
         ;; (format stream "~a" (make-features (slot-value tk 'misc)))
-        (format stream "conll:~a conll:misc [ ~a ] .~%" tid misc))
+        ;; (format stream "conll:~a conll:misc [ ~a ] .~%" tid misc)
+	(format stream "conll:~a conll:misc ~a .~%" tid (make-literal misc)))
 
       (if (string-equal "root" deprel)
           (format stream "conll:~a conll:root conll:~a .~%" id tid)
