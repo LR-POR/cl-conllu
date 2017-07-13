@@ -1,6 +1,7 @@
 
 (in-package :cl-conllu)
 
+
 (defclass token ()
   ((id      :initarg :id
 	    :accessor token-id)
@@ -55,9 +56,20 @@
 	    :initform nil
 	    :accessor sentence-mtokens)))
 
+(defun sentence-hash-table (sentence)
+  (let* ((tb      (alexandria:alist-hash-table (sentence-meta sentence)))
+	 (fields '(id form lemma upostag xpostag feats head deprel deps misc)))
+    (setf (gethash "tokens" tb)
+	  (mapcar (lambda (tk)
+		    (let ((dt (mapcar (lambda (field)
+					(cons (symbol-name field) (slot-value tk field)))
+				      fields)))
+		      (alexandria:alist-hash-table (remove-if (lambda (p) (equal (cdr p) "_")) dt)))) 
+		  (sentence-tokens sentence)))
+    tb))
 
 (defun sentence-meta-value (sentence meta-field)
-  (cdr (assoc meta-field (sentence-meta sentence) :test #'equal)))
+    (cdr (assoc meta-field (sentence-meta sentence) :test #'equal)))
 
 
 (defun sentence-id (sentence)

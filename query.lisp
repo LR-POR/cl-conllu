@@ -7,5 +7,8 @@
 	     (cl-ppcre:scan pattern (slot-value tk (intern (string-upcase field)
 							   :cl-conllu))))
 	   (cl-conllu:sentence-tokens s)))
-   sentences))  
+   sentences))
+
+(defun query-as-json (pattern field sentences)
+  (yason:encode (mapcar #'sentence-hash-table (query pattern field sentences))))
 
