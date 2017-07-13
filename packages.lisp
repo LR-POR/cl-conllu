@@ -26,6 +26,7 @@
 	   #:read-directory
 	   #:read-conllu
 	   #:query
+	   #:query-as-json
 	   #:write-conllu
 	   #:write-conllu-to-stream   
 	   #:levenshtein
@@ -55,6 +56,7 @@
 	   #:sentence
 	   #:sentence-start
 	   #:sentence-meta
+	   #:sentence-hash-table
 	   #:sentence-tokens
 	   #:sentence-mtokens
 	   #:sentence-equal
