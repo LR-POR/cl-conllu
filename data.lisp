@@ -64,7 +64,7 @@
 		    (let ((dt (mapcar (lambda (field)
 					(cons (symbol-name field) (slot-value tk field)))
 				      fields)))
-		      (alexandria:alist-hash-table (remove-if (lambda (p) (equal (cdr p) "_")) dt)))) 
+		      (alexandria:alist-hash-table dt))) 
 		  (sentence-tokens sentence)))
     tb))
 
