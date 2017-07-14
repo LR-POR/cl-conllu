@@ -57,14 +57,14 @@
 	    :accessor sentence-mtokens)))
 
 (defun sentence-hash-table (sentence)
-  (let* ((tb      (alexandria:alist-hash-table (sentence-meta sentence)))
+  (let* ((tb      (alexandria:alist-hash-table (sentence-meta sentence) :test #'equal))
 	 (fields '(id form lemma upostag xpostag feats head deprel deps misc)))
     (setf (gethash "tokens" tb)
 	  (mapcar (lambda (tk)
 		    (let ((dt (mapcar (lambda (field)
 					(cons (symbol-name field) (slot-value tk field)))
 				      fields)))
-		      (alexandria:alist-hash-table dt))) 
+		      (alexandria:alist-hash-table dt :test #'equal))) 
 		  (sentence-tokens sentence)))
     tb))
 
