@@ -48,6 +48,14 @@
 	   #:token-deps
 	   #:token-misc
 
+	   #:form
+	   #:lemma
+	   #:upostag
+	   #:xpostag
+	   #:feats
+	   #:deprel
+	   #:misc
+
 	   #:mtoken
 	   #:mtoken-start
 	   #:mtoken-end
