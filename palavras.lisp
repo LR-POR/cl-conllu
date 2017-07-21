@@ -12,14 +12,22 @@
 ;; $?FORM \t [FORM] <NAME-WITH-SPACE>* NAME+ @NAME+ §NAME* #NUM->NUM
 ;; $FORM NAME @NAME #NUM->NUM
 
+(eval-when (eval)
+    (deflexer niceline
+	:flex-compatible
+      ("\\[[^ ]+\\]"     (return (list :lemma %0)))
+      ("<[^>]+>"         (return (list   :sem %0)))
+      ("@[^ ]+"          (return (list  :func %0)))
+      ("§[^ ]+"          (return (list  :role %0)))
+      ("£[^ ]+"          (return (list :extra %0)))
+      ("[^:space:]+"     (return (list   :pos %0)))
+      ("#[0-9]+->[0-9]+" (return (list  :link %0)))
+      ("[:space:]+")))
 
-(defparameter niceline '((lemma   "\\[(.*)\\]" xpostag error)
-			 (xpostag "<([^>]*)>" xpostag upostag)
-			 (upostag "([^ ]+)" feats error)
-			 (feats   "^[^[<#@§]([^ ]+)" )
-			 (deprel  "@([^ ]+)" nil)
-			 (xpostag "§([^ ]+)" nil)
-			 (link    "#([0-9]+)->([0-9]+)" nil)))
+
+(define-condition malformed-line-error (error)
+  ((text :initarg :text :reader text)))
+
 
 
 (defun add-field-value (token field value)
@@ -104,28 +112,33 @@
        (return token)))))
 
 
+(defun consume-tags (tags)
+  (let ((lex (niceline tags)))
+    (loop for pair = (funcall lex)
+	  while pair
+	  collect pair)))
+
+
 (defun read-niceline (line)
-  (cond ((cl-ppcre:scan "[ ]*\\t[ ]*" line)
+  (cond ((cl-ppcre:scan "\\t" line)
 	 (destructuring-bind (form rest)
-	     (cl-ppcre:split "[ ]*\\t[ ]*" line)
-	   (let ((tags (cl-ppcre:split "[ ]+" rest))
-		 (tk  (make-instance 'cl-conllu:token
-				     :id 0
-				     :form (if (cl-ppcre:scan "^\\$" form) (subseq form 1) form)
-				     :lemma "_")))
-	     (consume-tags tags tk))))
-	((cl-ppcre:scan "^\\$.[ ]+PU" line)
-	 (let ((tags (cl-ppcre:split "[ ]+" line)))
-	   (multiple-value-bind (a b)
-	       (cl-ppcre:scan-to-strings "#([0-9]+)->([0-9]+)" (nth 3 tags))
-	     (declare (ignore a))
-	     (make-instance 'cl-conllu:token
-				       :id (aref b 0)
-				       :head (aref b 1)
-				       :form (subseq (car tags) 1)
-				       :upostag "PU"
-				       :deprel "PU"
-				       :lemma (subseq (car tags) 1)))))
+	     (subseq (cl-ppcre:split "\\t" line) 0 2)
+	   (let ((tk (make-instance 'cl-conllu:token
+				    :id 0
+				    :form (string-trim '(#\Space) (if (cl-ppcre:scan "^\\$" form) (subseq form 1) form))
+				    :lemma "_")))
+	     (declare (ignore tk))
+	     (consume-tags rest))))
+	((cl-ppcre:scan "^\\$([^ ]+)[ ]+PU" line)
+	 (multiple-value-bind (a b c d)
+	     (cl-ppcre:scan "^\\$([^ ]+)[ ]+PU" line)
+	   (declare (ignore a b))
+	   (let ((tk (make-instance 'cl-conllu:token
+				    :id 0
+				    :form (subseq line (aref c 0) (aref d 0))
+				    :lemma "_")))
+	     (declare (ignore tk))
+	     (consume-tags (subseq line (1+ (aref d 0)))))))
 	((equal 0 (length line))
 	 nil)
 	(t (error "ill-formed input."))))
@@ -137,10 +150,10 @@
 	       (read-line stream nil nil)))
 	((null line)
 	 (reverse sentences))
-      (cond ((equal line "<ß>")
-	     (setf tokens nil))
-	    ((equal line "</ß>")
-	     (push (make-instance 'sentence :tokens (reverse tokens)) sentences))
+      (cond ((equal line "") 
+	     (when tokens
+	       (push (make-instance 'sentence :tokens (reverse tokens)) sentences)
+	       (setf tokens nil)))
 	    (t (let ((tk (read-niceline line)))
 		 (if tk (push tk tokens))))))))
 

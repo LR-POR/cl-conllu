@@ -77,7 +77,7 @@
   (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
 
 (defpackage #:conllu-palavras
-  (:use #:cl #:cl-conllu))
+  (:use #:cl #:cl-conllu #:lispbuilder-lexer))
 
 (defpackage #:conllu-visualize
   (:use #:cl #:cl-conllu)
