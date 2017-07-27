@@ -186,9 +186,6 @@
     sentence))
 
 
- 
-
-
 (defun remove-token (sentence id)
   "Remove the token with the given ID if it is not part of a
    multi-word token and it does not contain childs. It returns two

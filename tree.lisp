@@ -1,26 +1,23 @@
 (in-package :conllu-visualize)
 
 
-(defun tree-sentence (sentence)
-  (mapcar #'meta-sentence (sentence-meta sentence))
-  (make-tree sentence)
+(defun tree-sentence (sentence &optional (stream *standard-output*))
+  (mapc (lambda (p)
+	  (format stream "~a = ~a~%" (car p) (cdr p)))
+	(sentence-meta sentence))
+  (format stream "~{~a ~%~}~%" (make-tree sentence))
   (values))
-
-
-(defun meta-sentence (meta-sent)
-  (format t "~a = ~a ~%" (car meta-sent) (cdr meta-sent)))
 
 
 (defun make-tree (sent)
   (let*  ((tks (sentence-tokens sent))
 	  (len-tks (length tks))
-	  (lines (make-list len-tks :initial-element ""))
+	  (lines  (make-list len-tks :initial-element ""))
 	  (spaces (make-list len-tks :initial-element 0))
 	  (root (root-leaf tks)))
-    (format t "─┮ ~%")
     (make-root-lines tks root lines spaces)
     (make-branchs root (children root tks) tks len-tks lines spaces)
-    (mapc #'(lambda (line) (format t "~a ~%" line)) lines)))
+    (cons "─┮" lines)))
 
 
 (defun make-branchs (father children tokens len-tokens lines spaces)

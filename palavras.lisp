@@ -13,19 +13,21 @@
 ;; $FORM NAME @NAME #NUM->NUM
 ;;
 ;; We still need many improvements: (1) error handler; (2) sentences
-;; metadata.
+;; metadata; the `eval-when` is not working when the package is loaded
+;; without compile. Need better solution for the tokenizer.
 
 (eval-when (eval compile)
-    (deflexer niceline
-	:flex-compatible
-      ("\\[([^ ]+)\\]"   (return (cons :lemma %1)))
-      ("<[^>]+>"         (return (cons   :sem (substitute #\_ #\Space %0))))
-      ("@[^ ]+"          (return (cons  :func %0)))
-      ("§[^ ]+"          (return (cons  :role %0)))
-      ("£[^ ]+"          (return (cons :extra %0)))
-      ("[^:space:]+"     (return (cons   :pos %0)))
-      ("#([0-9]+)->([0-9]+)" (return (cons :link (cons %1 %2))))
-      ("[:space:]+")))
+  (deflexer niceline :flex-compatible
+    ("\\[([^ ]+)\\]"   (return (cons :lemma %1)))
+    ("<[^>]+>"         (return (cons   :sem (substitute #\_ #\Space %0))))
+    ("@[^ ]+"          (return (cons  :func %0)))
+    ("§[^ ]+"          (return (cons  :role %0)))
+    ("£[^ ]+"          (return (cons :extra %0)))
+    ("N|PERS|SPEC|EC|ADV|NUM|PRP|IN|KC|KS|DET|V|PROP|ADJ|PU"
+     (return (cons :pos %0)))
+    ("[^:space:]+"     (return (cons :feats %0)))
+    ("#([0-9]+)->([0-9]+)" (return (cons :link (cons %1 %2))))
+    ("[:space:]+")))
 
 
 (defun add-field-value (token field value)
@@ -39,14 +41,12 @@
 (defun consume-tags (tags tk)
   (let ((lex (niceline tags)))
     (loop for pair = (funcall lex)
-	  with pos = nil
 	  while pair
 	  do (cond ((equal (car pair) :lemma)
 		    (add-field-value tk 'lemma (cdr pair)))
-		   ((and (not pos) (equal (car pair) :pos))
-		    (add-field-value tk 'upostag (cdr pair))
-		    (setf pos t))
-		   ((and pos (equal (car pair) :pos))
+		   ((equal (car pair) :pos)
+		    (add-field-value tk 'upostag (cdr pair)))
+		   ((equal (car pair) :feats)
 		    (add-field-value tk 'feats (cdr pair)))
 		   ((equal (car pair) :func)
 		    (add-field-value tk 'deprel (cdr pair)))
