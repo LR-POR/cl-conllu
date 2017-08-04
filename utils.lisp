@@ -13,6 +13,11 @@
   (apply #'append (mapcar function list)))
 
 
+;; (defun subtree (sentence token)
+;;   (let ((childs (token-child token sentence)))
+;;     ))
+
+
 (defun levenshtein (s1 s2 &key test)
   (let* ((width (1+ (length s1)))
 	 (height (1+ (length s2)))

@@ -1,5 +1,23 @@
 (in-package :cl-conllu)
 
+;; VERB <advcl L=correr&VERB
+;; L=correr&VERB >advcl VERB
+
+;; (nsubj (advcl (and (upostag ~ "VERB")
+;; 		   (lemma ~ "correr"))
+;; 	      (upostag ~ "VERB"))
+;;        (upostag ~ "PROP"))
+
+
+(defmacro match (field pattern)
+  `(lambda (tokens)
+     (remove-if-not (lambda (tk)
+		      (cl-ppcre:scan ,pattern
+				     (slot-value tk (intern (string-upcase ,field) :cl-conllu))))
+		    tokens)))
+
+
+
 (defun query (pattern field sentences)
   (remove-if-not
    (lambda (s)
