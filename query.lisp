@@ -1,56 +1,105 @@
 (in-package :cl-conllu)
 
-;; VERB <advcl L=correr&VERB
-;; L=correr&VERB >advcl VERB
 
-;; (nsubj (advcl (and (upostag ~ "VERB")
-;; 		   (lemma ~ "correr"))
-;; 	      (upostag ~ "VERB"))
-;;        (upostag ~ "PROP"))
-;; -> (lambda ...)
+(defparameter *deprels* '(acl acl-part acl-relcl
+			  advcl
+			  advmod
+			  amod
+			  appos
+			  aux
+			  aux-pass
+			  case
+			  cc
+			  ccomp
+			  compound
+			  conj
+			  cop
+			  csubj
+			  dep
+			  det
+			  discourse
+			  dislocated
+			  expl
+			  fixed
+			  flat
+			  flat-foreign
+			  flat-name
+			  iobj
+			  mark
+			  nmod
+			  nmod-npmod
+			  nmod-tmod
+			  nsubj
+			  nsubj-pass
+			  nummod
+			  obj
+			  obl
+			  obl-agent
+			  orphan
+			  parataxis
+			  punct
+			  reparandum
+			  xcomp
+			  vocative))
 
-;; (defmacro match (field pattern)
-;;   `(lambda (tokens)
-;;      (remove-if-not (lambda (tk)
-;; 		      (cl-ppcre:scan ,pattern
-;; 				     (slot-value tk (intern (string-upcase ,field) :cl-conllu))))
-;; 		    tokens)))
 
-;; (execute '(nsubj (advcl (and (upostag ~ "VERB")
-;; 			     (lemma ~ "correr"))
-;;   		        (upostag ~ "VERB"))
-;; 	         (upostag ~ "PROP"))
-;; 	 tokens)
+(defun children (tks id)
+  (remove-if-not (lambda (tk) (equal (cl-conllu:token-head tk) id)) tks))
 
 
-;; (execute '(r~ nsubj (r~ advcl (%or (~ upostag "VERB")
-;; 			           (~ lemma "correr"))
-;; 	  	              (~ upostag "VERB"))
-;; 	            (~ upostag "PROP"))
-;; 	 tokens)
+(defun r~ (relation query1 query2 &key tks)
+  (let ((list1 (compile-query query1 :tks tks))
+	(list2 (compile-query query2 :tks tks))
+	(rel (string-upcase (substitute #\: #\- (symbol-name relation)))))
+    (remove-if-not (lambda (tk)
+		     (some (lambda (child)
+			     (equal (string-upcase (token-deprel child)) rel))
+			   (children list2 (cl-conllu:token-id tk))))
+		   list1)))
 
 
-(defun compile-query (expression)
-  "...")
+(defun t~ (slot string &key tks)
+  (remove-if-not (lambda (tk)
+		   (cl-ppcre:scan string (slot-value tk slot)))
+		 tks))
+
+
+(defun %or (query1 query2 &key tks)
+  (let ((list1 (compile-query query1 :tks tks))
+	(list2 (compile-query query2 :tks tks)))
+    (union list1 list2)))
+
+
+(defun %and (query1 query2 &key tks)
+  (let ((list1 (compile-query query1 :tks tks))
+	(list2 (compile-query query2 :tks tks)))
+    (intersection list1 list2)))
+
+
+(defun compile-query (expression &key tks)
+  (let ((op (intern (symbol-name (car expression)) :cl-conllu)))
+    (cond ((member op *deprels*)
+	   (destructuring-bind (deprel arg1 arg2)
+	       expression
+	     (declare (ignore deprel))
+	     (funcall #'r~ op arg1 arg2 :tks tks)))
+	  ((member op '(upostag lemma form feats misc xpostag))
+	   (destructuring-bind (field value)
+	       expression
+	     (declare (ignore field))
+	     (funcall #'t~ op value :tks tks)))
+	  ((member op '(or and))
+	   (destructuring-bind (op arg1 arg2)
+	       expression
+	     (funcall (getf '(or %or and %and) op) arg1 arg2 :tks tks)))
+	  (t (error "Invalid query.")))))
 
 
 (defun query (query sentences)
   (remove-if-not (lambda (s)
-		   (some (compile-query query) 
-			 (cl-conllu:sentence-tokens s)))
+		   (compile-query query :tks (cl-conllu:sentence-tokens s)))
 		 sentences))
 
 
-(defun query (pattern field sentences)
-  (remove-if-not
-   (lambda (s)
-     (some (lambda (tk)
-	     (cl-ppcre:scan pattern (slot-value tk (intern (string-upcase field)
-							   :cl-conllu))))
-	   (cl-conllu:sentence-tokens s)))
-   sentences))
-
-
-(defun query-as-json (pattern field sentences)
-  (yason:encode (mapcar #'sentence-hash-table (query pattern field sentences))))
-
+(defun query-as-json (a-query sentences)
+  (yason:encode (mapcar #'sentence-hash-table (query a-query sentences))))
