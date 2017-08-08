@@ -2,45 +2,26 @@
 
 
 (defparameter *deprels* '(acl acl-part acl-relcl
-			  advcl
-			  advmod
-			  amod
+			  advcl advmod amod
 			  appos
-			  aux
-			  aux-pass
+			  aux aux-pass
 			  case
-			  cc
-			  ccomp
-			  compound
-			  conj
+			  cc ccomp conj
 			  cop
 			  csubj
-			  dep
-			  det
-			  discourse
-			  dislocated
-			  expl
-			  fixed
-			  flat
-			  flat-foreign
-			  flat-name
+			  dep det
+			  discourse dislocated expl
+			  compound fixed flat flat-foreign flat-name
 			  iobj
 			  mark
-			  nmod
-			  nmod-npmod
-			  nmod-tmod
+			  nmod nmod-npmod nmod-tmod
 			  nsubj
 			  nsubj-pass
 			  nummod
-			  obj
-			  obl
-			  obl-agent
-			  orphan
-			  parataxis
-			  punct
-			  reparandum
-			  xcomp
-			  vocative))
+			  obj obl obl-agent
+			  orphan parataxis
+			  punct reparandum
+			  xcomp vocative))
 
 
 (defun children (tks id)
@@ -64,13 +45,13 @@
 		 tks))
 
 
-(defun %or (query1 query2 &key tks)
+(defun or% (query1 query2 &key tks)
   (let ((list1 (compile-query query1 :tks tks))
 	(list2 (compile-query query2 :tks tks)))
     (union list1 list2)))
 
 
-(defun %and (query1 query2 &key tks)
+(defun and% (query1 query2 &key tks)
   (let ((list1 (compile-query query1 :tks tks))
 	(list2 (compile-query query2 :tks tks)))
     (intersection list1 list2)))
@@ -91,7 +72,7 @@
 	  ((member op '(or and))
 	   (destructuring-bind (op arg1 arg2)
 	       expression
-	     (funcall (getf '(or %or and %and) op) arg1 arg2 :tks tks)))
+	     (funcall (getf '(or or% and and%) op) arg1 arg2 :tks tks)))
 	  (t (error "Invalid query.")))))
 
 
