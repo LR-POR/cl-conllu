@@ -29,8 +29,8 @@
 
 
 (defun r~ (relation query1 query2 &key tks)
-  (let ((list1 (compile-query query1 :tks tks))
-	(list2 (compile-query query2 :tks tks))
+  (let ((list1 (eval-query query1 :tks tks))
+	(list2 (eval-query query2 :tks tks))
 	(rel (string-upcase (substitute #\: #\- (symbol-name relation)))))
     (remove-if-not (lambda (tk)
 		     (some (lambda (child)
@@ -46,18 +46,18 @@
 
 
 (defun or% (query1 query2 &key tks)
-  (let ((list1 (compile-query query1 :tks tks))
-	(list2 (compile-query query2 :tks tks)))
+  (let ((list1 (eval-query query1 :tks tks))
+	(list2 (eval-query query2 :tks tks)))
     (union list1 list2)))
 
 
 (defun and% (query1 query2 &key tks)
-  (let ((list1 (compile-query query1 :tks tks))
-	(list2 (compile-query query2 :tks tks)))
+  (let ((list1 (eval-query query1 :tks tks))
+	(list2 (eval-query query2 :tks tks)))
     (intersection list1 list2)))
 
 
-(defun compile-query (expression &key tks)
+(defun eval-query (expression &key tks)
   (let ((op (intern (symbol-name (car expression)) :cl-conllu)))
     (cond ((member op *deprels*)
 	   (destructuring-bind (deprel arg1 arg2)
@@ -78,7 +78,7 @@
 
 (defun query (query sentences)
   (remove-if-not (lambda (s)
-		   (compile-query query :tks (cl-conllu:sentence-tokens s)))
+		   (eval-query query :tks (cl-conllu:sentence-tokens s)))
 		 sentences))
 
 
