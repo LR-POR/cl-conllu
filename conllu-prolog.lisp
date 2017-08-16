@@ -48,10 +48,7 @@
   (maphash (lambda (k clauses) 
              (format out "~%")
              (format out "%% ~a~%" k)
-             (dolist (c clauses) (format out "~a~%" c))) *clauses*)
-  (maphash (lambda (k v)
-             (format out "nlp_~a(S,T1,T2) :- nlp_dependency(S,T1,T2,~a).~%" k v))
-           *dependencies*))
+             (dolist (c clauses) (format out "~a~%" c))) *clauses*))
 
 (defun prolog-string (str &optional (downcase t))
   (format nil "'~a'" (cl-ppcre:regex-replace-all "([\'\\\\])" (if downcase (string-downcase str) str)
