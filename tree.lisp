@@ -1,10 +1,11 @@
 (in-package :conllu-visualize)
 
 
-(defun tree-sentence (sentence &optional (stream *standard-output*))
-  (mapc (lambda (p)
-	  (format stream "~a = ~a~%" (car p) (cdr p)))
-	(sentence-meta sentence))
+(defun tree-sentence (sentence &key (stream *standard-output*) show-meta)
+  (when show-meta 
+    (mapc (lambda (p)
+            (format stream "~a = ~a~%" (car p) (cdr p)))
+          (sentence-meta sentence)))
   (format stream "~{~a ~%~}~%" (make-tree sentence))
   (values))
 
