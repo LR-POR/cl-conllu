@@ -32,34 +32,71 @@
 
 ;; testing
 
-;; sentence token -> (list token)
-(defun linerialize (sentence token)
-  (let ((childs (token-childs token sentence))
+;; sentence token filter -> (list token)
+(defun linerialize (sentence token filter)
+  (let ((childs (token-childs token sentence :fn-filter filter))
 	pre pos)
     (dolist (c childs)
       (if (< (token-id c) (token-id token))
 	  (push c pre)
 	  (push c pos)))
     (append (mappend (lambda (tk)
-		      (linerialize sentence tk))
+		       (linerialize sentence tk filter))
 		     (reverse pre))
 	    (list token)
 	    (mappend (lambda (tk)
-		       (linerialize sentence tk))
+		       (linerialize sentence tk filter))
 		     (reverse pos)))))
 
+;; sentence token filter -> (list token)
+(defun linerialize (sentence token filter &key (direction :both))
+  (let ((childs (token-childs token sentence :fn-filter filter))
+	pre pos)
+    (dolist (c childs)
+      (if (< (token-id c) (token-id token))
+	  (push c pre)
+	  (push c pos)))
+    (let ((lhs (mappend (lambda (tk)
+			  (linerialize sentence tk filter :direction :both))
+			(reverse pre)))
+	  (rhs (mappend (lambda (tk)
+			  (linerialize sentence tk filter :direction :both))
+			(reverse pos))))
+      (case direction
+	(:both  (append lhs (list token) rhs))
+	(:lhs   (append lhs (list token)))
+	(:rhs   (cons token rhs))))))
 
-(defun get-phrases (sent fn-filter fn-key)
+
+(defun get-phrases (sent fn-filter fn-key filter-rel &key (direction :both))
   (mapcar (lambda (atk)
-	    (mapcar fn-key (linerialize sent atk)))
+	    (mapcar fn-key (linerialize sent atk filter-rel :direction direction)))
 	  (remove-if-not fn-filter (sentence-tokens sent))))
 
 
-(mapcar (lambda (sent)
-	  (format t "[~a]~%~{~{~a~^ ~}~%~}~%"
-		  (sentence-meta-value sent "text")
-		  (get-phrases sent 
-			       (lambda (tk) (string= (token-upostag tk) "NOUN"))
-			       #'token-upostag)))
-	(read-conllu #P"CF107.conllu"))
+
+(with-open-file (out "/Users/arademaker/Temp/lixo.txt" :direction :output :if-exists :supersede)
+  (let* ((files (append (directory #P"~/work/cpdoc/dhbb-nlp/udp/?.conllu")
+			(directory #P"~/work/cpdoc/dhbb-nlp/udp/1?.conllu"))))
+    (mapcar (lambda (file)
+	      (mapcar (lambda (sent)
+			(format out "~%[FILE:~a ~a]~%~{N:~{~a~^ ~}~%~}"
+				(pathname-name file)
+				(sentence-meta-value sent "text")
+				(get-phrases sent 
+					     (lambda (tk)
+					       (and (string= (token-upostag tk) "PROPN")
+						    (string/= (token-deprel tk) "flat:name")))
+					     #'token-form
+					     (lambda (tk) (member (token-deprel tk)
+								  '("cc" "flat:name" "det" "case" "flat")
+								  :test #'equal))
+					     :direction :rhs)))
+		      (cl-conllu:read-conllu file)))
+	    files)))
+
+
+
+
+
 

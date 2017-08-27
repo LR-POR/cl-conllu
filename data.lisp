@@ -56,24 +56,11 @@
 	    :initform nil
 	    :accessor sentence-mtokens)))
 
-;; (defclass node ()
-;;   ((token :initarg :token
-;; 	  :accessor :node-token)
-;;    (head  :initarg :head
-;; 	  :initform nil
-;; 	  :accessor :node-head)
-;;    (childs :initarg :childs
-;; 	   :initform nil
-;; 	   :accessor :node-childs)))
-
 
 (defun sentence-root (sentence)
   (car (remove-if-not (lambda (tk) (equal "0" (slot-value tk 'head)))
 		      (sentence-tokens sentence))))
 
-;; (defun sentence->node (sentence)
-;;   (let ((root (sentence-root sentence)))
-;;     (make-instance 'node :head 0 ())))
 
 (defun sentence-hash-table (sentence)
   (let* ((tb      (alexandria:alist-hash-table (sentence-meta sentence) :test #'equal))
@@ -166,10 +153,13 @@
 				(funcall fn-key child))))))
 
 
-(defun token-childs (token sentence)
-  (remove-if-not (lambda (tk)
-		   (equal (slot-value tk 'head) (slot-value token 'id)))
-		 (sentence-tokens sentence)))
+(defun token-childs (token sentence &key (fn-filter nil))
+  (let ((res (remove-if-not (lambda (tk)
+			      (equal (slot-value tk 'head)
+				     (slot-value token 'id)))
+			    (sentence-tokens sentence))))
+    (if fn-filter (remove-if-not fn-filter res) res)))
+
 
 
 (defun mtoken->tokens (sentence mtoken)

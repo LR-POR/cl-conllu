@@ -3,21 +3,14 @@
 
 (defparameter *deprels* '(acl acl-part acl-relcl
 			  advcl advmod amod
-			  appos
 			  aux aux-pass
-			  case
-			  cc ccomp conj
-			  cop
-			  csubj
-			  dep det
+			  case dep det cc ccomp conj
+			  appos cop csubj 
 			  discourse dislocated expl
 			  compound fixed flat flat-foreign flat-name
-			  iobj
-			  mark
-			  nmod nmod-npmod nmod-tmod
-			  nsubj
-			  nsubj-pass
-			  nummod
+			  iobj mark
+			  nmod nmod-npmod nmod-tmod nummod
+			  nsubj nsubj-pass 
 			  obj obl obl-agent
 			  orphan parataxis
 			  punct reparandum
