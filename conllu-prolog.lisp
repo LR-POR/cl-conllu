@@ -80,8 +80,10 @@
     (process-features sentence-id word-index-id (token-feats token))
     (process-features sentence-id word-index-id (token-misc token))
     (emit-prolog "idx" (format nil "nlp_index(~a,~a,~a)." sentence-id word-index-id (token-id token)))
-    (emit-prolog "form" (format nil "nlp_form(~a,~a,~a)." sentence-id word-index-id (prolog-string (token-form token) nil)))
-    (emit-prolog "lemma" (format nil "nlp_lemma(~a,~a,~a)." sentence-id word-index-id (prolog-string (token-lemma token))))
+    (emit-prolog  "form" (format nil "nlp_form(~a,~a,~a)."
+				 sentence-id word-index-id (prolog-string (token-form token) nil)))
+    (emit-prolog "lemma" (format nil "nlp_lemma(~a,~a,~a)."
+				 sentence-id word-index-id (prolog-string (token-lemma token) nil)))
     (emit-prolog "pos" (format nil "nlp_pos(~a,~a,'~a')." sentence-id word-index-id (token-upostag token)))
     (if (is-root dep-rel)
         (emit-prolog "root" (format nil "nlp_sent_root(~a,~a)." sentence-id word-index-id))

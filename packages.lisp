@@ -74,7 +74,8 @@
   
 
 (defpackage #:conllu-prolog
-  (:use #:cl #:alexandria #:split-sequence #:cl-conllu))
+  (:use #:cl #:alexandria #:split-sequence #:cl-conllu)
+  (:export #:convert-filename))
 
 (defpackage #:conllu-palavras
   (:use #:cl #:cl-conllu #:lispbuilder-lexer))
