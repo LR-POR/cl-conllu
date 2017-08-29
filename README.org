@@ -1,32 +1,164 @@
 #+title: Library for working with ConLLU files with CL
 
-We have already the basic funcionalities:
+The =cl-conllu= is a Common Lisp library to work with [[http://universaldependencies.org/format.html][CoNLL-U]],
+licensed under the Apache license:
 
-1. load and save conllu files;
-2. compare list of sentences;
-3. export CoNLL-U as RDF;
-4. export CoNLL-U as Prolog.
+http://www.apache.org/licenses/LICENSE-2.0
 
-* Web Interface
+It is developed and tested with SBCL but should probably run with any
+other implementation.
 
-The idea is two be able to edit the sentences via a local web
-interface. Working in progress.
+* Quicklisp
 
-Lisp Backend:
+If don't have quicklisp installed already, follow [[https://www.quicklisp.org/beta/#installation][these steps]].
 
-1. http://clacklisp.org
-2. http://8arrow.org/ningle/
-3. http://mmontone.github.io/djula/
+The =cl-conllu= library is not available yet from quicklisp
+distribution, so you must clone this project to your =local-projects=
+quicklisp directory (usually at =~/quicklisp/local-projects/=).
 
-Javascript and CSS:
+After downloading the project to your =local-projects= directory, you
+just have to load the library. Do
 
-4. http://getbootstrap.com
-5. http://jquery.com
+#+BEGIN_SRC lisp
+(ql:quickload :cl-conllu)
+#+END_SRC
 
-Table editor ideas:
+and quicklisp will download the library's dependencies and then load
+it.
 
-https://editor.datatables.net/examples/inline-editing/simple
-https://codepen.io/ashblue/pen/mCtuA
-http://markcell.github.io/jquery-tabledit/#home 
-http://www.jtable.org
+* Reading CoNLL-U files
 
+First you need some CoNLL-U files to start with. If you have none in
+mind, you may get some
+from [here](https://github.com/own-pt/bosque-UD/tree/master/documents).
+
+The simplest way to read a file or a directory of =conllu= files:
+
+#+BEGIN_SRC lisp
+CL-USER> (defparameter *sents* (cl-conllu:read-conllu #P"/path/to/my/file/CF1.conllu"))
+(#<CL-CONLLU:SENTENCE {1003CFD9C3}> #<CL-CONLLU:SENTENCE {1003D164C3}>
+ #<CL-CONLLU:SENTENCE {1003D1BB13}> #<CL-CONLLU:SENTENCE {1003D2C013}>
+ #<CL-CONLLU:SENTENCE {1003D348A3}> #<CL-CONLLU:SENTENCE {1003D3E383}>
+ #<CL-CONLLU:SENTENCE {1003D49C23}>)
+#+END_SRC
+
+Each object returned is an instance of a =sentence= class, made up of
+=token= objects, which we will describe in the next section.
+
+All read functions accept a =fn-meta= function as argument. This
+function collects the metadata from each CoNLL-U sentence, which
+usually includes the raw sentence (see [[http://universaldependencies.org/format.html][format]]). The default metadata
+collector function, =collect-meta=.
+
+* The Classes
+
+=cl-conllu= has a few central classes: =sentence=, =token=, and
+=mtoken=. They are all defined in =data.lisp= file.  When a CoNLL-U
+file is read, its contents are turned into instances of these classes.
+
+** Sentences
+
+Every CoNLL-U sentence is turned in an instance of the =sentence=
+class by =cl-conllu=. Each instance is characterized by four
+properties: =start=, =meta=, =tokens=, and =mtokens=. The =start=
+field keep the line number of the file that the sentence block
+started.
+
+The =meta= includes the metainformation regarding the sentence. this
+may vary, as we have discussed in the previous section, but usually
+includes the full (raw) sentence and the sentence ID, as required by
+the CoNLL-U format specification.
+
+#+BEGIN_EXAMPLE
+CL-USER> (cl-conllu:sentence-meta (first *sents*))
+(("text" . "PT no governo")
+ ("source" . "CETENFolha n=1 cad=Opinião sec=opi sem=94a")
+ ("sent_id" . "CF1-1") ("id" . "1"))
+#+END_EXAMPLE
+
+The =tokens= are the list of tokens that together form the sentence,
+and they are themselves instances of the =token= class.
+
+The =mtokens= (meta-tokens) are also instances of their own =mtoken=
+class, and they are used for multiword tokens (vámonos = vamos + nos).
+
+** Tokens
+
+Instances of the =token= class have one property for each field/column
+in the CoNLL-U format's sentences, that is:
+
+- ID :: Word index, integer starting at 1 for each new sentence; may
+        be a range for multiword tokens; may be a decimal number for
+        empty nodes.
+- FORM :: Word form or punctuation symbol.
+- LEMMA :: Lemma of word form.
+- UPOSTAG :: Universal part-of-speech tag.
+- XPOSTAG :: Language-specific part-of-speech tag; underscore if not
+             available.
+- FEATS :: List of morphological features from the universal feature
+           inventory or from a defined language-specific extension;
+           underscore if not available.
+- HEAD :: Head of the current word, which is either a value of ID or
+          zero if the token is the root (0).
+- DEPREL :: Universal dependency relation to the HEAD (=root= iff HEAD
+            is 0) or a defined language-specific subtype of one.
+- DEPS :: Enhanced dependency graph in the form of a list of
+          head-deprel pairs.
+- MISC :: Any other annotation.
+
+* Visualizing CoNLL-U sentences
+
+To visualize CoNLL-U sentences, we use the =conllu-visualize=
+subpackage. The function =tree-sentence= receives an instance of a
+sentence object and (optionally) an output stream, and outputs to the
+stream the sentence's metadata and its tree structure:
+
+#+BEGIN_EXAMPLE
+(conllu-visualize:tree-sentence (nth 5 *frases*))
+text = Eles se dizem oposição, mas ainda não informaram o que vão combater.
+source = CETENFolha n=1 cad=Opinião sec=opi sem=94a
+sent_id = CF1-7
+id = 6
+─┮ 
+ │ ╭─╼ Eles nsubj 
+ │ ├─╼ se expl 
+ ╰─┾ dizem root 
+   ├─╼ oposição xcomp 
+   │ ╭─╼ , punct 
+   │ ├─╼ mas cc 
+   │ │ ╭─╼ ainda advmod 
+   │ ├─┶ não advmod 
+   ├─┾ informaram conj 
+   │ │   ╭─╼ o det 
+   │ │ ╭─┶ que obj 
+   │ │ ├─╼ vão aux 
+   │ ╰─┶ combater ccomp 
+   ╰─╼ . punct 
+#+END_EXAMPLE
+
+* Querying CoNLL-U files
+
+Queries can be executed with 
+
+#+BEGIN_SRC lisp
+  (query ’(nsubj (advcl (and (upostag ~ "VERB") (lemma ~ " correr " ))
+			(upostag ~ "VERB" )) 
+		 (upostag ~ "PROP"))
+	  ,*sents*)
+#+END_SRC
+
+* How to cite
+
+http://arademaker.github.io/bibliography/tilic-stil-2017.html
+
+#+BEGIN_EXAMPLE
+@inproceedings{tilic-stil-2017,
+  author = {Muniz, Henrique and Chalub, Fabricio and Rademaker, Alexandre},
+  title = {CL-CONLLU: dependências universais em Common Lisp},
+  booktitle = {V Workshop de Iniciação Científica em Tecnologia da
+                    Informação e da Linguagem Humana (TILic)},
+  year = {2017},
+  address = {Uberlândia, MG, Brazil},
+  note = {https://sites.google.com/view/tilic2017/}
+}
+#+END_EXAMPLE
