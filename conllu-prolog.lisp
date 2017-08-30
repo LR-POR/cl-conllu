@@ -54,15 +54,17 @@
   (format nil "'~a'" (cl-ppcre:regex-replace-all "([\'\\\\])" (if downcase (string-downcase str) str)
 						 '("\\" :match))))
 
-(defun process-features (sentence-id word-index-id feats-str)
+(defun process-features (sentence-id word-index-id feats-str &key (field "feat"))
   (let ((features (split-sequence #\| feats-str)))
     (dolist (feat features)
       (let ((k-v (split-sequence #\= feat)))
         (when (= 2 (length k-v))
-          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a,~a)." (car k-v)  sentence-id word-index-id
+          (emit-prolog (car k-v) (format nil "nlp_~a(~a,~a,~a,~a)." field
+					 sentence-id word-index-id
+					 (prolog-string (car k-v) nil)
 					 (prolog-string (cadr k-v) nil))))
         (when (= 1 (length k-v))
-          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a)." (car k-v) sentence-id word-index-id)))))))
+          (emit-prolog (car k-v) (format nil "nlp_~a(~a,~a,~a)." field sentence-id word-index-id (prolog-string (car k-v) nil))))))))
 
 (defun process-tokens (context sentence-id token)
   (let ((word-index-id (make-id context "i" (token-id token)))
@@ -78,7 +80,7 @@
     (emit-prolog "dependency" (format nil "nlp_dependency(~a,~a,~a,~a)."
 				      sentence-id word-index-id head-id (prolog-string dep-rel)))
     (process-features sentence-id word-index-id (token-feats token))
-    (process-features sentence-id word-index-id (token-misc token))
+    (process-features sentence-id word-index-id (token-misc token) :field "misc")
     (emit-prolog "idx" (format nil "nlp_index(~a,~a,~a)." sentence-id word-index-id (token-id token)))
     (emit-prolog  "form" (format nil "nlp_form(~a,~a,~a)."
 				 sentence-id word-index-id (prolog-string (token-form token) nil)))
