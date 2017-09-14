@@ -1,6 +1,8 @@
 
 (in-package :cl-conllu)
 
+(defparameter *token-fields*
+  '(id form lemma upostag xpostag feats head deprel deps misc))
 
 (defclass token ()
   ((id      :initarg :id
@@ -31,6 +33,7 @@
 	    :initform "_"
 	    :accessor token-misc)))
 
+
 (defclass mtoken ()
   ((start   :initarg :start
 	    :accessor mtoken-start)
@@ -55,6 +58,24 @@
    (mtokens :initarg :mtokens
 	    :initform nil
 	    :accessor sentence-mtokens)))
+
+
+(defmethod print-object ((obj token) out)
+  (print-unreadable-object (obj out :type t)
+    (format out "~a_~a #~a-~a-~a"
+	    (slot-value obj 'form) (slot-value obj 'upostag)
+	    (slot-value obj 'id) (slot-value obj 'deprel) (slot-value obj 'head))))
+
+
+(defun sentence-matrix (sentence)
+  (let ((arr (make-array (list (length (sentence-tokens sentence)) 10)))
+	(tb '(0 id 1 form 2 lemma 3 upostag 4 xpostag 5 feats 6 head 7 deprel 8 deps 9 misc)))
+    (dolist (tk (sentence-tokens sentence) arr)
+      (dotimes (v 10)
+	(setf (aref arr (- (token-id tk) 1) v)
+	      (if (member (getf tb v) '(id head))
+		  (- (slot-value tk (getf tb v)) 1)
+		  (slot-value tk (getf tb v))))))))
 
 
 (defun sentence-root (sentence)
@@ -130,9 +151,10 @@
   (length (sentence-tokens sentence)))
 
 
-(defun sentence->deep (sentence &key fn-key)
-  (labels ((ensure-list (key)
-	     (if (symbolp key) (list fn-key) key)))
+(defun sentence-tree (sentence)
+  (let ((root (sentence-root sentence)))
+    (aux root sentence)
+    (deep-aux (sentence-root sentence) sentence fn-key)
     (if (functionp fn-key)
 	(deep-aux (sentence-root sentence) sentence fn-key)
 	(if (or (symbolp fn-key)
@@ -144,8 +166,8 @@
 			  (if (and (listp out) (= 1 (length out)))
 			      (car out) out))))))))
 
-(defun deep-aux (root sentence fn-key)
-  (list (funcall fn-key root)
+(defun deep-aux (root sentence)
+  (list root
 	(loop for child in (token-childs root sentence)
 	      collect (list (slot-value child 'deprel)
 			    (if (token-childs child sentence)

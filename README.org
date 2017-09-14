@@ -12,19 +12,16 @@ other implementation.
 
 If don't have quicklisp installed already, follow [[https://www.quicklisp.org/beta/#installation][these steps]].
 
-The =cl-conllu= library is not available yet from quicklisp
-distribution, so you must clone this project to your =local-projects=
-quicklisp directory (usually at =~/quicklisp/local-projects/=).
-
-After downloading the project to your =local-projects= directory, you
-just have to load the library. Do
+The =cl-conllu= library is now available from quicklisp distribution,
+if you are not planning to change the code, just use:
 
 #+BEGIN_SRC lisp
 (ql:quickload :cl-conllu)
 #+END_SRC
 
-and quicklisp will download the library's dependencies and then load
-it.
+If you plan to contribute, clone this project to your =local-projects=
+quicklisp directory (usually at =~/quicklisp/local-projects/=) and use
+the same command above.
 
 * Reading CoNLL-U files
 

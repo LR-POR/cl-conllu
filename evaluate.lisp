@@ -1,32 +1,19 @@
 
 (in-package :cl-conllu)
 
-;; Functions for evaluating parsers: comparing the conllu output of a
-;; parser with a golden parse file Comparisons below are for
-;; dependency only (arcs and labels)
+;; Functions for evaluating parsers
 
-;; two sentence objects check if same words (by id and form) (it
-;; should be same POS, and same Features, but this won't affect) run
-;; evaluation
 
 (defvar *deprel-value-list*
   '("nsubj"
-    "obj"
-    "iobj"
-    "csubj"
-    "ccomp"
-    "xcomp"
-    "obl"
-    "vocative"
-    "expl"
-    "dislocated"
-    "advcl"
-    "advmod"
+    "obj"   "iobj"
+    "csubj" "ccomp" "xcomp"
+    "obl"   "vocative"
+    "expl"  "dislocated"
+    "advcl" "advmod"
     "discourse"
-    "aux"
-    "cop"
-    "mark"
-    "nmod"
+    "aux" "cop"
+    "mark" "nmod"
     "appos"
     "nummod"
     "acl"
@@ -50,95 +37,51 @@
   "List of the 37 universal syntactic relations in UD.")
 
 
-(defun disagreeing-words (sent1 sent2 &key (head-error t) (label-error t)
-					(remove-punct nil) (simple-deprel nil))
-  "Returns a list of disagreements in dependency parsing (either head
-   or label):
+(defun simple-deprel (deprel)
+  (car (ppcre:split ":" deprel)))
 
-   a list (w1,w2) where w1 is a word of sent1, w2 is its matching word
-   on sent2 and they disagree.
 
-   If head-error is true, getting the wrong head is considered a
-   disagreement (an error).
-   If label-error is true, getting the wrong label (type of dependency
-   to head) is considered a disagreement (an error).
-   By default both are errors.
+(defun token-equal (tk1 tk2 &key (fields *token-fields*) (test #'equal) (simple-dep nil))
+  (every (lambda (field)
+	   (if (and (equal field 'deprel) simple-dep)
+	       (funcall test
+			(simple-deprel (slot-value tk1 field))
+			(simple-deprel (slot-value tk2 field)))
+	       (funcall test
+			(slot-value tk1 field)
+			(slot-value tk2 field))))
+	 fields))
 
-   We assume that sent1 is the classified result and sent2 is the
-   golden (correct) sentence."
-  (labels ((token-deprel-chosen (tk)
-			       (if simple-deprel
-				   (token-simple-deprel tk)
-				   (token-deprel tk))))
-    (assert
-     (every #'identity
-	    (mapcar
-	     #'(lambda (tk1 tk2)
-		 (and (equal (token-id tk1)
-			     (token-id tk2))
-		      (equal (token-form tk1)
-			     (token-form tk2))))
-	     (sentence-tokens sent1)
-	     (sentence-tokens sent2)))
-     ()
-     "Error: Sentence words do not match. The sentence pair ID is: ~a, ~a~%"
-     (sentence-id sent1)
-     (sentence-id sent2))
-    (assert
-     (or head-error
-	 label-error)
-     ()
-     "Error: At least one error must be used!")
-    (remove-if
-     (lambda (x)
-       (or
-	(and remove-punct
-	     (equal (token-upostag (first x))
-		    "PUNCT"))
-	(and      
-	 (or (not head-error)
-	     (equal (token-head (first x))
-		    (token-head (second x))))
-	 (or (not label-error)
-	     (equal (token-deprel-chosen (first x))
-		    (token-deprel-chosen (second x)))))))
-     (mapcar
-      #'list
-      (sentence-tokens sent1)
-      (sentence-tokens sent2)))))
 
-(defun attachment-score (list-sent1 list-sent2 &key (labeled nil)
-						 (remove-punct nil) (simple-deprel nil))
-  "Attachment score by word (micro-average).
+(defun token-diff (tk1 tk2 &key (fields *token-fields*) (test #'equal) (simple-dep nil))
+  (loop for field in fields
+	for res = (if (and (equal field 'deprel) simple-dep)
+		      (funcall test
+			       (simple-deprel (slot-value tk1 field))
+			       (simple-deprel (slot-value tk2 field)))
+		      (funcall test
+			       (slot-value tk1 field)
+			       (slot-value tk2 field)))
+	unless res
+	collect (list field (slot-value tk1 field) (slot-value tk2 field))))
 
-   The attachment score is the percentage of words that have correct
-   arcs to their heads.
 
-   The unlabeled attachment score (UAS) considers only who is the head
-   of the token, while the labeled attachment score (LAS) considers
-   both the head and the arc label (dependency label / syntactic class).
+(defun sentence-diff (sent1 sent2 &key (fields *token-fields*)
+				    (test #'equal) (simple-dep nil) (punct t))
+  (assert (equal (sentence-size sent1) (sentence-size sent2)))
+  (loop for tk1 in (remove-if (lambda (tk)
+				(and (not punct) (equal "PUNCT" (token-upostag tk))))
+			      (sentence-tokens sent1))
+	for tk2 in (remove-if (lambda (tk)
+				(and (not punct) (equal "PUNCT" (token-upostag tk))))
+			      (sentence-tokens sent2))
+	for diff = (token-diff tk1 tk2 :fields fields :test test :simple-dep simple-dep) 
+	when diff
+	collect (list (token-id tk1) diff)))
 
-   References:
-     - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
-  (let ((total-words
-	 (reduce #'+
-		 list-sent1
-		 :key #'sentence-size
-		 :initial-value 0))
-	(wrong-words
-	 (reduce #'+
-		 (mapcar #'(lambda (x y)
-			     (disagreeing-words x y :label-error labeled :remove-punct remove-punct
-						:simple-deprel simple-deprel))
-		       list-sent1
-		       list-sent2)
-		 :key #'length
-		 :initial-value 0)))
-    (/ (- total-words
-	  (float wrong-words))
-       total-words)))
 
-(defun attachment-score-sentence (list-sent1 list-sent2 &key labeled (remove-punct nil) (simple-deprel t))
+(defun attachment-score-by-sentence (list-sent1 list-sent2 &key (fields *token-fields*)
+							     (punct t) (simple-dep nil))
   "Attachment score by sentence (macro-average).
 
    The attachment score is the percentage of words that have correct
@@ -150,27 +93,42 @@
 
    References:
      - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
-  (let ((total-sentences
-	 (length list-sent1))
-	(wrong-sentences
-	 (reduce
-	  #'+
-	  (mapcar
-	   #'(lambda (x y)
-	       (disagreeing-words x y
-				  :label-error labeled
-				  :remove-punct remove-punct
-				  :simple-deprel simple-deprel))
-	   list-sent1
-	   list-sent2)
-	  :key #'(lambda (wrong-words)
-		   (if wrong-words
-		       1 			; There's at least one wrong word
-		       0))			; There's no wrong word
-	  :initial-value 0)))
-    (/ (- total-sentences
-	  (float wrong-sentences))
-       total-sentences)))
+  (let ((ns (mapcar #'(lambda (x y)
+			(/ (length (sentence-diff x y :fields fields
+						  :punct punct
+						  :simple-dep simple-dep))
+			   (sentence-size y)))
+		    list-sent1
+		    list-sent2)))
+    (/ (apply #'+ ns) (float (length ns)))))
+
+
+(defun attachment-score-by-word (list-sent1 list-sent2 &key (fields *token-fields*)
+							 (punct t) (simple-dep nil))
+  "Attachment score by word (micro-average).
+
+   The attachment score is the percentage of words that have correct
+   arcs to their heads.
+
+   The unlabeled attachment score (UAS) considers only who is the head
+   of the token, while the labeled attachment score (LAS) considers
+   both the head and the arc label (dependency label / syntactic class).
+
+   References:
+     - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
+  (let ((total-words (apply #'+ (mapcar #'sentence-size list-sent1)))
+	(wrong-words (reduce #'+
+			     (mapcar #'(lambda (x y)
+					 (sentence-diff x y :fields fields
+							:punct punct
+							:simple-dep simple-dep))
+				     list-sent1
+				     list-sent2)
+			     :key #'length
+			     :initial-value 0)))
+    (/ (- total-words (float wrong-words))
+       total-words)))
+
 
 (defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
   "Restricted to words which are originally of syntactical class
@@ -329,8 +287,8 @@
 
 (defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
   "Returns a hash table where keys are lists (deprel1 deprel2) and
-values are fraction of classifications as deprel1 of a word that
-originally was deprel2."
+   values are fraction of classifications as deprel1 of a word that
+   originally was deprel2."
   (let* ((M (make-hash-table :test #'equal))
 	 (all-words-pair-list
 	  (mapcar
@@ -383,10 +341,3 @@ originally was deprel2."
 	(format t "~{~15a |~^ ~}~%"
 		(cons dep1 (mapcar #'(lambda (x) (cdr x)) L)))))))
 
-
-(defun simple-deprel (deprel)
-  (car (ppcre:split ":" deprel)))
-
-
-(defun token-simple-deprel (token)
-  (simple-deprel (token-deprel token)))

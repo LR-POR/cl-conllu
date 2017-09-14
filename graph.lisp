@@ -1,6 +1,4 @@
 
-(ql:quickload :cl-conllu)
-(ql:quickload :cl-graph)
 
 ;; subgraph is not working!
 ;; dot -Tpdf documents/teste.dot  > teste.pdf

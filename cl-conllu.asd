@@ -24,6 +24,7 @@
   :components ((:file "packages")
 	       (:file "data"          :depends-on ("packages"))
 	       (:file "read-write"    :depends-on ("data"))
+	       (:file "evaluate"      :depends-on ("data"))
 	       (:file "query"         :depends-on ("data"))
 	       (:file "utils"         :depends-on ("data"))
 	       (:file "rdf"           :depends-on ("data"))
