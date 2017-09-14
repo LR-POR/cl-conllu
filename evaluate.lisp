@@ -94,10 +94,11 @@
    References:
      - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
   (let ((ns (mapcar #'(lambda (x y)
-			(/ (length (sentence-diff x y :fields fields
-						  :punct punct
-						  :simple-dep simple-dep))
-			   (sentence-size y)))
+			(- (float 1)
+			   (/ (length (sentence-diff x y :fields fields
+						     :punct punct
+						     :simple-dep simple-dep))
+			      (sentence-size y))))
 		    list-sent1
 		    list-sent2)))
     (/ (apply #'+ ns) (float (length ns)))))
@@ -126,8 +127,8 @@
 				     list-sent2)
 			     :key #'length
 			     :initial-value 0)))
-    (/ (- total-words (float wrong-words))
-       total-words)))
+    (- (1 (/ (float wrong-words)
+	     total-words)))))
 
 
 (defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
