@@ -12,9 +12,8 @@
     "expl"  "dislocated"
     "advcl" "advmod"
     "discourse"
-    "aux" "cop"
-    "mark" "nmod"
-    "appos"
+    "aux"  "cop"
+    "mark" "nmod" "appos"
     "nummod"
     "acl"
     "amod"
@@ -85,35 +84,27 @@
   "Attachment score by sentence (macro-average).
 
    The attachment score is the percentage of words that have correct
-   arcs to their heads.
-
-   The unlabeled attachment score (UAS) considers only who is the head
-   of the token, while the labeled attachment score (LAS) considers
-   both the head and the arc label (dependency label / syntactic class).
+   arcs to their heads. The unlabeled attachment score (UAS) considers
+   only who is the head of the token, while the labeled attachment
+   score (LAS) considers both the head and the arc label (dependency
+   label / syntactic class).
 
    References:
      - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
   (let ((ns (mapcar #'(lambda (x y)
-			(- (float 1)
+			(- 1.0
 			   (/ (length (sentence-diff x y :fields fields
 						     :punct punct
 						     :simple-dep simple-dep))
 			      (sentence-size y))))
-		    list-sent1
-		    list-sent2)))
+		    list-sent1 list-sent2)))
     (/ (apply #'+ ns) (float (length ns)))))
 
 
 (defun attachment-score-by-word (list-sent1 list-sent2 &key (fields *token-fields*)
 							 (punct t) (simple-dep nil))
-  "Attachment score by word (micro-average).
-
-   The attachment score is the percentage of words that have correct
-   arcs to their heads.
-
-   The unlabeled attachment score (UAS) considers only who is the head
-   of the token, while the labeled attachment score (LAS) considers
-   both the head and the arc label (dependency label / syntactic class).
+  "Attachment score by word (micro-average). See also the
+  `attachment-score-by-sentence`.
 
    References:
      - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
@@ -127,8 +118,8 @@
 				     list-sent2)
 			     :key #'length
 			     :initial-value 0)))
-    (- (1 (/ (float wrong-words)
-	     total-words)))))
+    (- 1.0 (/ wrong-words total-words))))
+	
 
 
 (defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
