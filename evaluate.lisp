@@ -127,8 +127,8 @@
 				     list-sent2)
 			     :key #'length
 			     :initial-value 0)))
-    (- (1 (/ (float wrong-words)
-	     total-words)))))
+    (- 1 (/ (float wrong-words)
+	     total-words))))
 
 
 (defun recall (list-sent1 list-sent2 deprel &key (head-error nil) (label-error t) (simple-deprel nil))
