@@ -106,7 +106,7 @@
   (sentence-meta-value sentence "text"))
 
 
-(defun sentence->text (sentence)
+(defun sentence->text (sentence &key (ignore-mtokens nil))
   (labels ((forma (obj lst)
 	     (if (search "SpaceAfter=No" (slot-value obj 'misc))
 		 (cons (slot-value obj 'form) lst)
@@ -129,7 +129,11 @@
 				   (forma (car mtokens) response)))
 	       (t
 		(aux (cdr tokens) mtokens ignore (forma (car tokens) response))))))
-    (format nil "~{~a~}" (aux (sentence-tokens sentence) (sentence-mtokens sentence) nil nil))))
+    (format nil "~{~a~}" (aux (sentence-tokens sentence)
+			      (if ignore-mtokens
+				  nil
+				  (sentence-mtokens sentence))
+			      nil nil))))
 
 
 (defun sentence-valid? (sentence)
