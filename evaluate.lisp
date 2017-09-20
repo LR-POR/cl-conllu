@@ -36,22 +36,6 @@
   "List of the 37 universal syntactic relations in UD.")
 
 
-(defun simple-deprel (deprel)
-  (car (ppcre:split ":" deprel)))
-
-
-(defun token-equal (tk1 tk2 &key (fields *token-fields*) (test #'equal) (simple-dep nil))
-  (every (lambda (field)
-	   (if (and (equal field 'deprel) simple-dep)
-	       (funcall test
-			(simple-deprel (slot-value tk1 field))
-			(simple-deprel (slot-value tk2 field)))
-	       (funcall test
-			(slot-value tk1 field)
-			(slot-value tk2 field))))
-	 fields))
-
-
 (defun token-diff (tk1 tk2 &key (fields *token-fields*) (test #'equal) (simple-dep nil))
   (loop for field in fields
 	for res = (if (and (equal field 'deprel) simple-dep)
@@ -90,7 +74,7 @@
    label / syntactic class).
 
    References:
-     - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
+     - Dependency Parsing. Kubler, Mcdonald and Nivre (pp.79-80)"
   (let ((ns (mapcar #'(lambda (x y)
 			(- 1.0
 			   (/ (length (sentence-diff x y :fields fields
@@ -102,20 +86,19 @@
 
 
 (defun attachment-score-by-word (list-sent1 list-sent2 &key (fields *token-fields*)
-							 (punct t) (simple-dep nil))
+					    (punct t) (simple-dep nil))
   "Attachment score by word (micro-average). See also the
   `attachment-score-by-sentence`.
 
    References:
-     - Dependency Parsing - Kubler, Mcdonald and Nivre (pp.79-80)"
+     - Dependency Parsing. Kubler, Mcdonald and Nivre (pp.79-80)"
   (let ((total-words (apply #'+ (mapcar #'sentence-size list-sent1)))
-	(wrong-words (reduce #'+
-			     (mapcar #'(lambda (x y)
-					 (sentence-diff x y :fields fields
-							:punct punct
-							:simple-dep simple-dep))
-				     list-sent1
-				     list-sent2)
+	(wrong-words (reduce #'+ (mapcar #'(lambda (x y)
+					     (sentence-diff x y :fields fields
+							    :punct punct
+							    :simple-dep simple-dep))
+					 list-sent1
+					 list-sent2)
 			     :key #'length
 			     :initial-value 0)))
     (- 1.0 (/ wrong-words total-words))))

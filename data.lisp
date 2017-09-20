@@ -155,28 +155,28 @@
   (length (sentence-tokens sentence)))
 
 
-(defun sentence-tree (sentence)
-  (let ((root (sentence-root sentence)))
-    (aux root sentence)
-    (deep-aux (sentence-root sentence) sentence fn-key)
-    (if (functionp fn-key)
-	(deep-aux (sentence-root sentence) sentence fn-key)
-	(if (or (symbolp fn-key)
-		(listp fn-key))
-	    (deep-aux (sentence-root sentence) sentence
-		      (lambda (tk)
-			(let ((out (loop for k in (ensure-list fn-key)
-					 collect (slot-value tk k))))
-			  (if (and (listp out) (= 1 (length out)))
-			      (car out) out))))))))
+;; (defun sentence-tree (sentence)
+;;   (let ((root (sentence-root sentence)))
+;;     (aux root sentence)
+;;     (deep-aux (sentence-root sentence) sentence fn-key)
+;;     (if (functionp fn-key)
+;; 	(deep-aux (sentence-root sentence) sentence fn-key)
+;; 	(if (or (symbolp fn-key)
+;; 		(listp fn-key))
+;; 	    (deep-aux (sentence-root sentence) sentence
+;; 		      (lambda (tk)
+;; 			(let ((out (loop for k in (ensure-list fn-key)
+;; 					 collect (slot-value tk k))))
+;; 			  (if (and (listp out) (= 1 (length out)))
+;; 			      (car out) out))))))))
 
-(defun deep-aux (root sentence)
-  (list root
-	(loop for child in (token-childs root sentence)
-	      collect (list (slot-value child 'deprel)
-			    (if (token-childs child sentence)
-				(deep-aux child sentence fn-key)
-				(funcall fn-key child))))))
+;; (defun deep-aux (root sentence)
+;;   (list root
+;; 	(loop for child in (token-childs root sentence)
+;; 	      collect (list (slot-value child 'deprel)
+;; 			    (if (token-childs child sentence)
+;; 				(deep-aux child sentence)
+;; 				(funcall fn-key child))))))
 
 
 (defun token-childs (token sentence &key (fn-filter nil))
@@ -187,6 +187,9 @@
     (if fn-filter (remove-if-not fn-filter res) res)))
 
 
+(defun token-parent (token sentence)
+  (nth (- (token-id token) 1)
+       (sentence-tokens sentence)))
 
 (defun mtoken->tokens (sentence mtoken)
   (remove-if-not (lambda (x) (and (>= x (mtoken-start mtoken))
@@ -290,12 +293,20 @@
   sentence)
 
 
-(defun token-equal (token-1 token-2)
-  "Tests if, for each slot, token-1 has the same values as token-2."
-  (every (lambda (slot)
-	   (equal (slot-value token-1 slot)
-		  (slot-value token-2 slot)))
-	 '(id form lemma upostag xpostag feats head deprel deps misc)))
+(defun simple-deprel (deprel)
+  (car (ppcre:split ":" deprel)))
+
+
+(defun token-equal (tk1 tk2 &key (fields *token-fields*) (test #'equal) (simple-dep nil))
+  (every (lambda (field)
+	   (if (and (equal field 'deprel) simple-dep)
+	       (funcall test
+			(simple-deprel (slot-value tk1 field))
+			(simple-deprel (slot-value tk2 field)))
+	       (funcall test
+			(slot-value tk1 field)
+			(slot-value tk2 field))))
+	 fields))
 
 
 (defun mtoken-equal (mtoken-1 mtoken-2)
