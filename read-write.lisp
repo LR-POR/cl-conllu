@@ -166,7 +166,7 @@
   (princ #\Newline stream))
 
 
-(defun write-conllu-to-stream (sentences out)
+(defun write-conllu-to-stream (sentences &optional (out *standard-output*))
   (reduce (lambda (alist sent)
 	    (if alist (princ #\Newline out))
 	    (write-sentence sent out)

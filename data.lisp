@@ -62,8 +62,8 @@
 
 (defmethod print-object ((obj token) out)
   (print-unreadable-object (obj out :type t)
-    (format out "~a_~a #~a-~a-~a"
-	    (slot-value obj 'form) (slot-value obj 'upostag)
+    (format out "~a #~a-~a-~a"
+	    (slot-value obj 'form) ; (slot-value obj 'upostag)
 	    (slot-value obj 'id) (slot-value obj 'deprel) (slot-value obj 'head))))
 
 
@@ -79,8 +79,41 @@
 
 
 (defun sentence-root (sentence)
-  (car (remove-if-not (lambda (tk) (equal "0" (slot-value tk 'head)))
-		      (sentence-tokens sentence))))
+  (find-if (lambda (tk) (equal 0 (slot-value tk 'head)))
+	   (sentence-tokens sentence)))
+
+
+(defun sentence-binary-tree (sentence)
+  "Based on the idea from [1], it produces a tree view of the
+   sentence, still need to improve the priorities of children. 
+
+   Code at https://github.com/sivareddyg/UDepLambda in file
+   src/deplambda/parser/TreeTransformer.java method 'binarizeTree'
+
+   [1] Siva Reddy, O. Tackstrom, M. Collins, T. Kwiatkowski, D. Das,
+       M. Steedman, and M. Lapataw, Transforming Dependency Structures
+       to Logical Forms for Semantic Parsing, Transactions of the
+       Association for Computational Linguistics, pp. 127–140,
+       Apr. 2016."
+  (let* ((pri '("amod" "flat" "compound" "det" "cc"
+		"appos" "acl" "cop" "dobj" "aux" "xcomp" "nmod"
+		"advmod" "advcl" "nsubj" "case" "conj" "punct"))
+	 (siz (length pri)))
+    (labels ((priority (label default)
+	       (or (position label pri) default))
+	     (deep-aux (root)
+	       (let ((children (sort (token-children root sentence)
+				     (lambda (a b)
+				       (< (priority (token-deprel a) (+ 1 siz))
+					  (priority (token-deprel b) (+ 2 siz)))))))
+		 (if (null children)
+		     root
+		     (let* ((c (car children))
+			    (left (list (token-deprel c) root (deep-aux c))))
+		       (dolist (child (cdr children) left)
+			 (setf left
+			       (list (token-deprel child) left (deep-aux child)))))))))
+      (deep-aux (sentence-root sentence)))))
 
 
 (defun sentence-hash-table (sentence)
@@ -155,31 +188,7 @@
   (length (sentence-tokens sentence)))
 
 
-;; (defun sentence-tree (sentence)
-;;   (let ((root (sentence-root sentence)))
-;;     (aux root sentence)
-;;     (deep-aux (sentence-root sentence) sentence fn-key)
-;;     (if (functionp fn-key)
-;; 	(deep-aux (sentence-root sentence) sentence fn-key)
-;; 	(if (or (symbolp fn-key)
-;; 		(listp fn-key))
-;; 	    (deep-aux (sentence-root sentence) sentence
-;; 		      (lambda (tk)
-;; 			(let ((out (loop for k in (ensure-list fn-key)
-;; 					 collect (slot-value tk k))))
-;; 			  (if (and (listp out) (= 1 (length out)))
-;; 			      (car out) out))))))))
-
-;; (defun deep-aux (root sentence)
-;;   (list root
-;; 	(loop for child in (token-childs root sentence)
-;; 	      collect (list (slot-value child 'deprel)
-;; 			    (if (token-childs child sentence)
-;; 				(deep-aux child sentence)
-;; 				(funcall fn-key child))))))
-
-
-(defun token-childs (token sentence &key (fn-filter nil))
+(defun token-children (token sentence &key (fn-filter nil))
   (let ((res (remove-if-not (lambda (tk)
 			      (equal (slot-value tk 'head)
 				     (slot-value token 'id)))
@@ -188,7 +197,7 @@
 
 
 (defun token-parent (token sentence)
-  (nth (- (token-id token) 1)
+  (nth (- (token-head token) 1)
        (sentence-tokens sentence)))
 
 (defun mtoken->tokens (sentence mtoken)
