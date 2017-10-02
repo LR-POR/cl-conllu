@@ -31,17 +31,17 @@
 ;;; getting substrings a the sentence (flat, compounds etc)
 
 (defun linearize (sentence token &key (filter nil) (direction :both))
-  (let ((childs (token-childs token sentence :fn-filter filter))
+  (let ((children (token-children token sentence :fn-filter filter))
 	pre pos)
-    (dolist (c childs)
+    (dolist (c children)
       (if (< (token-id c) (token-id token))
 	  (push c pre)
 	  (push c pos)))
     (let ((lhs (mappend (lambda (tk)
-			  (linerialize sentence tk filter :direction :both))
+			  (linearize sentence tk :filter filter :direction :both))
 			(reverse pre)))
 	  (rhs (mappend (lambda (tk)
-			  (linerialize sentence tk filter :direction :both))
+			  (linearize sentence tk :filter filter :direction :both))
 			(reverse pos))))
       (case direction
 	(:both  (append lhs (list token) rhs))
@@ -57,7 +57,7 @@
 		 (if (member (token-deprel (car alist)) deps :test #'equal)
 		     (aux (cdr alist))
 		     alist))))
-    (aux a-list-tokens)))
+    (reverse (aux (reverse (aux a-list-tokens))))))
 
 
 (defun get-groups (deprel sent &optional (out *standard-output*))
@@ -67,11 +67,20 @@
 	    (format out "~{~a~^ ~}~%" (mapcar #'token-form alist)))
 	  (remove-duplicates (mapcar (lambda (tk)
 				       (list-trim '("case" "advmod" "punct" "cc" "det")
-						  (linerialize sent (token-parent tk sent) nil)))
+						  (linearize sent (token-parent tk sent))))
 				     leaves) :test #'equal))))
 
-;; Execute (get-groups "compound" a-sentence)
+(defun get-groups (deprel sent)
+  (let ((leaves (remove-if-not (lambda (tk) (equal deprel (token-deprel tk)))
+			       (sentence-tokens sent))))
+    (mapcar (lambda (alist)
+	      (format nil "~{~a~^ ~}" (mapcar #'token-form alist)))
+	    (remove-duplicates (mapcar (lambda (tk)
+					 (list-trim '("case" "advmod" "punct" "cc" "det")
+						    (linearize sent (token-parent tk sent))))
+				       leaves) :test #'equal))))
 
+;; Execute (get-groups "compound" a-sentence)
 
 ;;; problems in the misc field
 

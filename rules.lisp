@@ -35,10 +35,8 @@
 
 ;;acessores e leitor de regras
 
-
 (defun rls (rule)
   (cadr rule))
-
 
 (defun rhs (rule)
   (caddr rule))
@@ -106,12 +104,12 @@
 				       (caddr condition))))
        pattern)))
 
-;; 
-
 
 (defun apply-rules (sentences rules recursive)
   (dolist (sentence sentences)
-    (apply-rules-in-sentence sentence rules (cdr (assoc "sent_id" (sentence-meta sentence) :test #'equalp)) recursive)))
+    (apply-rules-in-sentence sentence rules
+			     (cdr (assoc "sent_id" (sentence-meta sentence) :test #'equalp))
+			     recursive)))
 
 
 (defun apply-rules-in-sentence (a-sentence rules sent-id  recursive &optional old-rules-applied)

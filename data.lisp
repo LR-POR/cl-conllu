@@ -60,10 +60,16 @@
 	    :accessor sentence-mtokens)))
 
 
+(defmethod print-object ((obj sentence) out)
+  (print-unreadable-object (obj out :type t)
+    (format out "~a at ~a"
+	    (sentence-meta-value obj "sent_id") 
+	    (slot-value obj 'start))))
+
 (defmethod print-object ((obj token) out)
   (print-unreadable-object (obj out :type t)
-    (format out "~a #~a-~a-~a"
-	    (slot-value obj 'form) ; (slot-value obj 'upostag)
+    (format out "~a/~a #~a-~a-~a"
+	    (slot-value obj 'form) (slot-value obj 'upostag)
 	    (slot-value obj 'id) (slot-value obj 'deprel) (slot-value obj 'head))))
 
 

@@ -31,8 +31,9 @@
 	   #:write-conllu-to-stream   
 	   #:levenshtein
 	   #:diff
-	   #:insert-token
-	   #:remove-token
+	   #:sentence-binary-tree
+	   ; #:insert-token
+	   ; #:remove-token
 	   #:adjust-sentence
 	   #:non-projective?
 
