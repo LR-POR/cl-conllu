@@ -58,18 +58,48 @@
 (defun make-metadata (metadata)
   (with-output-to-string (s)
     (mapcar (lambda (m)
-              (format s "conll:m~a a conll:MetadataKey .~%" (string-downcase (car m)))
-              (format s "conll:m~a rdfs:label ~a .~%" (cl-ppcre:regex-replace-all
-						       " "
-						       (string-downcase (car m)) "_")
-                      (make-literal (car m)))) metadata)
+	      (cond
+		((stringp (car m))
+		 (format s "conll:m~a a conll:MetadataKey .~%" (string-downcase (car m)))
+		 (format s "conll:m~a rdfs:label ~a .~%"
+			 (cl-ppcre:regex-replace-all
+			  " "
+			  (string-downcase (car m)) "_")
+			 (make-literal (car m))))
+		((equal (car m)
+			:raw)
+		 (format s "conll:m~a a conll:MetadataValue .~%"
+			 (cl-ppcre:regex-replace-all
+			  " "
+			  (string-downcase (cdr m)) "_"))
+		 (format s "conll:m~a rdfs:label ~a .~%"
+			 (cl-ppcre:regex-replace-all
+			  " "
+			  (string-downcase (cdr m)) "_")
+			 (make-literal (cdr m))))
+		(t
+		 (error "Indetermined metadata case."))))
+		metadata)
     s))
 
 (defun make-metadata-bnode (metadata)
   (format nil "~{ ~a~^;~}"
           (mapcar (lambda (m)
-                    (format nil "conll:m~a ~a" (string-downcase (car m)) 
-                            (make-literal (cdr m)))) metadata)))
+		    (cond
+		      ((stringp (car m))
+		       (format nil "conll:m~a ~a"
+			       (cl-ppcre:regex-replace-all
+				" "
+				(string-downcase (car m))
+				"_")
+			       (make-literal (cdr m))))
+		      ((eq (car m)
+			   :raw)
+		       (format nil "a conll:m~a"
+			       (cl-ppcre:regex-replace-all
+				" "
+				(string-downcase (cdr m)) "_")))))
+		  metadata)))
 
 (defun make-features (features &optional (value-as-literal nil))
   (unless (unspecified-field? features)
