@@ -71,7 +71,10 @@
 	   #:sentence-equal
 
 	   #:apply-rules
-	   #:apply-rules-from-files))
+	   #:apply-rules-from-files
+
+	   #:convert-rdf
+	   #:convert-rdf-file))
   
 
 (defpackage #:conllu-prolog

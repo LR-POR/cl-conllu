@@ -59,7 +59,7 @@
   (with-output-to-string (s)
     (mapcar (lambda (m)
               (format s "conll:m~a a conll:MetadataKey .~%" (string-downcase (car m)))
-              (format s "conll:m~a rdfs:label ~a .~%" (string-downcase (car m)) 
+              (format s "conll:m~a rdfs:label ~a .~%" (cl-ppcre:regex-replace-all " " (string-downcase (car m)) "_")
                       (make-literal (car m)))) metadata)
     s))
 
