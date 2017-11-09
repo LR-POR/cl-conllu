@@ -25,8 +25,8 @@
   (unless id
     (setf id (uuid:make-v4-uuid)))
   (if context 
-      (format nil "c~a_~a~a" (toprologid context) (toprologid prefix) (toprologid id))
-      (format nil "~a~a" (toprologid prefix) (toprologid id))))
+      (format nil "c~a_~a_~a" (toprologid context) (toprologid prefix) (toprologid id))
+      (format nil "~a_~a" (toprologid prefix) (toprologid id))))
 
 (defun is-root (str)
   (string-equal str "root"))
@@ -55,14 +55,19 @@
 						 '("\\" :match))))
 
 (defun process-features (sentence-id word-index-id feats-str)
-  (let ((features (split-sequence #\| feats-str)))
+  (let ((tags nil)
+        (features (split-sequence #\| feats-str)))
     (dolist (feat features)
       (let ((k-v (split-sequence #\= feat)))
         (when (= 2 (length k-v))
           (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a,~a)." (car k-v)  sentence-id word-index-id
 					 (prolog-string (cadr k-v) nil))))
+        ;; features that don't have a Key=Value pair are considered
+        ;; "tags" and will be emitted at the end all at once
         (when (= 1 (length k-v))
-          (emit-prolog (car k-v) (format nil "nlp_feat_~a(~a,~a)." (car k-v) sentence-id word-index-id)))))))
+          (push (car k-v) tags))))
+    (when tags
+      (emit-prolog "tags" (format nil "nlp_tag(~a,~a,[~{'~a'~^,~}])." sentence-id word-index-id (reverse tags))))))
 
 (defun process-tokens (context sentence-id token)
   (let ((word-index-id (make-id context "i" (token-id token)))
