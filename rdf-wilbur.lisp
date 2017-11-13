@@ -1,5 +1,5 @@
 (in-package :cl-conllu)
-(ql:quickload :wilbur)
+;; (ql:quickload :wilbur)
 
 (defun convert-features-to-rdf (features-string)
   "Input: string
