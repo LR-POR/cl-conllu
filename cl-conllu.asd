@@ -20,7 +20,7 @@
   :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
 
-  :depends-on (#:cl-ppcre #:uuid #:alexandria #:cl-log #:split-sequence #:xmls #:yason #:lispbuilder-lexer)
+  :depends-on (#:cl-ppcre #:uuid #:alexandria #:cl-log #:split-sequence #:xmls #:yason #:lispbuilder-lexer #:wilbur)
   :components ((:file "packages")
 	       (:file "data"          :depends-on ("packages"))
 	       (:file "read-write"    :depends-on ("data"))
@@ -28,6 +28,7 @@
 	       (:file "query"         :depends-on ("data"))
 	       (:file "utils"         :depends-on ("data"))
 	       (:file "rdf"           :depends-on ("data"))
+	       (:file "rdf-wilbur"    :depends-on ("data"))
 	       (:file "command-line"  :depends-on ("data"))
 	       (:file "rules"         :depends-on ("utils" "data"))
 	       (:file "conllu-prolog" :depends-on ("data"))

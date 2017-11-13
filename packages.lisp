@@ -74,7 +74,9 @@
 	   #:apply-rules-from-files
 
 	   #:convert-rdf
-	   #:convert-rdf-file))
+	   #:convert-rdf-file
+
+	   #:convert-to-rdf))
   
 
 (defpackage #:conllu-prolog
