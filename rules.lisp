@@ -218,8 +218,8 @@
 	     (op (car condition))
 	     (field (cadr condition))
 	     (a-value (caddr condition)))
-	(cond ((equal op '!) (modify-value field a-value token (cdr conditions)))
-	      ((equal op '+) (add-value field a-value token (cdr conditions))))
+	(cond ((equal op 'change) (modify-value field a-value token (cdr conditions)))
+	      ((equal op 'add) (add-value field a-value token (cdr conditions))))
 	
 	)))
 
