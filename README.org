@@ -111,7 +111,7 @@ sentence object and (optionally) an output stream, and outputs to the
 stream the sentence's metadata and its tree structure:
 
 #+BEGIN_EXAMPLE
-(conllu-visualize:tree-sentence (nth 5 *frases*))
+(conllu.draw:tree-sentence (nth 5 *frases*))
 text = Eles se dizem oposição, mas ainda não informaram o que vão combater.
 source = CETENFolha n=1 cad=Opinião sec=opi sem=94a
 sent_id = CF1-7
