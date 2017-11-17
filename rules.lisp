@@ -1,7 +1,6 @@
 
 (in-package :cl-conllu)
 
-
 ;; rule       ::= => rls rhs
 ;; rls, rhs   ::= (pattern+)
 ;; pattern    ::= (var condition+)

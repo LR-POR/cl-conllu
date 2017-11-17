@@ -79,13 +79,20 @@
 	   #:convert-to-rdf))
   
 
-(defpackage #:conllu-prolog
+(defpackage #:conllu.prolog
   (:use #:cl #:alexandria #:split-sequence #:cl-conllu)
   (:export #:convert-filename))
 
-(defpackage #:conllu-palavras
+(defpackage #:conllu.rdf
+  (:use #:cl #:wilbur #:alexandria #:cl-conllu)
+  (:export #:convert-filename))
+
+(defpackage #:conllu.converters.niceline
   (:use #:cl #:cl-conllu #:lispbuilder-lexer))
 
-(defpackage #:conllu-visualize
+(defpackage #:conllu.converters.tags
+  (:use #:cl #:cl-conllu #:lispbuilder-lexer))
+
+(defpackage #:conllu.draw
   (:use #:cl #:cl-conllu)
   (:export #:tree-sentence))

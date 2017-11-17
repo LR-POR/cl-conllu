@@ -1,4 +1,4 @@
-;; Copyright 2016 IBM
+s ;; Copyright 2016 IBM
 
 ;; Licensed under the Apache License, Version 2.0 (the "License");
 ;; you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
   :description "Common Lisp corpus conllu utilities"
   :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
-
-  :depends-on (#:cl-ppcre #:uuid #:alexandria #:cl-log #:split-sequence #:xmls #:yason #:lispbuilder-lexer #:wilbur)
+  :depends-on (#:cl-ppcre #:uuid #:alexandria #:cl-log #:split-sequence #:xmls
+			  #:yason #:lispbuilder-lexer #:wilbur)
   :components ((:file "packages")
 	       (:file "data"          :depends-on ("packages"))
 	       (:file "read-write"    :depends-on ("data"))
@@ -32,5 +32,5 @@
 	       (:file "command-line"  :depends-on ("data"))
 	       (:file "rules"         :depends-on ("utils" "data"))
 	       (:file "conllu-prolog" :depends-on ("data"))
-	       (:file "palavras"      :depends-on ("data"))
-	       (:file "tree"          :depends-on ("data"))))
+	       (:file "niceline"      :depends-on ("data"))
+	       (:file "draw"          :depends-on ("data"))))

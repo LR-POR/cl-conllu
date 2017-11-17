@@ -1,4 +1,5 @@
-(in-package :cl-conllu)
+
+(in-package :conllu.rdf)
 
 ;; NOTES: 1) we use Turtle mostly due to the easy way of specifying
 ;; containers and blank nodes.  2) there is a lot of duplicated code

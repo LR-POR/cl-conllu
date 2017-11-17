@@ -1,5 +1,5 @@
 
-(in-package :conllu-palavras)
+(in-package :conllu.converters.niceline)
 
 ;; Links:
 ;; http://beta.visl.sdu.dk/cg3/chunked/streamformats.html#stream-niceline

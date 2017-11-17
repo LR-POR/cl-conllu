@@ -1,8 +1,7 @@
 ;; https://common-lisp.net/project/xmls/
 
-(ql:quickload :cxml)
-(ql:quickload :cxml-stp)
-(ql:quickload :xpath)
+(in-package :conllu.converters.malt)
+
 
 (defun read-sentences (node)
   (destructuring-bind (name attributes nodes)

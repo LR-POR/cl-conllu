@@ -14,7 +14,7 @@
 
 ;;;; conll-prolog.lisp
 
-(in-package #:conllu-prolog)
+(in-package #:conllu.prolog)
 
 (defun toprologid (str)
   (cl-ppcre:regex-replace-all "[^A-Za-z0-9_]"

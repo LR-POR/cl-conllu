@@ -1,4 +1,4 @@
-(in-package :conllu-visualize)
+(in-package :conllu.draw)
 
 
 (defun tree-sentence (sentence &key (stream *standard-output*) show-meta)
