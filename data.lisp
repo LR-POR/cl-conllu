@@ -145,11 +145,26 @@
   (sentence-meta-value sentence "text"))
 
 
-(defun sentence->text (sentence &key (ignore-mtokens nil))
+(defun sentence->text (sentence &key (ignore-mtokens nil) (special-format-test #'null special-format-test-supplied-p) (special-format-function #'identity special-format-function-supplied-p))
+  (assert (or (and special-format-test-supplied-p
+		   special-format-function-supplied-p)
+	      (and (not special-format-test-supplied-p)
+		   (not special-format-function-supplied-p)))
+	  (special-format-test
+	   special-format-function)
+	  "If a special format is intended, then both
+	  SPECIAL-FORMAT-TEST and SPECIAL-FORMAT-FUNCTION should be
+	  specified!")
+  (assert (functionp special-format-test))
+  (assert (functionp special-format-function))
   (labels ((forma (obj lst)
-	     (if (search "SpaceAfter=No" (slot-value obj 'misc))
-		 (cons (slot-value obj 'form) lst)
-		 (cons " " (cons (slot-value obj 'form) lst))))
+	     (let ((obj-form
+		    (if (funcall special-format-test obj)
+			(funcall special-format-function (slot-value obj 'form))
+			(slot-value obj 'form))))
+	       (if (search "SpaceAfter=No" (slot-value obj 'misc))
+		   (cons obj-form lst)
+		   (cons " " (cons obj-form lst)))))
 	   (aux (tokens mtokens ignore response)
 	     (cond 
 	       ((and (null tokens) (null mtokens))
