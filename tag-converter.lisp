@@ -1,4 +1,4 @@
-(in-package :cl-conllu.converters.tags)
+(in-package :conllu.converters.tags)
 
 (defun write-token-tag-suffix (token stream field-value separator)
   (if (null field-value)
