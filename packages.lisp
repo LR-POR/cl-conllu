@@ -95,7 +95,7 @@
   (:use #:cl #:cl-conllu #:lispbuilder-lexer))
 
 (defpackage #:conllu.converters.tags
-  (:use #:cl #:cl-conllu)
+  (:use #:cl #:cl-conllu #:cl-ppcre)
   (:export #:write-sentence-tag-suffix-to-stream
 	   #:write-sentences-tag-suffix-to-stream
 	   #:write-sentences-tag-suffix

@@ -110,7 +110,7 @@ Pierre_NNP Vinken_NNP ,_, 61_CD years_NNS old_JJ ,_, will_MD join_VB the_DT boar
 	  (push
 	   (list-to-sentence
 	    (mapcar #'(lambda (x) (split separator x))
-		    (split " " line)))
+		    (cl-ppcre:split " " line)))
 	   sentences))))))
 
 (defun read-file-tag-suffix (filename &key (tag 'upostag) (separator "_"))
