@@ -95,7 +95,7 @@
   (:use #:cl #:cl-conllu #:lispbuilder-lexer))
 
 (defpackage #:conllu.converters.tags
-  (:use #:cl #:cl-conllu #:lispbuilder-lexer))
+  (:use #:cl #:cl-conllu))
 
 (defpackage #:conllu.draw
   (:use #:cl #:cl-conllu)
