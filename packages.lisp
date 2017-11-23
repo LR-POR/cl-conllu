@@ -85,7 +85,11 @@
 
 (defpackage #:conllu.rdf
   (:use #:cl #:wilbur #:alexandria #:cl-conllu)
-  (:export #:convert-filename))
+  (:shadowing-import-from #:cl-conllu
+			  #:query
+			  #:token)
+  (:export #:convert-filename
+	   #:convert-to-rdf))
 
 (defpackage #:conllu.converters.niceline
   (:use #:cl #:cl-conllu #:lispbuilder-lexer))
