@@ -34,19 +34,19 @@
 
 
 (defun convert-token-to-rdf (token sentence-id sentence-node)
-  (let* ((token-node (node (format nil "NAMESPACE:~a-~a" sentence-id (token-id token))))
+  (let* ((token-node (node (format nil "NAMESPACE:~a-~a" sentence-id (slot-value token 'cl-conllu::id))))
 	(slots '(id form lemma upostag xpostag feats head deprel deps))
 	(slot-nodes
 	 (list
-	  'id `(,(wilbur:literal (slot-value token 'id)))
-	  'form `(,(wilbur:literal (slot-value token 'form)))
-	  'lemma `(,(wilbur:literal (slot-value token 'lemma)))
-	  'upostag `(,(wilbur:literal (slot-value token 'upostag)))
-	  'xpostag `(,(wilbur:literal (slot-value token 'xpostag)))
-	  'feats (convert-features-to-rdf (slot-value token 'feats))
-	  'head `(,(wilbur:literal (slot-value token 'head)))
-	  'deprel `(,(wilbur:literal (slot-value token 'deprel)))
-	  'deps `(,(wilbur:literal (slot-value token 'deps))))))
+	  'id `(,(wilbur:literal (slot-value token 'cl-conllu::id)))
+	  'form `(,(wilbur:literal (slot-value token 'cl-conllu::form)))
+	  'lemma `(,(wilbur:literal (slot-value token 'cl-conllu::lemma)))
+	  'upostag `(,(wilbur:literal (slot-value token 'cl-conllu::upostag)))
+	  'xpostag `(,(wilbur:literal (slot-value token 'cl-conllu::xpostag)))
+	  'feats (convert-features-to-rdf (slot-value token 'cl-conllu::feats))
+	  'head `(,(wilbur:literal (slot-value token 'cl-conllu::head)))
+	  'deprel `(,(wilbur:literal (slot-value token 'cl-conllu::deprel)))
+	  'deps `(,(wilbur:literal (slot-value token 'cl-conllu::deps))))))
     
     `(,(wilbur:triple token-node
 		      (node "rdf:type")
