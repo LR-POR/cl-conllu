@@ -68,6 +68,8 @@
 	   #:sentence-hash-table
 	   #:sentence-tokens
 	   #:sentence-mtokens
+	   #:sentence-text
+	   #:sentence-id
 	   #:sentence-equal
 
 	   #:apply-rules
@@ -84,7 +86,7 @@
   (:export #:convert-filename))
 
 (defpackage #:conllu.rdf
-  (:use #:cl #:wilbur #:alexandria #:cl-conllu)
+  (:use #:cl #:wilbur #:alexandria #:cl-conllu #:split-sequence)
   (:shadowing-import-from #:cl-conllu
 			  #:query
 			  #:token)
