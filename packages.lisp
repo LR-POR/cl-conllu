@@ -32,12 +32,6 @@
 	   #:levenshtein
 	   #:diff
 
-	   #:diff-parent-upostag
-	   #:diff-deprel
-	   #:diff-dependency-distance
-	   #:make-confusion-table
-	   #:save-confusion-table-csv
-
 	   #:sentence-binary-tree
 	   ; #:insert-token
 	   ; #:remove-token

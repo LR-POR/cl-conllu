@@ -1,7 +1,8 @@
 (in-package :cl-conllu)
 
+
 (defun parent-upostag (token sent)
-  (if (=(token-head token) 0)
+  (if (= (token-head token) 0)
       "root"
       (token-upostag (token-parent token sent))))
 
@@ -18,27 +19,27 @@
     (loop
        for token in (sentence-tokens sent)
        for g-token in (sentence-tokens g-sent)
-       collect(cons (parent-upostag token sent) (parent-upostag g-token g-sent)))))
+       collect (cons (parent-upostag token sent) (parent-upostag g-token g-sent)))))
 
 
 (defun diff-dependency-distance(sent g-sent)
-    (loop
-       for token in (cl-conllu:sentence-tokens sent)
-       for g-token in (cl-conllu:sentence-tokens g-sent)
-	 collect (cons (token-to-parent-distance token sent)(token-to-parent-distance g-token g-sent))))
+  (loop
+     for token in (cl-conllu:sentence-tokens sent)
+     for g-token in (cl-conllu:sentence-tokens g-sent)
+     collect (cons (token-to-parent-distance token sent) (token-to-parent-distance g-token g-sent))))
 
 
-(defun diff-deprel(sent g-sent)
+(defun diff-deprel (sent g-sent)
   (let ((pairs nil))
     (loop
        for token in  (cl-conllu:sentence-tokens sent)
        for g-token in  (cl-conllu:sentence-tokens g-sent)
-	 collect(cons (token-deprel token) (token-deprel g-token) ))))
+       collect (cons (token-deprel token) (token-deprel g-token)))))
 
 
 ; Functions for generating and writing a confusion table in csv format
-; For the purposes of documentation, the term 'pair' is a cons and 'pairs' a a-list
-; The first element of the pair must be the prediction the second the golden i.e. (predicted-value . actual-value )
+; For the purposes of documentation, the term 'pair' is a cons and 'pairs' an a-list
+; The first element of the pair must be the prediction the second the golden i.e. (predicted-value . actual-value)
 
 
 (defun get-columns (pairs)
@@ -48,9 +49,9 @@
   
   (let ((columns nil))
     (loop for pair in pairs
-	   when (not (find (format nil "~A" (car pair))  columns :test #'string-equal )) do (push (format nil "~A" (car pair)) columns)
-	   when (not (find (format nil "~A" (cdr pair)) columns :test #'string-equal )) do (push (format nil "~A"(cdr pair)) columns))
-	columns))
+       when (not (find (format nil "~A" (car pair)) columns :test #'string-equal)) do (push (format nil "~A" (car pair)) columns)
+       when (not (find (format nil "~A" (cdr pair)) columns :test #'string-equal)) do (push (format nil "~A" (cdr pair)) columns))
+    columns))
 
 
 (defun make-row (columns)
@@ -58,7 +59,7 @@
    Recieves the columns names
    i.e: row -> (col1 : 0 col2: 0)"
   (let ((row (make-hash-table :test 'equal)))
-    (mapc (lambda(key)(setf (gethash key row) 0)) columns)
+    (mapc (lambda(key) (setf (gethash key row) 0)) columns)
     row))
 
 
@@ -69,7 +70,7 @@
     (col2 : (col1 : 0 col2: 0 ...) ...)"
   (let ((table (make-hash-table :test 'equal))
 	(row (make-row columns)))
-    (mapc (lambda(key)(setf (gethash key table) (alexandria:copy-hash-table row))) columns)
+    (mapc (lambda(key) (setf (gethash key table) (alexandria:copy-hash-table row))) columns)
     table))
 
 
@@ -81,7 +82,7 @@
 (defun make-confusion-table(pairs)
   "Returns a filled confusion table, recieves a-list of pairs"
   (let((table (make-empty-confusion-table (get-columns pairs))))
-    (mapc (lambda (pair)(increment-cell-value pair table)) pairs)
+    (mapc (lambda (pair) (increment-cell-value pair table)) pairs)
     table))
 
 
@@ -90,7 +91,7 @@
   (gethash row (gethash col table)))
 
 
-(defun append-element(element lst)
+(defun append-element (element lst)
   "append element to end of the list"
   (if (= (length lst) 0)
       (push  element lst)
@@ -105,19 +106,19 @@
     (loop for line in columns
        do
 	 (let ((row (list line)))
-	 (loop for column in columns
-	    do
-	      (append-element (write-to-string (cf-access-cell line column table)) row))
-	 (append-element row rows)))
+	   (loop for column in columns
+	      do
+		(append-element (write-to-string (cf-access-cell line column table)) row))
+	   (append-element row rows)))
     rows))
 
 
 (defun make-csv (file lines)
   "Makes a csv file from the sent lines"
   (with-open-file (str file
-                     :direction :output
-                     :if-exists :supersede
-                     :if-does-not-exist :create)
+		       :direction :output
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
     (format str (cl-csv:write-csv lines))))
 
 
