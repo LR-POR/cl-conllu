@@ -7,7 +7,7 @@
       (token-upostag (token-parent token sent))))
 
 
-(defun token-to-parent-distance(token sent)
+(defun token-to-parent-distance (token sent)
   (if (= (token-head token) 0)
       0
       (- (token-head token) (token-id token))))
@@ -22,11 +22,12 @@
        collect (cons (parent-upostag token sent) (parent-upostag g-token g-sent)))))
 
 
-(defun diff-dependency-distance(sent g-sent)
+(defun diff-dependency-distance (sent g-sent)
   (loop
      for token in (cl-conllu:sentence-tokens sent)
      for g-token in (cl-conllu:sentence-tokens g-sent)
-     collect (cons (token-to-parent-distance token sent) (token-to-parent-distance g-token g-sent))))
+	collect (cons (token-to-parent-distance token sent)
+		      (token-to-parent-distance g-token g-sent))))
 
 
 (defun diff-deprel (sent g-sent)
@@ -37,9 +38,11 @@
        collect (cons (token-deprel token) (token-deprel g-token)))))
 
 
-; Functions for generating and writing a confusion table in csv format
-; For the purposes of documentation, the term 'pair' is a cons and 'pairs' an a-list
-; The first element of the pair must be the prediction the second the golden i.e. (predicted-value . actual-value)
+;; Functions for generating and writing a confusion table in csv
+;; format. For the purposes of documentation, the term 'pair' is a
+;; cons and 'pairs' an a-list
+;; The first element of the pair must be the prediction the second the
+;; golden i.e. (predicted-value . actual-value)
 
 
 (defun get-columns (pairs)
@@ -49,8 +52,10 @@
   
   (let ((columns nil))
     (loop for pair in pairs
-       when (not (find (format nil "~A" (car pair)) columns :test #'string-equal)) do (push (format nil "~A" (car pair)) columns)
-       when (not (find (format nil "~A" (cdr pair)) columns :test #'string-equal)) do (push (format nil "~A" (cdr pair)) columns))
+	  when (not (find (format nil "~A" (car pair)) columns :test #'string-equal))
+	  do (push (format nil "~A" (car pair)) columns)
+	  when (not (find (format nil "~A" (cdr pair)) columns :test #'string-equal))
+	  do (push (format nil "~A" (cdr pair)) columns))
     columns))
 
 
