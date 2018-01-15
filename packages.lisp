@@ -31,6 +31,7 @@
 	   #:write-conllu-to-stream   
 	   #:levenshtein
 	   #:diff
+
 	   #:sentence-binary-tree
 	   ; #:insert-token
 	   ; #:remove-token
