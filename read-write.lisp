@@ -191,8 +191,7 @@
       (yason:encode-object-element "sent_id"
 				   (sentence-meta-value sentence "sent_id"))
       (yason:with-object-element ("tokens")
-	(yason:with-array ()
-	  (yason:encode-array-elements (sentence-tokens sentence)))))))
+	(yason:encode-array-elements (sentence-tokens sentence))))))
 
 
 (defmethod yason:encode ((token token) &optional (stream *standard-output*))
