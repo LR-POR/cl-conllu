@@ -1,6 +1,29 @@
 (in-package :cl-conllu)
 
 
+(defun make-pair-diff (sent g-sent token g-token evaluation-function)
+  (let ((pair-diff (make-hash-table)))
+    (setf (gethash "sent" pair-diff) sent)
+    (setf (gethash "g-sent" pair-diff) g-sent)
+    (setf (gethash "token" pair-diff) token)
+    (setf (gethash "g-token" pair-diff) g-token)
+    (setf (gethash "diffs" pair-diff) (cons (funcall evaluation-function token sent) (funcall evaluation-function g-token g-sent)))
+    pair-diff))
+
+
+(defun is-pair-different (pair)
+  (print pair)
+    (if (not (string= (car pair) (cdr pair)))
+	t))
+
+
+(defun diff-sentences-by-function (sent g-sent evaluation-function)
+  (loop
+     for token in (sentence-tokens sent)
+     for g-token in (sentence-tokens g-sent)
+     collect (make-pair-diff sent g-sent token g-token evaluation-function)))
+
+
 (defun parent-upostag (token sent)
   (if (= (token-head token) 0)
       "root"
@@ -11,7 +34,6 @@
   (if (= (token-head token) 0)
       0
       (- (token-head token) (token-id token))))
-
 
 (defun diff-parent-upostag (sent g-sent)
   "Checks if the parent heads are equal to each token of the sentence, except the root "
@@ -79,9 +101,11 @@
   (incf (gethash (format nil "~A" (cdr pair)) (gethash (format nil "~A" (car pair)) table))))
 
 
-(defun make-confusion-table(pairs)
+(defun make-confusion-table (diffs)
   "Returns a filled confusion table, recieves a-list of pairs"
-  (let((table (make-empty-confusion-table (get-columns pairs))))
+  (let* ((pairs (mapcar #'(lambda (x) (gethash "diffs" x)) diffs))
+         (table (make-empty-confusion-table (get-columns pairs))))
+
     (mapc (lambda (pair) (increment-cell-value pair table)) pairs)
     table))
 
@@ -99,7 +123,7 @@
 
 
 (defun confusion-table-rows (table)
-  " Returns the rows for the csv file "
+  " Returns the rows of the confusion table "
   (let ((rows (list (alexandria:flatten (append '("") (alexandria:hash-table-keys table)))))
 	(columns (alexandria:hash-table-keys table)))
     
@@ -124,3 +148,39 @@
 
 (defun save-confusion-table-csv (filename confusion-table)
   (make-csv filename (confusion-table-rows confusion-table)))
+
+
+(defun report-write-confusion-table-string (confusion-table stream)
+  (let ((width 10)(data (confusion-table-rows confusion-table)))
+    
+  (write-line (format nil "~{|~{ ~{~Vd~}~}|~%~}"
+	  (mapcar #'(lambda (r) (mapcar #'(lambda (v) (list width v)) r)) data)) stream)))
+
+(defun report-write-sentences(diffs stream)
+    (let* ((pairs (mapcar #'(lambda (x) (gethash "diffs" x)) diffs))
+	   (columns  (get-columns pairs)))
+
+      (loop for col1 in columns do
+	   (loop for col2 in columns do
+		(write-line (concatenate 'string "(" col1 " - " col2 ")") stream)
+
+		(loop for diff in diffs do
+		     (let ((pair (gethash "diffs" diff)))
+		       (if (and (is-pair-different pair) (and (string= col1 (car pair)) (string= col2 (cdr pair))))
+			(write-line (concatenate 'string (sentence-id (gethash "sent" diff))) stream))))))))
+		       
+
+
+
+
+(defun make-confusion-table-report (file diffs)
+
+  (with-open-file (str file
+		       :direction :output
+		       :if-exists :supersede
+		       :if-does-not-exist :create)
+
+    (report-write-confusion-table-string (make-confusion-table diffs) str)
+    (report-write-sentences diffs str)
+
+    ))
