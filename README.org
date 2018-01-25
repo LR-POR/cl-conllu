@@ -1,9 +1,7 @@
-#+title: Library for working with ConLLU files with CL
+#+title: Library for working with CoNLL-U files with CL
 
 The =cl-conllu= is a Common Lisp library to work with [[http://universaldependencies.org/format.html][CoNLL-U]],
-licensed under the Apache license:
-
-http://www.apache.org/licenses/LICENSE-2.0
+licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache license]].
 
 It is developed and tested with SBCL but should probably run with any
 other implementation.
@@ -19,17 +17,16 @@ if you are not planning to change the code, just use:
 (ql:quickload :cl-conllu)
 #+END_SRC
 
-If you plan to contribute, clone this project to your =local-projects=
-quicklisp directory (usually at =~/quicklisp/local-projects/=) and use
-the same command above.
+If you plan on contributing, clone this project to your
+=local-projects= quicklisp directory (usually at
+=~/quicklisp/local-projects/=) and use the same command as above.
 
 * Reading CoNLL-U files
 
 First you need some CoNLL-U files to start with. If you have none in
-mind, you may get some
-from [here](https://github.com/own-pt/bosque-UD/tree/master/documents).
+mind, you may get some from [[https://github.com/own-pt/bosque-UD/tree/master/documents][here]].
 
-The simplest way to read a file or a directory of =conllu= files:
+The simplest way to read a file or a directory of =conllu= files is:
 
 #+BEGIN_SRC lisp
 CL-USER> (defparameter *sents* (cl-conllu:read-conllu #P"/path/to/my/file/CF1.conllu"))
@@ -45,7 +42,7 @@ Each object returned is an instance of a =sentence= class, made up of
 All read functions accept a =fn-meta= function as argument. This
 function collects the metadata from each CoNLL-U sentence, which
 usually includes the raw sentence (see [[http://universaldependencies.org/format.html][format]]). The default metadata
-collector function, =collect-meta=.
+collector function is =collect-meta=.
 
 * The Classes
 
@@ -58,13 +55,13 @@ file is read, its contents are turned into instances of these classes.
 Every CoNLL-U sentence is turned in an instance of the =sentence=
 class by =cl-conllu=. Each instance is characterized by four
 properties: =start=, =meta=, =tokens=, and =mtokens=. The =start=
-field keep the line number of the file that the sentence block
+field contains the line number of the file where the sentence block
 started.
 
-The =meta= includes the metainformation regarding the sentence. this
-may vary, as we have discussed in the previous section, but usually
-includes the full (raw) sentence and the sentence ID, as required by
-the CoNLL-U format specification.
+The =meta= field includes the metainformation regarding the
+sentence. This information may vary, as we have discussed in the
+previous section, but usually includes the full (raw) sentence and the
+sentence ID, as required by the CoNLL-U format specification.
 
 #+BEGIN_EXAMPLE
 CL-USER> (cl-conllu:sentence-meta (first *sents*))
@@ -138,10 +135,10 @@ id = 6
 Queries can be executed with 
 
 #+BEGIN_SRC lisp
-  (query ’(nsubj (advcl (and (upostag ~ "VERB") (lemma ~ " correr " ))
-			(upostag ~ "VERB" )) 
-		 (upostag ~ "PROP"))
-	  ,*sents*)
+  (query '(nsubj (advcl (and (upostag "VERB") (lemma "correr"))
+			(upostag "VERB" )) 
+		 (upostag "PROP"))
+	  *sents*)
 #+END_SRC
 
 * How to cite
