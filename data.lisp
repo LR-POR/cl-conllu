@@ -146,6 +146,42 @@
 
 
 (defun sentence->text (sentence &key (ignore-mtokens nil) (special-format-test #'null special-format-test-supplied-p) (special-format-function #'identity special-format-function-supplied-p))
+  "Receives SENTENCE, a sentence object, and returns a string
+reconstructed from its tokens and mtokens.
+   
+   If IGNORE-MTOKENS, then tokens' forms are used. Else, tokens with
+   id contained in a mtoken are not used, with mtoken's form being
+   used instead.
+
+   It is possible to special format some tokens. In order to do so,
+   both SPECIAL-FORMAT-TEST and SPECIAL-FORMAT-FUNCTION should be
+   passed. Then for each object (token or mtoken) for which
+   SPECIAL-FORMAT-TEST returns a non-nil result, its form is modified
+   by SPECIAL-FORMAT-FUNCTION in the final string.
+
+   Example:
+  (sentence-tokens *sentence*)
+  => (#<TOKEN The/DET #1-det-3> #<TOKEN US/PROPN #2-compound-3>
+ #<TOKEN troops/NOUN #3-nsubj-4> #<TOKEN fired/VERB #4-root-0>
+ #<TOKEN into/ADP #5-case-8> #<TOKEN the/DET #6-det-8>
+ #<TOKEN hostile/ADJ #7-amod-8> #<TOKEN crowd/NOUN #8-obl-4>
+ #<TOKEN ,/PUNCT #9-punct-4> #<TOKEN killing/VERB #10-advcl-4>
+ #<TOKEN 4/NUM #11-obj-10> #<TOKEN ./PUNCT #12-punct-4>)
+
+  (sentence->text 
+    sentence)
+  => \"The US troops fired into the hostile crowd, killing 4.\"
+  
+   (sentence->text 
+     sentence
+    :special-format-test #'(lambda (token)
+			     (eq (token-upostag token)
+				 \"VERB\"))
+    :special-format-function (lambda (string)
+			       (format nil \"*~a*\" (string-upcase string))))
+   => \"The US troops *FIRED* into the hostile crowd, *KILLING* 4.\"
+"
+   
   (assert (or (and special-format-test-supplied-p
 		   special-format-function-supplied-p)
 	      (and (not special-format-test-supplied-p)
