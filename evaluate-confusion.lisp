@@ -3,16 +3,20 @@
 
 (defun make-pair-diff (sent g-sent token g-token evaluation-function)
   (let ((pair-diff (make-hash-table)))
+    (setf (gethash "diffs" pair-diff) (cons (funcall evaluation-function token sent) (funcall evaluation-function g-token g-sent)))
+
+    (when (not (string=
+	      (car (gethash "diffs" pair-diff))
+	      (cdr (gethash "diffs" pair-diff))))
     (setf (gethash "sent" pair-diff) sent)
     (setf (gethash "g-sent" pair-diff) g-sent)
     (setf (gethash "token" pair-diff) token)
-    (setf (gethash "g-token" pair-diff) g-token)
-    (setf (gethash "diffs" pair-diff) (cons (funcall evaluation-function token sent) (funcall evaluation-function g-token g-sent)))
+    (setf (gethash "g-token" pair-diff) g-token))
+    
     pair-diff))
 
 
 (defun is-pair-different (pair)
-  (print pair)
     (if (not (string= (car pair) (cdr pair)))
 	t))
 
@@ -153,8 +157,19 @@
 (defun report-write-confusion-table-string (confusion-table stream)
   (let ((width 10)(data (confusion-table-rows confusion-table)))
     
-  (write-line (format nil "~{|~{ ~{~Vd~}~}|~%~}"
+  (write-line (format nil "~{<tr>~{~{~Vd~}~}</tr>~%~}"
 	  (mapcar #'(lambda (r) (mapcar #'(lambda (v) (list width v)) r)) data)) stream)))
+
+
+(defun report-format-dependency (token sent)
+  (if (= (token-head token) 0)
+      (concatenate 'string (token-deprel token) "(" (token-form token) ")")
+      (concatenate 'string (token-deprel token) "(" (token-form token) ";" (token-form (token-parent token sent)) ")")))
+      
+  
+(defun report-format-dependency-diff (token g-token sent g-sent)
+  (concatenate 'string (report-format-dependency token sent) " -- " (report-format-dependency g-token g-sent)))
+
 
 (defun report-write-sentences(diffs stream)
     (let* ((pairs (mapcar #'(lambda (x) (gethash "diffs" x)) diffs))
@@ -163,12 +178,24 @@
       (loop for col1 in columns do
 	   (loop for col2 in columns do
 		(write-line (concatenate 'string "(" col1 " - " col2 ")") stream)
+		(write-line "" stream)
 
 		(loop for diff in diffs do
 		     (let ((pair (gethash "diffs" diff)))
-		       (if (and (is-pair-different pair) (and (string= col1 (car pair)) (string= col2 (cdr pair))))
-			(write-line (concatenate 'string (sentence-id (gethash "sent" diff))) stream))))))))
-		       
+		       (when (and (is-pair-different pair) (and (string= col1 (car pair)) (string= col2 (cdr pair))))
+			 
+			   (write-line (concatenate 'string (sentence-id (gethash "sent" diff))) stream)
+			   (write-line (sentence-text (gethash "sent" diff)) stream)
+			   (write-line (report-format-dependency-diff
+					(gethash "token" diff)
+					(gethash "g-token" diff)
+					(gethash "sent" diff)
+					(gethash "g-sent" diff)
+
+					) stream)
+			   
+			   
+			   			)))))))
 
 
 
@@ -181,6 +208,4 @@
 		       :if-does-not-exist :create)
 
     (report-write-confusion-table-string (make-confusion-table diffs) str)
-    (report-write-sentences diffs str)
-
-    ))
+    (report-write-sentences diffs str)))
