@@ -36,8 +36,8 @@
 
 (defun token-to-parent-distance(token sent)
   (if (= (token-head token) 0)
-      0
-      (- (token-head token) (token-id token))))
+      (write-to-string 0)
+      (write-to-string (- (token-head token) (token-id token)))))
 
 (defun diff-parent-upostag (sent g-sent)
   "Checks if the parent heads are equal to each token of the sentence, except the root "
