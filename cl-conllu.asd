@@ -25,7 +25,6 @@
 	       (:file "data"               :depends-on ("packages"))
 	       (:file "read-write"         :depends-on ("data"))
 	       (:file "evaluate"           :depends-on ("data"))
-	       (:file "evaluate-confusion-2" :depends-on ("data"))
 	       (:file "evaluate-confusion" :depends-on ("data"))
 	       (:file "query"              :depends-on ("data"))
 	       (:file "utils"              :depends-on ("data"))
