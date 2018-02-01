@@ -1,6 +1,15 @@
 (in-package :cl-conllu)
 
-(defun diff-sentences (p-sentence g-sentence evaluation-function confusion-table diff-table)
+
+(defun allowed-value (allowed-values value)
+  "Checks if the value is in the allowed list. An empty list signals that any value is allowed."
+  (if  allowed-values     
+    (find value allowed-values :test #'string=) t))
+  
+(defun diff-sentences (p-sentence g-sentence evaluation-function confusion-table diff-table &optional g-columns p-columns)
+  " Evaluates the tokens using the recieved evaluation-function.
+    Optional columns g-columns/p-columns for golden and predicted values.
+    The differences found are reported in the diff-table and confusion-table recieved"
   
   (loop for p-token in (sentence-tokens p-sentence)
         for g-token in (sentence-tokens g-sentence) do
@@ -8,10 +17,9 @@
        (let ((p-value (funcall evaluation-function p-token p-sentence))
 	     (g-value (funcall evaluation-function g-token g-sentence)))
 
-
-
-	 (confusion-table-add-pair g-value p-value confusion-table)
-	 (report-diff p-value g-value p-token g-token p-sentence g-sentence diff-table))))
+	 (when (and (allowed-value g-columns g-value) (allowed-value p-columns p-value))
+	   (confusion-table-add-pair g-value p-value confusion-table)
+	   (report-diff p-value g-value p-token g-token p-sentence g-sentence diff-table)))))
 
 
 (defun get-token-parent (token sent)
@@ -86,15 +94,17 @@
 
 
 (defun format-file-name (p-value g-value)
-  (format nil "/~a~a.html" g-value p-value))
+  (format nil "~a-~a.html" g-value p-value))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun write-diffs-to-files(diff-table diffs-path)
+(defun get-diff-file-path (p-value g-value diffs-path)
+  (concatenate 'string (namestring diffs-path)  (format-file-name p-value g-value)))
+
+(defun write-diffs-to-files (diff-table diffs-path)
   (loop for g-value being the hash-keys in diff-table do
        (loop for p-value being the hash-keys in (gethash g-value diff-table) do
-	    (let ((filename (concatenate  'string diffs-path  (format-file-name p-value g-value))))
-	      
+	    (let ((filename (get-diff-file-path p-value g-value diffs-path)))
 	    (with-open-file (file filename
 				  :direction :output
 				  :if-exists :append
@@ -110,7 +120,6 @@
 
 
 (defun confusion-table-add-column (confusion-table new-column)
-  (print new-column)
   ; Add new column
   (setf (gethash new-column confusion-table) (make-hash-table :test 'equal))
 
@@ -139,39 +148,44 @@
   (incf  (gethash p-value (gethash g-value confusion-table))))
 
 
-(defun report-confusion-table (path golden-files prediction-files evaluation-function &optional (batch-write 50) (diffs-path "diffs"))
+(defun report-confusion-table (work-dir golden-files prediction-files evaluation-function &optional g-columns p-columns (column-sort-function nil) (batch-write 50))
 
-  (let ((confusion-table (make-hash-table :test 'equal))
+
+  (let* ((confusion-table (make-hash-table :test 'equal))
 	(diff-table (make-hash-table :test 'equal))
-	(counter 0))
+	(work-dirs (ensure-directories-exist work-dir))
+	(diffs-dir (ensure-directories-exist (merge-pathnames "diffs/"  work-dirs)))
+	(total-pairs (length golden-files))
+ 	(counter 0))
+
+    (print (format nil "~a pairs of files to diff" total-pairs))
     
-    (with-open-file (report path
-			    :direction :output
-			    :if-exists :supersede
-			    :if-does-not-exist :create)
-      
-      (loop for p-file in prediction-files
+    (loop for p-file in prediction-files
 	    for g-file in golden-files do
 	   
 	   (assert (string= (file-namestring p-file) (file-namestring g-file)) (p-file g-file) "invalid match of filenames")
 	   
        (loop for p-sentence in (read-file p-file)
-	     for g-sentence in (read-file g-file) do
-	    (diff-sentences p-sentence g-sentence evaluation-function confusion-table diff-table))
-
-
-	   (print counter)
+	  for g-sentence in (read-file g-file) do
+	    (diff-sentences p-sentence g-sentence evaluation-function confusion-table diff-table g-columns p-columns))
 	   (incf counter)
 
-	   (when (=(rem counter batch-write) 0)
-	     (write-diffs-to-files diff-table diffs-path)))
-      
-      (write-charset report)
-      (write-style-css report)
-      (write-confusion-table confusion-table report diffs-path)
+	 (when (=(rem counter batch-write) 0)
+	     (print (format nil "Progress:~a/~a " counter total-pairs))
+	     (write-diffs-to-files diff-table diffs-dir)))
 
-      (write-diffs-to-files diff-table diffs-path)
-      )))
+      (with-open-file (report (merge-pathnames work-dir "matrix.html")
+			      :direction :output
+			      :if-exists :supersede
+			      :if-does-not-exist :create)
+
+	(print (format nil "Progress: ~a/~a" counter total-pairs))
+	(write-charset report)
+	(write-style-css report)
+	(write-confusion-table confusion-table report diffs-dir column-sort-function)
+	(write-diffs-to-files diff-table diffs-dir))))
+
+
 
 
 (defun confusion-table-access-cell-counter (row col table)
@@ -230,11 +244,6 @@ th:hover::after {
 </style>
 " stream))
 
-(defun write-confusion-tabsle (confusion-table stream)
-  (let ((width 10)
-	(data (confusion-table-rows confusion-table)))
-    (write-line (format nil "<table> ~{ <tr> ~{ <td> ~{~Vd~} </td> ~} </tr> ~% ~} </table>"
-	  (mapcar #'(lambda (r) (mapcar #'(lambda (v) (list width v)) r)) data)) stream)))
 
 (defun format-cell-html (val &optional color)
   (if color
@@ -250,15 +259,15 @@ th:hover::after {
 (defun format-link-html (val href )
     (format nil "<a href=\"~a\">~a</a>" href val))
 
-(defun write-confusion-table (confusion-table stream diffs-path &optional (sort nil) sort-function )
+(defun write-confusion-table (confusion-table stream diffs-path &optional (column-sort-function nil))
   (write-line "<table>" stream)
   (let* ((column-names (alexandria:hash-table-keys confusion-table)))
 
-    (when sort
-      (funcall sort-function column-names))
+    (when column-sort-function
+      (setf column-names (funcall column-sort-function column-names)))
+
     
-    
-					; write the header
+    ; write the header
     (write-line "<tr>" stream)
     (mapc (lambda(x) (write-line (format-cell-html x) stream)) (append '("") column-names))
     (write-line "</tr>" stream)
@@ -267,13 +276,10 @@ th:hover::after {
 	 (write-line "<tr>" stream)
 	 (loop for column-name in column-names for i from 0 do
 	      (let ((value (confusion-table-access-cell-counter row-name column-name confusion-table))
-		    (filename (concatenate 'string diffs-path (format-file-name row-name column-name))))
-		    
-		   ;((filename (concatenate 'string diffs-path (format-file-name row-name column-name)))))
-		    
+		    (filename (concatenate 'string "diffs/" (format-file-name row-name column-name))))
 
+		    
 		(when (= i 0)
-		  (print row-name)
 		  (write-line (format-cell-html row-name) stream))
 		
 		(if (and (not(= value 0)) (not (string= row-name column-name)))
@@ -281,7 +287,6 @@ th:hover::after {
 		    (if (string= row-name column-name)
 			(write-line (format-cell-html value) stream)
 			(write-line (format-cell-html value) stream)))))
-		
 		
 	 (write-line "</tr>" stream)))
   (write-line "</table>" stream))
