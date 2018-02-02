@@ -181,4 +181,22 @@
     (write-conllu-to-stream sentences out)))
 
 
+;; JSON output
 
+(defmethod yason:encode ((sentence sentence) &optional (stream *standard-output*))
+  (yason:with-output (stream)
+    (yason:with-object ()
+      (yason:encode-object-element "text"
+				   (sentence-meta-value sentence "text"))
+      (yason:encode-object-element "sent_id"
+				   (sentence-meta-value sentence "sent_id"))
+      (yason:with-object-element ("tokens")
+	(yason:encode-array-elements (sentence-tokens sentence))))))
+
+
+(defmethod yason:encode ((token token) &optional (stream *standard-output*))
+  (yason:with-output (stream)
+    (yason:with-object ()
+      (loop for k in '(id form lemma upostag xpostag feats head deprel deps misc)
+	    do (yason:encode-object-element (symbol-name k)
+					    (slot-value token k))))))
