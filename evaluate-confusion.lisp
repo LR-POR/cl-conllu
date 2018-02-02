@@ -50,7 +50,7 @@ td:hover::after,th:hover::after
 
 (defun format-sentence-text (sentence &optional highlighted-tokens)
   (let ((ids (mapcar #'token-id highlighted-tokens)))
-    (custom-sentence->text
+    (sentence->text
      sentence
      :ignore-mtokens t
      :special-format-test
@@ -70,8 +70,8 @@ td:hover::after,th:hover::after
 
 (defun html-diff-log (p-value g-value p-token g-token p-sentence g-sentence diff-table)
   (format nil "~{~a ~}<br>" (list (html-make-info-line "Id" (sentence-id g-sentence))
-    (html-make-info-line "Text" (format-sentence-text g-sentence (remove nil (list g-token (get-token-parent g-token g-sentence)))))
-    (html-make-info-line "Dep" (html-dependency-pair p-token g-token p-sentence g-sentence)))))
+				  (html-make-info-line "Text" (format-sentence-text g-sentence (remove nil (list g-token (get-token-parent g-token g-sentence)))))
+				  (html-make-info-line "Dep" (html-dependency-pair p-token g-token p-sentence g-sentence)))))
 
 
 (defun html-make-header (p-value g-value)
@@ -105,58 +105,11 @@ td:hover::after,th:hover::after
 
 (defun format-link-html (val href )
     (format nil "<a href=\"~a\">~a</a>" href val))
-
-
-(defun custom-sentence->text (sentence &key (ignore-mtokens nil) (special-format-test #'null special-format-test-supplied-p) (special-format-function #'identity special-format-function-supplied-p))
-  "Custom sentence text for custom formatting"
-  (assert (or (and special-format-test-supplied-p
-		   special-format-function-supplied-p)
-	      (and (not special-format-test-supplied-p)
-		   (not special-format-function-supplied-p)))
-	  (special-format-test
-	   special-format-function)
-	  "If a special format is intended, then both
-	  SPECIAL-FORMAT-TEST and SPECIAL-FORMAT-FUNCTION should be
-	  specified!")
-  (assert (functionp special-format-test))
-  (assert (functionp special-format-function))
-  (labels ((forma (obj lst)
-	     (let ((obj-form
-		    (if (funcall special-format-test obj)
-			(funcall special-format-function (slot-value obj 'form))
-			(slot-value obj 'form))))
-	       (if (search "SpaceAfter=No" (slot-value obj 'misc))
-		   (cons obj-form lst)
-		   (cons " " (cons obj-form lst)))))
-	   (aux (tokens mtokens ignore response)
-	     (cond 
-	       ((and (null tokens) (null mtokens))
-		(if (equal " " (car response))
-		    (reverse (cdr response))
-		    (reverse response)))
-
-	       ((and ignore (< (token-id (car tokens)) ignore))
-		(aux (cdr tokens) mtokens ignore response))
-	       ((and ignore (equal (token-id (car tokens)) ignore))
-		(aux (cdr tokens) mtokens nil response))
-      
-	       ((and mtokens (<= (mtoken-start (car mtokens)) (token-id (car tokens))))
-		(aux tokens (cdr mtokens)
-				   (mtoken-end (car mtokens))
-				   (forma (car mtokens) response)))
-	       (t
-		(aux (cdr tokens) mtokens ignore (forma (car tokens) response))))))
-    (format nil "~{~a~}" (aux (sentence-tokens sentence)
-			      (if ignore-mtokens
-				  nil
-				  (sentence-mtokens sentence))
-			      nil nil))))
-
+    
 
 (defun write-confusion-table (confusion-table stream diffs-path &optional (column-sort-function nil))
   (write-line "<table>" stream)
   (let* ((column-names (alexandria:hash-table-keys confusion-table)))
-
     (when column-sort-function
       (setf column-names (funcall column-sort-function column-names)))
     
@@ -196,9 +149,9 @@ td:hover::after,th:hover::after
 (defun report-diff (p-value g-value p-token g-token p-sentence g-sentence diff-table)
  "Stores the html diff section if a difference was found"
   ; conflict found
-  (when (not (string= g-value p-value))
+ (when (not (string= g-value p-value))
    (let ((formatted-log (html-diff-log p-value g-value p-token g-token p-sentence g-sentence diff-table)))
-      (add-diff-log p-value g-value formatted-log diff-table))))
+     (add-diff-log p-value g-value formatted-log diff-table))))
 
 
 (defun format-file-name (p-value g-value)
@@ -214,19 +167,20 @@ td:hover::after,th:hover::after
    Erases them from the diff table."
   (loop for g-value being the hash-keys in diff-table do
        (loop for p-value being the hash-keys in (gethash g-value diff-table) do
-       (let ((filename (get-diff-file-path p-value g-value diffs-path)))
-       (with-open-file (file filename
-				               :direction :output
-				               :if-exists :append
-				               :if-does-not-exist :create)
+	    (let ((filename (get-diff-file-path p-value g-value diffs-path)))
+	      (with-open-file (file filename
+				    :direction :output
+				    :if-exists :append
+				    :if-does-not-exist :create)
 
-	      (when (= (file-length file) 0)
-        (html-write-charset file)
-		   (html-write-style-css file))
-	      (loop for log in (gethash p-value (gethash g-value diff-table)) do
-		   (write-line log file))
-	      
-	      (setf (gethash p-value (gethash g-value diff-table)) nil))))))
+		(when (= (file-length file) 0)
+		  (html-write-charset file)
+		  (html-write-style-css file))
+
+		(loop for log in (gethash p-value (gethash g-value diff-table)) do
+		     (write-line log file))
+
+		(setf (gethash p-value (gethash g-value diff-table)) nil))))))
 
 
 (defun confusion-table-add-column (confusion-table new-column)
@@ -251,7 +205,7 @@ td:hover::after,th:hover::after
   " Returns the rows of the confusion table "
   (let ((rows (list (alexandria:flatten (append '("") (alexandria:hash-table-keys table)))))
 	(columns (alexandria:hash-table-keys table)))
-    
+
     (loop for line in columns do
 	 (let ((row (list line)))
 	   (loop for column in columns do
