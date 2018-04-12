@@ -367,6 +367,62 @@
 	   number-of-non-projectives))))
 
 
+(defun exact-match-sentence (sent1 sent2 &key (compared-fields '(upostag feats head deprel)) (identity-fields '(id form)) (test #'equal) (simple-dep nil) (ignore-punct nil))
+  "Compares if two sentences are an exact match.
+
+   The typical use case is comparing the result of a tagger (or
+   parser) against a test sentence.
+
+   Returns T if SENT1 and SENT2 agree for all tokens with respect to
+   the COMPARED-FIELDS. Otherwise returns NIL.
+
+   If they do not have the same number of tokens or if the tokens do
+   not agree on each IDENTITY-FIELD, then the sentences are not 'the
+   same' and thus an error is returned."
+
+  ;; check if sentences are the same (tokens and form)
+  (assert (null (sentence-diff sent1 sent2 :fields identity-fields)))
+  ;;  if not, raise error
+  ;; return t if they are the same
+  (if (sentence-diff sent1 sent2 :fields compared-fields
+		     :test test
+		     :simple-dep simple-dep
+		     :ignore-punct ignore-punct)
+      nil
+      t))
+
+(defun exact-match (list-sent1 list-sent2 (compared-fields '(upostag feats head deprel)) (identity-fields '(id form)) (test #'equal) (simple-dep nil) (ignore-punct nil))
+  "Returns the percentage of sentences of LIST-SENT1 that are an exact
+  match to LIST-SENT2.
+
+  LIST-SENT1 and LIST-SENT2 must have the same size with corresponding
+  sentences in order.
+
+  The typical use case is comparing the result of a tagger (or
+  parser) against a test set, where an exact match is a completely
+  correct tagging (or parse) for the sentence.
+
+  References:
+    - Dependency Parsing. Kubler, Mcdonald and Nivre (p.79)"
+
+  (assert (equal
+	   (length list-sent1)
+	   (length list-sent2)))
+  (let ((n (float (length list-sent1)))
+	(correct-sentences
+	 (count t
+		(mapcar #'(lambda (x y)
+			    (exact-match-sentence
+			     x y
+			     :compared-fields compared-fields
+			     :identity-fields identity-fields
+			     :test test
+			     :simple-dep simple-dep
+			     :ignore-punct ignore-punct))
+			list-sent1
+			list-sent2))))
+    (/ correct-sentences n)))
+
 (defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
   "Returns a hash table where keys are lists (deprel1 deprel2) and
    values are fraction of classifications as deprel1 of a word that
