@@ -266,8 +266,8 @@ reconstructed from its tokens and mtokens.
 
 (defun insert-token (sentence new-token)
   "Inserts token in a sentence object. It will not be inserted exactly
-   as given: it's ID will be the same (place where it'll be inserted)
-   but it's head should point to id value prior to the insertion. It
+   as given: its ID will be the same (place where it'll be inserted)
+   but its head should point to id value prior to the insertion. It
    changes the sentence object passed."
   (with-slots (tokens mtokens) sentence
     (dolist (token tokens)
@@ -283,7 +283,8 @@ reconstructed from its tokens and mtokens.
     (if (>= (token-head new-token)
 	    (token-id new-token))
 	(incf (token-head new-token)))
-    (insert-at tokens (1- (token-id new-token)) new-token)
+    (setf tokens
+	  (insert-at tokens (1- (token-id new-token)) new-token))
     sentence))
 
 
