@@ -391,7 +391,7 @@
       nil
       t))
 
-(defun exact-match (list-sent1 list-sent2 (compared-fields '(upostag feats head deprel)) (identity-fields '(id form)) (test #'equal) (simple-dep nil) (ignore-punct nil))
+(defun exact-match (list-sent1 list-sent2 &key (compared-fields '(upostag feats head deprel)) (identity-fields '(id form)) (test #'equal) (simple-dep nil) (ignore-punct nil))
   "Returns the percentage of sentences of LIST-SENT1 that are an exact
   match to LIST-SENT2.
 
