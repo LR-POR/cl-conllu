@@ -112,9 +112,19 @@
 	  '()
 	  "Different tokens are being compared! Tokens ~a and ~a do not have the same FORM. ~%Perhaps different sentences are being compared."
 	  token1 token2)
-  ...)
+
+  (insert-entry-confusion-matrix
+   (funcall (cm-key-fn cm)
+	    token1)
+   (funcall (cm-key-fn cm)
+	    token2)
+   token1
+   cm))
 
 (defun insert-entry-confusion-matrix (label1 label2 token cm)
+  ;; check if label1 x label2 already exists in cm
+  ;; label1 in rows
+  ;; label2 in columns
   ...)
   
 ;;; column creation
