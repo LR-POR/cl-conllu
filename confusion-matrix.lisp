@@ -36,17 +36,6 @@
   (setf (cm-columns obj)
 	(make-hash-table :test test-fn)))
 
-;;; column creation
-
-;;; initialization
-
-(defun make-confusion-matrix (sents-1 sents-2
-			      &key key-fn test-fn)
-  ...)
-
-(defun update-confusion-matrix (sents-1 sents-2 cm)
-  ...)
-
 ;;; Utility functions
 
 (defun get-labels cn
@@ -65,3 +54,68 @@
 (defun get-exact-match-sentences (cn)
   ;; output: list of strings (sent-id)
   ...)
+
+;;; initialization
+
+(defun make-confusion-matrix (list-sent1 list-sent2
+			      &key key-fn test-fn)
+  (assert (equal
+	   (length list-sent1)
+	   (length list-sent2))
+	  '()
+	  "LIST-SENT1 and LIST-SENT2 should have the same number of sentences!")
+  (let ((cm ...))
+    (mapc
+     #'(lambda (sent1 sent2)
+	 ...)
+     list-sent1
+     list-sent2)
+    cm))
+
+(defun update-confusion-matrix (list-sent1 list-sent2 cm)
+  ...)
+
+;;; low-level updating
+
+(defun update-confusion-matrix-sentences (sent1 sent2 cm)
+  (assert (equal
+	   (sentence-size sent1)
+	   (sentence-size sent2))
+	  '()
+	  "SENTENCES~%~a~%and~%~a~% do not have the same number of tokens!"
+	  sent1
+	  sent2)
+  (assert (equal
+	   (sentence-id sent1)
+	   (sentence-id sent2))
+	  '()
+	  "SENTENCES~%~a~%and~%~a~% do not have the same ID!"
+	  sent1
+	  sent2)
+  (mapc
+   #'(lambda (tk1 tk2)
+       (update-confusion-matrix-tokens
+	tk1 tk2 cm))
+   (sentence-tokens sent1)
+   (sentence-tokens sent2)))
+
+(defun update-confusion-matrix-tokens (token1 token2 cm)
+  (assert (equal
+	   (token-id token1)
+	   (token-id token2))
+	  '()
+	  "Different tokens are being compared! Tokens ~a and ~a do not have the same ID. ~%Perhaps different sentences are being compared."
+	  token1 token2)
+  (assert (equal
+	   (token-form token1)
+	   (token-form token2))
+	  '()
+	  "Different tokens are being compared! Tokens ~a and ~a do not have the same FORM. ~%Perhaps different sentences are being compared."
+	  token1 token2)
+  ...)
+
+(defun insert-entry-confusion-matrix (label1 label2 token cm)
+  ...)
+  
+;;; column creation
+
