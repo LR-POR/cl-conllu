@@ -13,22 +13,22 @@
 
 (defclass confusion-matrix ()
   ((corpus-id :initarg :corpus-id
-	      :accessor :cm-corpus-id
+	      :accessor cm-corpus-id
 	      :documentation "Identifier of the corpus or experiment.")
    (key-fn :initarg :key-fn
 	   :initform #'token-upostag
-	   :accessor :cm-key-fn
+	   :accessor cm-key-fn
 	   :documentation "Function used to label each token.")
    (test-fn :initarg :test-fn
 	    :initform #'equal
-	    :accessor :cm-test-fn
+	    :accessor cm-test-fn
 	    :documentation "Function which compares two labels. Typically a form of equality.")
-   (rows :accessor :cm-rows
-	    :documentation "Parameter which contains the contents of the confusion matrix."
-	    ;; Hash table which maps to rows, which are themselves
-	    ;; hash tables that maps to an array #(COUNT LIST), where
-	    ;; LIST is a list of (sentence-id . token-id)
-	    )))
+   (rows :accessor cm-rows
+	 :documentation "Parameter which contains the contents of the confusion matrix."
+	 ;; Hash table which maps to rows, which are themselves
+	 ;; hash tables that maps to an array #(COUNT LIST), where
+	 ;; LIST is a list of (sentence-id . token-id)
+	 )))
 
 (defmethod print-object ... ...)
 (defmethod initialize-instance :after
@@ -47,7 +47,6 @@
 (defun get-cell-tokens (label1 label2 cm)
   ;; output: list of (sent-id . token-id)
   ...)
-
 (defun get-sentences-ids (cm)
   ;; output: list of strings
   ...)
@@ -58,22 +57,30 @@
 ;;; initialization
 
 (defun make-confusion-matrix (list-sent1 list-sent2
-			      &key key-fn test-fn)
+			      &key (key-fn #'token-upostag) (test-fn #'equal) corpus-id)
   (assert (equal
 	   (length list-sent1)
 	   (length list-sent2))
-	  '()
+	  ()
 	  "LIST-SENT1 and LIST-SENT2 should have the same number of sentences!")
-  (let ((cm ...))
-    (mapc
-     #'(lambda (sent1 sent2)
-	 ...)
-     list-sent1
-     list-sent2)
-    cm))
+  (let ((cm (make-instance 'confusion-matrix
+			   :test-fn test-fn
+			   :key-fn key-fn
+			   :corpus-id corpus-id)))
+    (update-confusion-matrix list-sent1 list-sent2 cm)))
 
 (defun update-confusion-matrix (list-sent1 list-sent2 cm)
-  ...)
+  (assert (equal
+	   (length list-sent1)
+	   (length list-sent2))
+	  ()
+	  "LIST-SENT1 and LIST-SENT2 should have the same number of sentences!")
+  (mapc
+   #'(lambda (sent1 sent2)
+       (update-confusion-matrix-sentences sent1 sent2 cm))
+   list-sent1
+   list-sent2)
+  cm)
 
 ;;; low-level updating
 
@@ -81,14 +88,14 @@
   (assert (equal
 	   (sentence-size sent1)
 	   (sentence-size sent2))
-	  '()
+	  ()
 	  "SENTENCES~%~a~%and~%~a~% do not have the same number of tokens!"
 	  sent1
 	  sent2)
   (assert (equal
 	   (sentence-id sent1)
 	   (sentence-id sent2))
-	  '()
+	  ()
 	  "SENTENCES~%~a~%and~%~a~% do not have the same ID!"
 	  sent1
 	  sent2)
@@ -103,13 +110,13 @@
   (assert (equal
 	   (token-id token1)
 	   (token-id token2))
-	  '()
+	  ()
 	  "Different tokens are being compared! Tokens ~a and ~a do not have the same ID. ~%Perhaps different sentences are being compared."
 	  token1 token2)
   (assert (equal
 	   (token-form token1)
 	   (token-form token2))
-	  '()
+	  ()
 	  "Different tokens are being compared! Tokens ~a and ~a do not have the same FORM. ~%Perhaps different sentences are being compared."
 	  token1 token2)
 
@@ -124,7 +131,7 @@
 (defun insert-entry-confusion-matrix (label1 label2 token cm)
   "Inserts TOKEN as an occurence in the cell LABEL1 LABEL2 of the
 confusion matrix CM."
-  (unless (existing-cell label1 label2 cm)
+  (unless (existing-cell-p label1 label2 cm)
     (create-cell label1 label2 cm))
   (let ((cell (aref (gethash
 		     label2
@@ -156,7 +163,7 @@ matrix CM."
 		 (cm-rows cm)))
     (setf (gethash label1
 		   (cm-rows cm))
-	  (make-hash-table #'test
+	  (make-hash-table :test
 			   (cm-test-fn cm))))
   (let ((row (gethash label1 cm)))
     (unless (member label2
