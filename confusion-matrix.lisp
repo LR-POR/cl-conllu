@@ -30,7 +30,24 @@
 	 ;; LIST is a list of (sentence-id . token-id)
 	 )))
 
-(defmethod print-object ... ...)
+
+(defmethod print-object ((obj confusion-matrix) out)
+  (print-unreadable-object (obj out :type t)
+    (format out "~%~{~{~a~%~}~}"
+	    (mapcar
+	     #'(lambda (row)
+		 (mapcar
+		  #'(lambda (column)
+		      `(,row
+			,column
+			,(gethash
+			  column
+			  (gethash row
+				   (cm-rows obj)))))
+		  (alexandria:hash-table-keys
+		   (gethash row (cm-rows obj)))))
+	     (alexandria:hash-table-keys (cm-rows obj))))))
+
 (defmethod initialize-instance :after
     ((obj confusion-matrix) &key test-fn &allow-other-keys)
   (setf (cm-rows obj)
@@ -38,21 +55,21 @@
 
 ;;; Utility functions
 
-(defun get-labels cm
-  ;; output: list of labels
-  ...)
-(defun get-cell-count (label1 label2 cm)
-  ;; output: int
-  ...)
-(defun get-cell-tokens (label1 label2 cm)
-  ;; output: list of (sent-id . token-id)
-  ...)
-(defun get-sentences-ids (cm)
-  ;; output: list of strings
-  ...)
-(defun get-exact-match-sentences (cm)
-  ;; output: list of strings (sent-id)
-  ...)
+;; (defun get-labels cm
+;;   ;; output: list of labels
+;;   ...)
+;; (defun get-cell-count (label1 label2 cm)
+;;   ;; output: int
+;;   ...)
+;; (defun get-cell-tokens (label1 label2 cm)
+;;   ;; output: list of (sent-id . token-id)
+;;   ...)
+;; (defun get-sentences-ids (cm)
+;;   ;; output: list of strings
+;;   ...)
+;; (defun get-exact-match-sentences (cm)
+;;   ;; output: list of strings (sent-id)
+;;   ...)
 
 ;;; initialization
 
@@ -133,9 +150,9 @@
 confusion matrix CM."
   (unless (existing-cell-p label1 label2 cm)
     (create-cell label1 label2 cm))
-  (let ((cell (aref (gethash
-		     label2
-		     (gethash label1 (cm-rows cm))))))
+  (let ((cell (gethash
+	       label2
+	       (gethash label1 (cm-rows cm)))))
     (incf (aref cell 0))
     (push `(,(sentence-id (token-sentence token))
 	     ,(token-id token))
@@ -147,12 +164,15 @@ confusion matrix CM."
 LABEL2 already exist in the confusion matrix CM."
   (when (member label1
 		(alexandria:hash-table-keys
-		 (cm-rows cm)))
-    (let ((row (gethash label1 cm)))
+		 (cm-rows cm))
+		:test (cm-test-fn cm))
+    (let ((row (gethash label1
+			(cm-rows cm))))
       (assert (hash-table-p row))
       (if (member label2
-		    (alexandria:hash-table-keys
-		     row))
+		  (alexandria:hash-table-keys
+		   row)
+		  :test (cm-test-fn cm))
 	  t))))
 
 (defun create-cell (label1 label2 cm)
@@ -160,15 +180,18 @@ LABEL2 already exist in the confusion matrix CM."
 matrix CM."
   (unless (member label1
 		(alexandria:hash-table-keys
-		 (cm-rows cm)))
+		 (cm-rows cm))
+		:test (cm-test-fn cm))
     (setf (gethash label1
 		   (cm-rows cm))
 	  (make-hash-table :test
 			   (cm-test-fn cm))))
-  (let ((row (gethash label1 cm)))
+  (let ((row (gethash label1
+		      (cm-rows cm))))
     (unless (member label2
 		    (alexandria:hash-table-keys
-		     row))
+		     row)
+		    :test (cm-test-fn cm))
       (setf (gethash label2
 		     row)
 	    (make-array
