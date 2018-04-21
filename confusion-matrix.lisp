@@ -23,35 +23,35 @@
 	    :initform #'equal
 	    :accessor :cm-test-fn
 	    :documentation "Function which compares two labels. Typically a form of equality.")
-   (columns :accessor :cm-columns
+   (rows :accessor :cm-rows
 	    :documentation "Parameter which contains the contents of the confusion matrix."
-	    ;; Hash table which maps to rows, which maps to a pair
-	    ;; (count . list), where the list is a list of
-	    ;; (sentence-id . token-id)
+	    ;; Hash table which maps to rows, which are themselves
+	    ;; hash tables that maps to an array #(COUNT LIST), where
+	    ;; LIST is a list of (sentence-id . token-id)
 	    )))
 
 (defmethod print-object ... ...)
 (defmethod initialize-instance :after
     ((obj confusion-matrix) &key test-fn &allow-other-keys)
-  (setf (cm-columns obj)
+  (setf (cm-rows obj)
 	(make-hash-table :test test-fn)))
 
 ;;; Utility functions
 
-(defun get-labels cn
+(defun get-labels cm
   ;; output: list of labels
   ...)
-(defun get-cell-count (label1 label2 cn)
+(defun get-cell-count (label1 label2 cm)
   ;; output: int
   ...)
-(defun get-cell-tokens (label1 label2 cn)
+(defun get-cell-tokens (label1 label2 cm)
   ;; output: list of (sent-id . token-id)
   ...)
 
-(defun get-sentences-ids (cn)
+(defun get-sentences-ids (cm)
   ;; output: list of strings
   ...)
-(defun get-exact-match-sentences (cn)
+(defun get-exact-match-sentences (cm)
   ;; output: list of strings (sent-id)
   ...)
 
@@ -122,10 +122,51 @@
    cm))
 
 (defun insert-entry-confusion-matrix (label1 label2 token cm)
-  ;; check if label1 x label2 already exists in cm
-  ;; label1 in rows
-  ;; label2 in columns
-  ...)
-  
-;;; column creation
+  "Inserts TOKEN as an occurence in the cell LABEL1 LABEL2 of the
+confusion matrix CM."
+  (unless (existing-cell label1 label2 cm)
+    (create-cell label1 label2 cm))
+  (let ((cell (aref (gethash
+		     label2
+		     (gethash label1 (cm-rows cm))))))
+    (incf (aref cell 0))
+    (push `(,(sentence-id (token-sentence token))
+	     ,(token-id token))
+	  (aref cell 1))
+    cell))
+
+(defun existing-cell-p (label1 label2 cm)
+  "Predicate for verifying whether the cell for row LABEL1 and column
+LABEL2 already exist in the confusion matrix CM."
+  (when (member label1
+		(alexandria:hash-table-keys
+		 (cm-rows cm)))
+    (let ((row (gethash label1 cm)))
+      (assert (hash-table-p row))
+      (if (member label2
+		    (alexandria:hash-table-keys
+		     row))
+	  t))))
+
+(defun create-cell (label1 label2 cm)
+  "Creates the cell for row LABEL1 and column LABEL2 in confusion
+matrix CM."
+  (unless (member label1
+		(alexandria:hash-table-keys
+		 (cm-rows cm)))
+    (setf (gethash label1
+		   (cm-rows cm))
+	  (make-hash-table #'test
+			   (cm-test-fn cm))))
+  (let ((row (gethash label1 cm)))
+    (unless (member label2
+		    (alexandria:hash-table-keys
+		     row))
+      (setf (gethash label2
+		     row)
+	    (make-array
+	     2
+	     :initial-contents '(0 ()) )))))
+
+;;; content (hash) adjustment
 
