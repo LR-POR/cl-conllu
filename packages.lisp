@@ -49,6 +49,7 @@
 	   #:token-deprel
 	   #:token-deps
 	   #:token-misc
+	   #:token-sentence
 
 	   #:form
 	   #:lemma
