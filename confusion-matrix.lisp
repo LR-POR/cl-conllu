@@ -58,6 +58,9 @@
 ;; (defun get-labels cm
 ;;   ;; output: list of labels
 ;;   ...)
+;; (defun get-cells-labels cm
+;;   ;; output: list of pairs of labels
+;;   ...)
 ;; (defun get-cell-count (label1 label2 cm)
 ;;   ;; output: int
 ;;   ...)
