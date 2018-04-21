@@ -3,10 +3,6 @@
 ;;;;
 ;;;; For two sets of analyses of a set of sentences, a confusion matrix compares them with respect to a label for each token. Each token of a sentence is classified by a pair of labels (L1, L2), meaning that the first analyses for the token labels it as L1, while the second analyses labels it as L2.
 
-;;; TODOs
-;; todo: change token class definition to include pointers to sentence
-;; todo: change token initiation in order to include these pointers)
-
 ;;; class definition
 
 (in-package :cl-conllu)
