@@ -9,7 +9,7 @@
 
 (defclass confusion-matrix ()
   ((corpus-id :initarg :corpus-id
-	      :accessor cm-corpus-id
+	      :accessor confusion-matrix-corpus-id
 	      :documentation "Identifier of the corpus or experiment.")
    (key-fn :initarg :key-fn
 	   :initform #'token-upostag
@@ -19,6 +19,13 @@
 	    :initform #'equal
 	    :accessor cm-test-fn
 	    :documentation "Function which compares two labels. Typically a form of equality.")
+   (sort-fn :initarg :sort-fn
+	    :initform #'(lambda (x y)
+			  (string<=
+			   (format nil "~a" x)
+			   (format nil "~a" y)))
+	    :accessor cm-sort-fn
+	    :documentation "Function which sorts labels.")
    (rows :accessor cm-rows
 	 :documentation "Parameter which contains the contents of the confusion matrix."
 	 ;; Hash table which maps to rows, which are themselves
@@ -29,20 +36,16 @@
 
 (defmethod print-object ((obj confusion-matrix) out)
   (print-unreadable-object (obj out :type t)
-    (format out "~%~{~{~a~%~}~}"
+    (format out "~%~{~a~%~}"
 	    (mapcar
-	     #'(lambda (row)
-		 (mapcar
-		  #'(lambda (column)
-		      `(,row
-			,column
-			,(gethash
-			  column
-			  (gethash row
-				   (cm-rows obj)))))
-		  (alexandria:hash-table-keys
-		   (gethash row (cm-rows obj)))))
-	     (alexandria:hash-table-keys (cm-rows obj))))))
+	     #'(lambda (label-pair)
+		 `(,(first label-pair)
+		    ,(second label-pair)
+		    ,(confusion-matrix-cell-count
+		      (first label-pair)
+		      (second label-pair)
+		      obj)))
+	     (confusion-matrix-cells-labels obj)))))
 
 (defmethod initialize-instance :after
     ((obj confusion-matrix) &key test-fn &allow-other-keys)
@@ -51,22 +54,70 @@
 
 ;;; Utility functions
 
-;; (defun get-labels cm
-;;   ;; output: list of labels
-;;   ...)
-;; (defun get-cells-labels cm
-;;   ;; output: list of pairs of labels
-;;   ...)
-;; (defun get-cell-count (label1 label2 cm)
-;;   ;; output: int
-;;   ...)
-;; (defun get-cell-tokens (label1 label2 cm)
-;;   ;; output: list of (sent-id . token-id)
-;;   ...)
-;; (defun get-sentences-ids (cm)
+(defun confusion-matrix-labels (cm)
+  "Returns the list of all labels in the confusion matrix CM."
+  ;; output: list of labels
+  (sort
+  (remove-duplicates
+   (append
+    (alexandria:hash-table-keys
+     (cm-rows cm))
+    (apply #'append
+	   (mapcar
+	    #'alexandria:hash-table-keys
+	    (alexandria:hash-table-values (cm-rows cm)))))
+   :test (cm-test-fn cm))
+  (cm-sort-fn cm)))
+
+(defun confusion-matrix-cells-labels (cm)
+  "Returns a list of '(LABEL1 LABEL2) for each cell in the confusion
+matrix CM."
+  ;; output: list of pairs of labels
+  (apply #'append
+  (mapcar
+   #'(lambda (row)
+       (mapcar
+	#'(lambda (column)
+	    `(,row ,column))
+	(sort (alexandria:hash-table-keys (gethash
+				     row
+				     (cm-rows cm)))
+	      (cm-sort-fn cm))))
+   (sort (alexandria:hash-table-keys (cm-rows cm))
+	 (cm-sort-fn cm)))))
+
+(defun confusion-matrix-cell-count (label1 label2 cm)
+  "Returns the number of tokens that are contained in the cell defined
+by LABEL1 LABEL2 in the confusion matrix CM."
+  ;; output: int
+  (let ((entry-array
+	 (gethash label2
+		  (gethash label1 (cm-rows cm)))))
+    (if entry-array
+	(aref
+	 entry-array
+	 0)
+	(error "There is no cell (~a ~a)."
+	       label1
+	       label2))))
+
+(defun confusion-matrix-cell-tokens (label1 label2 cm)
+  ;; output: list of (sent-id . token-id)
+  (let ((entry-array
+	 (gethash label2
+		  (gethash label1 (cm-rows cm)))))
+    (if entry-array
+	(aref
+	 entry-array
+	 1)
+	(error "There is no cell (~a ~a)."
+	       label1
+	       label2))))
+
+;; (defun confusion-matrix-sentences-ids (cm)
 ;;   ;; output: list of strings
 ;;   ...)
-;; (defun get-exact-match-sentences (cm)
+;; (defun confusion-matrix-exact-match-sentences (cm)
 ;;   ;; output: list of strings (sent-id)
 ;;   ...)
 
@@ -199,3 +250,28 @@ matrix CM."
 
 ;;; content (hash) adjustment
 
+(defun normalize-confusion-matrix (cm)
+  "Creates empty cells for each pair (LABEL1 LABEL2) of labels in
+ (confusion-matrix-labels CM)."
+  (let ((cm-labels (confusion-matrix-labels cm)))
+    (dolist (label1 cm-labels)
+      (unless (member label1
+                      (alexandria:hash-table-keys
+                       (cm-rows cm))
+                      :test (cm-test-fn cm))
+        (setf (gethash label1
+                       (cm-rows cm))
+              (make-hash-table :test
+                               (cm-test-fn cm))))
+      (let ((row (gethash label1
+			  (cm-rows cm))))
+	(dolist (label2 cm-labels)
+          (unless (member label2
+			  (alexandria:hash-table-keys
+			   row)
+			  :test (cm-test-fn cm))
+	    (setf (gethash label2
+			   row)
+		  (make-array
+		   2
+		   :initial-contents '(0 ()) ))))))))
