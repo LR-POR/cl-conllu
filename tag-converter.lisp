@@ -14,7 +14,7 @@
 
   Example:
   ;; supposing sentence already defined
-  (write-sentence-tag-suffix-to-stream (sentence :tag 'xpostag :sepatator \"_\"))
+  (write-sentence-tag-suffix-to-stream (sentence :tag 'xpostag :separator \"_\"))
 Pierre_NNP Vinken_NNP ,_, 61_CD years_NNS old_JJ ,_, will_MD join_VB the_DT board_NN as_IN
     a_DT nonexecutive_JJ director_NN Nov._NNP 29_CD ._.
   => NIL"
