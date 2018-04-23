@@ -373,25 +373,46 @@
    The typical use case is comparing the result of a tagger (or
    parser) against a test sentence.
 
-   Returns T if SENT1 and SENT2 agree for all tokens with respect to
+   Returns SENT1 if SENT1 and SENT2 agree for all tokens with respect to
    the COMPARED-FIELDS. Otherwise returns NIL.
 
    If they do not have the same number of tokens or if the tokens do
    not agree on each IDENTITY-FIELD, then the sentences are not 'the
    same' and thus an error is returned."
 
-  ;; check if sentences are the same (tokens and form)
   (assert (null (sentence-diff sent1 sent2 :fields identity-fields)))
-  ;;  if not, raise error
-  ;; return t if they are the same
+
   (if (sentence-diff sent1 sent2 :fields compared-fields
 		     :test test
 		     :simple-dep simple-dep
 		     :ignore-punct ignore-punct)
       nil
-      t))
+      sent1))
 
 (defun exact-match (list-sent1 list-sent2 &key (compared-fields '(upostag feats head deprel)) (identity-fields '(id form)) (test #'equal) (simple-dep nil) (ignore-punct nil))
+  "Returns the list of sentences of LIST-SENT1 that are an exact
+  match to the corresponding sentence of LIST-SENT2 (same position in
+  list).
+
+  LIST-SENT1 and LIST-SENT2 must have the same size with corresponding
+  sentences in order."
+  (assert (equal
+	   (length list-sent1)
+	   (length list-sent2)))
+  (remove nil
+	  (mapcar #'(lambda (x y)
+		      (exact-match-sentence
+		       x y
+		       :compared-fields compared-fields
+		       :identity-fields identity-fields
+		       :test test
+		       :simple-dep simple-dep
+		       :ignore-punct ignore-punct))
+		  list-sent1
+		  list-sent2)
+	  :test #'equal))
+
+(defun exact-match-score (list-sent1 list-sent2 &key (compared-fields '(upostag feats head deprel)) (identity-fields '(id form)) (test #'equal) (simple-dep nil) (ignore-punct nil))
   "Returns the percentage of sentences of LIST-SENT1 that are an exact
   match to LIST-SENT2.
 
@@ -410,17 +431,14 @@
 	   (length list-sent2)))
   (let ((n (float (length list-sent1)))
 	(correct-sentences
-	 (count t
-		(mapcar #'(lambda (x y)
-			    (exact-match-sentence
-			     x y
-			     :compared-fields compared-fields
-			     :identity-fields identity-fields
-			     :test test
-			     :simple-dep simple-dep
-			     :ignore-punct ignore-punct))
-			list-sent1
-			list-sent2))))
+	 (length
+	  (exact-match
+	   list-sent1 list-sent2
+	   :compared-fields compared-fields
+	   :identity-fields identity-fields
+	   :test test
+	   :simple-dep simple-dep
+	   :ignore-punct ignore-punct))))
     (/ correct-sentences n)))
 
 (defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
