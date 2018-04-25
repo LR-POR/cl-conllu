@@ -87,8 +87,9 @@
 	   #:confusion-matrix-cells-labels
 	   #:confusion-matrix-cell-count
 	   #:confusion-matrix-cell-tokens
+	   #:confusion-matrix-corpus-id
 	   #:make-confusion-matrix
-	   #:update-confusion-matrix))
+	   #:confusion-matrix-update))
   
 
 (defpackage #:conllu.prolog

@@ -17,11 +17,11 @@
 	      :documentation "Identifier of the corpus or experiment.")
    (key-fn :initarg :key-fn
 	   :initform #'token-upostag
-	   :accessor cm-key-fn
+	   :accessor confusion-matrix-key-fn
 	   :documentation "Function used to label each token.")
    (test-fn :initarg :test-fn
 	    :initform #'equal
-	    :accessor cm-test-fn
+	    :accessor confusion-matrix-test-fn
 	    :documentation "Function which compares two labels.
 	    Typically a form of equality.")
    (sort-fn :initarg :sort-fn
@@ -29,10 +29,10 @@
 			  (string<=
 			   (format nil "~a" x)
 			   (format nil "~a" y)))
-	    :accessor cm-sort-fn
+	    :accessor confusion-matrix-sort-fn
 	    :documentation "Function which sorts labels. By default,
 	    converts labels to string and uses lexicographical order")
-   (rows :accessor cm-rows
+   (rows :accessor confusion-matrix-rows
 	 :documentation "Parameter which contains the contents of the
 	 confusion matrix."
 	 ;; Hash table which maps to rows, which are themselves
@@ -40,6 +40,11 @@
 	 ;; LIST is a list of (sentence-id . token-id)
 	 )))
 
+
+(defmethod initialize-instance :after
+    ((obj confusion-matrix) &key &allow-other-keys)
+  (setf (confusion-matrix-rows obj)
+	(make-hash-table :test (confusion-matrix-test-fn obj))))
 
 (defmethod print-object ((obj confusion-matrix) out)
   (print-unreadable-object (obj out :type t)
@@ -54,11 +59,6 @@
 		      obj)))
 	     (confusion-matrix-cells-labels obj)))))
 
-(defmethod initialize-instance :after
-    ((obj confusion-matrix) &key test-fn &allow-other-keys)
-  (setf (cm-rows obj)
-	(make-hash-table :test test-fn)))
-
 ;;; Utility functions
 
 (defun confusion-matrix-labels (cm)
@@ -68,13 +68,13 @@
   (remove-duplicates
    (append
     (alexandria:hash-table-keys
-     (cm-rows cm))
+     (confusion-matrix-rows cm))
     (apply #'append
 	   (mapcar
 	    #'alexandria:hash-table-keys
-	    (alexandria:hash-table-values (cm-rows cm)))))
-   :test (cm-test-fn cm))
-  (cm-sort-fn cm)))
+	    (alexandria:hash-table-values (confusion-matrix-rows cm)))))
+   :test (confusion-matrix-test-fn cm))
+  (confusion-matrix-sort-fn cm)))
 
 (defun confusion-matrix-cells-labels (cm)
   "Returns a list of '(LABEL1 LABEL2) for each cell in the confusion
@@ -88,10 +88,10 @@ matrix CM."
 	    `(,row ,column))
 	(sort (alexandria:hash-table-keys (gethash
 				     row
-				     (cm-rows cm)))
-	      (cm-sort-fn cm))))
-   (sort (alexandria:hash-table-keys (cm-rows cm))
-	 (cm-sort-fn cm)))))
+				     (confusion-matrix-rows cm)))
+	      (confusion-matrix-sort-fn cm))))
+   (sort (alexandria:hash-table-keys (confusion-matrix-rows cm))
+	 (confusion-matrix-sort-fn cm)))))
 
 (defun confusion-matrix-cell-count (label1 label2 cm)
   "Returns the number of tokens that are contained in the cell defined
@@ -99,7 +99,7 @@ by LABEL1 LABEL2 in the confusion matrix CM."
   ;; output: int
   (let ((entry-array
 	 (gethash label2
-		  (gethash label1 (cm-rows cm)))))
+		  (gethash label1 (confusion-matrix-rows cm)))))
     (if entry-array
 	(aref
 	 entry-array
@@ -114,7 +114,7 @@ LABEL1 LABEL2."
   ;; output: list of (sent-id . token-id)
   (let ((entry-array
 	 (gethash label2
-		  (gethash label1 (cm-rows cm)))))
+		  (gethash label1 (confusion-matrix-rows cm)))))
     (if entry-array
 	(aref
 	 entry-array
@@ -134,7 +134,11 @@ LABEL1 LABEL2."
 ;;; initialization
 
 (defun make-confusion-matrix (list-sent1 list-sent2
-			      &key (key-fn #'token-upostag) (test-fn #'equal) corpus-id)
+			      &key corpus-id (key-fn #'token-upostag) (test-fn #'equal)
+				(sort-fn #'(lambda (x y)
+					     (string<=
+					      (format nil "~a" x)
+					      (format nil "~a" y)))))
   "Creates a new confusion matrix from the lists of sentences
 LIST-SENT1 and LIST-SENT2."
   (assert (equal
@@ -145,10 +149,11 @@ LIST-SENT1 and LIST-SENT2."
   (let ((cm (make-instance 'confusion-matrix
 			   :test-fn test-fn
 			   :key-fn key-fn
-			   :corpus-id corpus-id)))
-    (update-confusion-matrix list-sent1 list-sent2 cm)))
+			   :corpus-id corpus-id
+			   :sort-fn sort-fn)))
+    (confusion-matrix-update list-sent1 list-sent2 cm)))
 
-(defun update-confusion-matrix (list-sent1 list-sent2 cm)
+(defun confusion-matrix-update (list-sent1 list-sent2 cm)
   "Updates an existing confusion matrix by a list of sentences
 LIST-SENT1 and LIST-SENT2."
   (assert (equal
@@ -158,14 +163,14 @@ LIST-SENT1 and LIST-SENT2."
 	  "LIST-SENT1 and LIST-SENT2 should have the same number of sentences!")
   (mapc
    #'(lambda (sent1 sent2)
-       (update-confusion-matrix-sentences sent1 sent2 cm))
+       (confusion-matrix-update-sentences sent1 sent2 cm))
    list-sent1
    list-sent2)
   cm)
 
 ;;; low-level updating
 
-(defun update-confusion-matrix-sentences (sent1 sent2 cm)
+(defun confusion-matrix-update-sentences (sent1 sent2 cm)
   "Updates an existing confusion matrix by a pair of matching
 sentences SENT1 and SENT2. That is, SENT1 and SENT2 should be
 alternative analyses of the same natural language sentence."
@@ -185,12 +190,12 @@ alternative analyses of the same natural language sentence."
 	  sent2)
   (mapc
    #'(lambda (tk1 tk2)
-       (update-confusion-matrix-tokens
+       (confusion-matrix-update-tokens
 	tk1 tk2 cm))
    (sentence-tokens sent1)
    (sentence-tokens sent2)))
 
-(defun update-confusion-matrix-tokens (token1 token2 cm)
+(defun confusion-matrix-update-tokens (token1 token2 cm)
   (assert (equal
 	   (token-id token1)
 	   (token-id token2))
@@ -205,9 +210,9 @@ alternative analyses of the same natural language sentence."
 	  token1 token2)
 
   (insert-entry-confusion-matrix
-   (funcall (cm-key-fn cm)
+   (funcall (confusion-matrix-key-fn cm)
 	    token1)
-   (funcall (cm-key-fn cm)
+   (funcall (confusion-matrix-key-fn cm)
 	    token2)
    token1
    cm))
@@ -219,7 +224,7 @@ confusion matrix CM."
     (create-cell label1 label2 cm))
   (let ((cell (gethash
 	       label2
-	       (gethash label1 (cm-rows cm)))))
+	       (gethash label1 (confusion-matrix-rows cm)))))
     (incf (aref cell 0))
     (push `(,(sentence-id (token-sentence token))
 	     ,(token-id token))
@@ -231,15 +236,15 @@ confusion matrix CM."
 LABEL2 already exist in the confusion matrix CM."
   (when (member label1
 		(alexandria:hash-table-keys
-		 (cm-rows cm))
-		:test (cm-test-fn cm))
+		 (confusion-matrix-rows cm))
+		:test (confusion-matrix-test-fn cm))
     (let ((row (gethash label1
-			(cm-rows cm))))
+			(confusion-matrix-rows cm))))
       (assert (hash-table-p row))
       (if (member label2
 		  (alexandria:hash-table-keys
 		   row)
-		  :test (cm-test-fn cm))
+		  :test (confusion-matrix-test-fn cm))
 	  t))))
 
 (defun create-cell (label1 label2 cm)
@@ -247,18 +252,18 @@ LABEL2 already exist in the confusion matrix CM."
 matrix CM."
   (unless (member label1
 		(alexandria:hash-table-keys
-		 (cm-rows cm))
-		:test (cm-test-fn cm))
+		 (confusion-matrix-rows cm))
+		:test (confusion-matrix-test-fn cm))
     (setf (gethash label1
-		   (cm-rows cm))
+		   (confusion-matrix-rows cm))
 	  (make-hash-table :test
-			   (cm-test-fn cm))))
+			   (confusion-matrix-test-fn cm))))
   (let ((row (gethash label1
-		      (cm-rows cm))))
+		      (confusion-matrix-rows cm))))
     (unless (member label2
 		    (alexandria:hash-table-keys
 		     row)
-		    :test (cm-test-fn cm))
+		    :test (confusion-matrix-test-fn cm))
       (setf (gethash label2
 		     row)
 	    (make-array
@@ -274,19 +279,19 @@ matrix CM."
     (dolist (label1 cm-labels)
       (unless (member label1
                       (alexandria:hash-table-keys
-                       (cm-rows cm))
-                      :test (cm-test-fn cm))
+                       (confusion-matrix-rows cm))
+                      :test (confusion-matrix-test-fn cm))
         (setf (gethash label1
-                       (cm-rows cm))
+                       (confusion-matrix-rows cm))
               (make-hash-table :test
-                               (cm-test-fn cm))))
+                               (confusion-matrix-test-fn cm))))
       (let ((row (gethash label1
-			  (cm-rows cm))))
+			  (confusion-matrix-rows cm))))
 	(dolist (label2 cm-labels)
           (unless (member label2
 			  (alexandria:hash-table-keys
 			   row)
-			  :test (cm-test-fn cm))
+			  :test (confusion-matrix-test-fn cm))
 	    (setf (gethash label2
 			   row)
 		  (make-array
