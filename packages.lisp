@@ -80,7 +80,15 @@
 	   #:convert-rdf
 	   #:convert-rdf-file
 
-	   #:convert-to-rdf))
+	   #:convert-to-rdf
+
+	   #:confusion-matrix
+	   #:confusion-matrix-labels
+	   #:confusion-matrix-cells-labels
+	   #:confusion-matrix-cell-count
+	   #:confusion-matrix-cell-tokens
+	   #:make-confusion-matrix
+	   #:update-confusion-matrix))
   
 
 (defpackage #:conllu.prolog
