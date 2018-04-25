@@ -7,6 +7,20 @@
 ;;;; meaning that the first analyses for the token labels it as L1,
 ;;;; while the second analyses labels it as L2.
 
+;;; Usage overview:
+;;
+;; For creating a new confusion matrix from two lists of sentence, use
+;; MAKE-CONFUSION-MATRIX.
+;; For the list of labels, use CONFUSION-MATRIX-LABELS.
+;; For accessing the cells, use CONFUSION-MATRIX-CELL-COUNT for the
+;; values and CONFUSION-MATRIX-CELL-TOKENS for the instances (in ids,
+;; not the objects).
+;; Notice that, by default, not necessarily the matrix is square, as
+;; not every pair LABEL1 LABEL2 is instantiated. For normalizing it,
+;; instantiating every possible LABEL1 LABEL2 pair with a cell with 0
+;; entries, use CONFUSION-MATRIX-NORMALIZE.
+
+
 ;;; class definition
 
 (in-package :cl-conllu)
@@ -272,7 +286,7 @@ matrix CM."
 
 ;;; content adjustment
 
-(defun normalize-confusion-matrix (cm)
+(defun confusion-matrix-normalize (cm)
   "Creates empty cells for each pair (LABEL1 LABEL2) of labels in
  (confusion-matrix-labels CM)."
   (let ((cm-labels (confusion-matrix-labels cm)))
