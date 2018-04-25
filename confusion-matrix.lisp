@@ -1,7 +1,11 @@
 ;;;; Confusion matrices
 ;;;; class definition, initiatlization, formatting, auxiliary functions, etc
 ;;;;
-;;;; For two sets of analyses of a set of sentences, a confusion matrix compares them with respect to a label for each token. Each token of a sentence is classified by a pair of labels (L1, L2), meaning that the first analyses for the token labels it as L1, while the second analyses labels it as L2.
+;;;; For two sets of analyses of a set of sentences, a confusion
+;;;; matrix compares them with respect to a label for each token. Each
+;;;; token of a sentence is classified by a pair of labels (L1, L2),
+;;;; meaning that the first analyses for the token labels it as L1,
+;;;; while the second analyses labels it as L2.
 
 ;;; class definition
 
@@ -18,16 +22,19 @@
    (test-fn :initarg :test-fn
 	    :initform #'equal
 	    :accessor cm-test-fn
-	    :documentation "Function which compares two labels. Typically a form of equality.")
+	    :documentation "Function which compares two labels.
+	    Typically a form of equality.")
    (sort-fn :initarg :sort-fn
 	    :initform #'(lambda (x y)
 			  (string<=
 			   (format nil "~a" x)
 			   (format nil "~a" y)))
 	    :accessor cm-sort-fn
-	    :documentation "Function which sorts labels.")
+	    :documentation "Function which sorts labels. By default,
+	    converts labels to string and uses lexicographical order")
    (rows :accessor cm-rows
-	 :documentation "Parameter which contains the contents of the confusion matrix."
+	 :documentation "Parameter which contains the contents of the
+	 confusion matrix."
 	 ;; Hash table which maps to rows, which are themselves
 	 ;; hash tables that maps to an array #(COUNT LIST), where
 	 ;; LIST is a list of (sentence-id . token-id)
@@ -102,6 +109,8 @@ by LABEL1 LABEL2 in the confusion matrix CM."
 	       label2))))
 
 (defun confusion-matrix-cell-tokens (label1 label2 cm)
+  "Returns the list of (SENT-ID . TOKEN-ID) of tokens in the cell
+LABEL1 LABEL2."
   ;; output: list of (sent-id . token-id)
   (let ((entry-array
 	 (gethash label2
@@ -114,6 +123,7 @@ by LABEL1 LABEL2 in the confusion matrix CM."
 	       label1
 	       label2))))
 
+;; TODO
 ;; (defun confusion-matrix-sentences-ids (cm)
 ;;   ;; output: list of strings
 ;;   ...)
@@ -125,6 +135,8 @@ by LABEL1 LABEL2 in the confusion matrix CM."
 
 (defun make-confusion-matrix (list-sent1 list-sent2
 			      &key (key-fn #'token-upostag) (test-fn #'equal) corpus-id)
+  "Creates a new confusion matrix from the lists of sentences
+LIST-SENT1 and LIST-SENT2."
   (assert (equal
 	   (length list-sent1)
 	   (length list-sent2))
@@ -137,6 +149,8 @@ by LABEL1 LABEL2 in the confusion matrix CM."
     (update-confusion-matrix list-sent1 list-sent2 cm)))
 
 (defun update-confusion-matrix (list-sent1 list-sent2 cm)
+  "Updates an existing confusion matrix by a list of sentences
+LIST-SENT1 and LIST-SENT2."
   (assert (equal
 	   (length list-sent1)
 	   (length list-sent2))
@@ -152,6 +166,9 @@ by LABEL1 LABEL2 in the confusion matrix CM."
 ;;; low-level updating
 
 (defun update-confusion-matrix-sentences (sent1 sent2 cm)
+  "Updates an existing confusion matrix by a pair of matching
+sentences SENT1 and SENT2. That is, SENT1 and SENT2 should be
+alternative analyses of the same natural language sentence."
   (assert (equal
 	   (sentence-size sent1)
 	   (sentence-size sent2))
@@ -248,7 +265,7 @@ matrix CM."
 	     2
 	     :initial-contents '(0 ()) )))))
 
-;;; content (hash) adjustment
+;;; content adjustment
 
 (defun normalize-confusion-matrix (cm)
   "Creates empty cells for each pair (LABEL1 LABEL2) of labels in
