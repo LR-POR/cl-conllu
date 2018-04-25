@@ -14,7 +14,7 @@
 
   Example:
   ;; supposing sentence already defined
-  (write-sentence-tag-suffix-to-stream (sentence :tag 'xpostag :sepatator \"_\"))
+  (write-sentence-tag-suffix-to-stream (sentence :tag 'xpostag :separator \"_\"))
 Pierre_NNP Vinken_NNP ,_, 61_CD years_NNS old_JJ ,_, will_MD join_VB the_DT board_NN as_IN
     a_DT nonexecutive_JJ director_NN Nov._NNP 29_CD ._.
   => NIL"
@@ -24,13 +24,12 @@ Pierre_NNP Vinken_NNP ,_, 61_CD years_NNS old_JJ ,_, will_MD join_VB the_DT boar
 	   (cons nil
 		 (mapcar #'sb-mop:slot-definition-name
 			 (sb-mop:class-slots (find-class 'token))))))
-  (with-slots (tokens) sentence
-    (dolist (token tokens)
-      (write-token-tag-suffix token stream
-			      (if (null tag)
-				  nil
-				  (slot-value token tag))
-			      separator))))
+  (dolist (token (sentence-tokens sentence))
+    (write-token-tag-suffix token stream
+			    (if (null tag)
+				nil
+				(slot-value token tag))
+			    separator)))
 
 (defun write-sentences-tag-suffix-to-stream (sentences &key (stream *standard-output*) (tag 'upostag) (separator "_"))
   "See documentation for write-sentence-tag-suffix-to-stream"
