@@ -49,6 +49,7 @@
 	   #:token-deprel
 	   #:token-deps
 	   #:token-misc
+	   #:token-sentence
 
 	   #:form
 	   #:lemma
@@ -79,7 +80,17 @@
 	   #:convert-rdf
 	   #:convert-rdf-file
 
-	   #:convert-to-rdf))
+	   #:convert-to-rdf
+
+	   #:confusion-matrix
+	   #:confusion-matrix-labels
+	   #:confusion-matrix-cells-labels
+	   #:confusion-matrix-cell-count
+	   #:confusion-matrix-cell-tokens
+	   #:confusion-matrix-corpus-id
+	   #:make-confusion-matrix
+	   #:confusion-matrix-update
+	   #:confusion-matrix-normalize))
   
 
 (defpackage #:conllu.prolog
