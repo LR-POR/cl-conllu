@@ -6,9 +6,7 @@ licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache license]
 It is developed and tested with SBCL but should probably run with any
 other implementation.
 
-* Quicklisp
-
-If don't have quicklisp installed already, follow [[https://www.quicklisp.org/beta/#installation][these steps]].
+* Install
 
 The =cl-conllu= library is now available from quicklisp distribution,
 if you are not planning to change the code, just use:
@@ -17,9 +15,12 @@ if you are not planning to change the code, just use:
 (ql:quickload :cl-conllu)
 #+END_SRC
 
+If you don't have quicklisp installed already, follow [[https://www.quicklisp.org/beta/#installation][these steps]].
+
 If you plan on contributing, clone this project to your
 =local-projects= quicklisp directory (usually at
-=~/quicklisp/local-projects/=) and use the same command as above.
+=~/quicklisp/local-projects/=) and use the same command as above to
+load the code.
 
 * Documentation
 
