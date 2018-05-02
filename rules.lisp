@@ -232,3 +232,5 @@
   (let ((old-values (slot-value token field)))
     (setf (slot-value token field) (concatenate 'string old-values "|" new-value))
     (apply-conditions-in-token rest-conditions token)))
+
+
