@@ -31,7 +31,8 @@
 	    :accessor token-deps)
    (misc    :initarg :misc
 	    :initform "_"
-	    :accessor token-misc)))
+	    :accessor token-misc)
+   (sentence :accessor token-sentence)))
 
 
 (defclass mtoken ()
@@ -73,6 +74,15 @@
 	    (slot-value obj 'id) (slot-value obj 'deprel) (slot-value obj 'head))))
 
 
+(defmethod initialize-instance :after ((obj sentence)
+				       &key tokens &allow-other-keys)
+  "Sets the TOKEN-SENTENCE slot for each token attributed to the
+initialize sentence OBJ."
+  (mapc
+   #'(lambda (tk)
+       (setf (token-sentence tk)
+	     obj))
+   tokens))
 (defun sentence-matrix (sentence)
   (let ((arr (make-array (list (length (sentence-tokens sentence)) 10)))
 	(tb '(0 id 1 form 2 lemma 3 upostag 4 xpostag 5 feats 6 head 7 deprel 8 deps 9 misc)))
@@ -145,9 +155,11 @@
   (sentence-meta-value sentence "text"))
 
 
-(defun sentence->text (sentence &key (ignore-mtokens nil) (special-format-test #'null special-format-test-supplied-p) (special-format-function #'identity special-format-function-supplied-p))
+(defun sentence->text (sentence &key (ignore-mtokens nil)
+				  (special-format-test #'null special-format-test-supplied-p)
+				  (special-format-function #'identity special-format-function-supplied-p))
   "Receives SENTENCE, a sentence object, and returns a string
-reconstructed from its tokens and mtokens.
+   reconstructed from its tokens and mtokens.
    
    If IGNORE-MTOKENS, then tokens' forms are used. Else, tokens with
    id contained in a mtoken are not used, with mtoken's form being
