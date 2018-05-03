@@ -114,7 +114,17 @@
 (defpackage #:conllu.evaluate
   (:use #:cl #:cl-conllu)
   (:documentation "Functions for evaluating datasets and parser outputs in the CoNLL-U format.")
-  (:export #:confusion-matrix
+  (:export #:attachment-score-by-sentence
+           #:attachment-score-by-word
+           #:recall
+           #:precision
+           #:non-projectivity-accuracy
+           #:non-projectivity-precision
+           #:non-projectivity-recall
+           #:exact-match
+           #:exact-match-score
+           
+           #:confusion-matrix
            #:confusion-matrix-labels
            #:confusion-matrix-cells-labels
            #:confusion-matrix-cell-count
