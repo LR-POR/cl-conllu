@@ -286,28 +286,48 @@ matrix CM."
 
 ;;; content adjustment
 
+(defun confusion-matrix-copy (cm)
+  "Returns a new CONFUSION-MATRIX with the same cells values as CM."
+  (let ((cm-new (make-instance 'confusion-matrix
+                               :test-fn (confusion-matrix-test-fn cm)
+                               :key-fn (confusion-matrix-key-fn cm)
+                               :corpus-id (confusion-matrix-corpus-id cm)
+                               :sort-fn (confusion-matrix-sort-fn cm))))
+    (maphash
+     #'(lambda (label row)
+         (setf (gethash label
+                        (confusion-matrix-rows cm-new))
+               (alexandria:copy-hash-table
+                (gethash label
+                         (confusion-matrix-rows cm)))))
+     (confusion-matrix-rows cm))
+    cm-new))
+
 (defun confusion-matrix-normalize (cm)
-  "Creates empty cells for each pair (LABEL1 LABEL2) of labels in
- (confusion-matrix-labels CM)."
-  (let ((cm-labels (confusion-matrix-labels cm)))
+  "Returns a new CONFUSION-MATRIX with new empty cells for each pair
+ (LABEL1 LABEL2) of labels in (confusion-matrix-labels CM) that are
+ undefined in CM."
+  (let* ((cm-labels (confusion-matrix-labels cm))
+         (cm-new (confusion-matrix-copy cm)))
     (dolist (label1 cm-labels)
       (unless (member label1
                       (alexandria:hash-table-keys
-                       (confusion-matrix-rows cm))
-                      :test (confusion-matrix-test-fn cm))
+                       (confusion-matrix-rows cm-new))
+                      :test (confusion-matrix-test-fn cm-new))
         (setf (gethash label1
-                       (confusion-matrix-rows cm))
+                       (confusion-matrix-rows cm-new))
               (make-hash-table :test
-                               (confusion-matrix-test-fn cm))))
+                               (confusion-matrix-test-fn cm-new))))
       (let ((row (gethash label1
-			  (confusion-matrix-rows cm))))
+			  (confusion-matrix-rows cm-new))))
 	(dolist (label2 cm-labels)
           (unless (member label2
 			  (alexandria:hash-table-keys
 			   row)
-			  :test (confusion-matrix-test-fn cm))
+			  :test (confusion-matrix-test-fn cm-new))
 	    (setf (gethash label2
 			   row)
 		  (make-array
 		   2
-		   :initial-contents '(0 ()) ))))))))
+		   :initial-contents '(0 ()) ))))))
+    cm-new))
