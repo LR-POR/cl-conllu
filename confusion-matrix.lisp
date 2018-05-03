@@ -23,7 +23,7 @@
 
 ;;; class definition
 
-(in-package :cl-conllu)
+(in-package :conllu.evaluate)
 
 (defclass confusion-matrix ()
   ((corpus-id :initarg :corpus-id

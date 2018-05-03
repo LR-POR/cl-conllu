@@ -73,6 +73,7 @@
 	   #:sentence-text
 	   #:sentence-id
 	   #:sentence-equal
+           #:sentence-size
 
 	   #:apply-rules
 	   #:apply-rules-from-files
@@ -80,17 +81,7 @@
 	   #:convert-rdf
 	   #:convert-rdf-file
 
-	   #:convert-to-rdf
-
-	   #:confusion-matrix
-	   #:confusion-matrix-labels
-	   #:confusion-matrix-cells-labels
-	   #:confusion-matrix-cell-count
-	   #:confusion-matrix-cell-tokens
-	   #:confusion-matrix-corpus-id
-	   #:make-confusion-matrix
-	   #:confusion-matrix-update
-	   #:confusion-matrix-normalize))
+	   #:convert-to-rdf))
   
 
 (defpackage #:conllu.prolog
@@ -119,3 +110,16 @@
 (defpackage #:conllu.draw
   (:use #:cl #:cl-conllu)
   (:export #:tree-sentence))
+
+(defpackage #:conllu.evaluate
+  (:use #:cl #:cl-conllu)
+  (:documentation "Functions for evaluating datasets and parser outputs in the CoNLL-U format.")
+  (:export #:confusion-matrix
+           #:confusion-matrix-labels
+           #:confusion-matrix-cells-labels
+           #:confusion-matrix-cell-count
+           #:confusion-matrix-cell-tokens
+           #:confusion-matrix-corpus-id
+           #:make-confusion-matrix
+           #:confusion-matrix-update
+           #:confusion-matrix-normalize))
