@@ -51,13 +51,17 @@
 	   #:token-misc
 	   #:token-sentence
 
+           #:id
 	   #:form
 	   #:lemma
 	   #:upostag
 	   #:xpostag
 	   #:feats
+           #:head
 	   #:deprel
+           #:deps
 	   #:misc
+           #:simple-deprel
 
 	   #:mtoken
 	   #:mtoken-start

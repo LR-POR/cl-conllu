@@ -3,6 +3,8 @@
 
 ;; Functions for evaluating parsers
 
+(defparameter *token-fields*
+  '(id form lemma upostag xpostag feats head deprel deps misc))
 
 (defvar *deprel-value-list*
   '("nsubj"
@@ -218,7 +220,7 @@
             (remove-if-not
              #'(lambda (x)
                  (equal x deprel))
-             (mappend #'sentence-tokens
+             (alexandria:mappend #'sentence-tokens
                       list-sent2)
              :key #'token-deprel-chosen)))
           (wrong-words
@@ -281,7 +283,7 @@
 	    (remove-if-not
 	     #'(lambda (x)
 		 (equal x deprel))
-	     (mappend #'sentence-tokens
+	     (alexandria:mappend #'sentence-tokens
 		      list-sent1)
 	     :key #'token-deprel-chosen)))
 	  (wrong-words
