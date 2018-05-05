@@ -225,7 +225,7 @@
              :key #'token-deprel-chosen)))
           (wrong-words
            (length
-            (mapcar
+            (alexandria:mappend
              #'(lambda (sent1 sent2)
                  (remove-if-not
                   #'(lambda (x)
@@ -288,7 +288,7 @@
 	     :key #'token-deprel-chosen)))
 	  (wrong-words
 	   (length
-	    (mapcar
+	    (alexandria:mappend
 	     #'(lambda (sent1 sent2)
 		 (remove-if-not
 		  #'(lambda (x)
