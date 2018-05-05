@@ -192,7 +192,7 @@
       nil))
 
 
-(defun member-op (field elment rest-pattern token)
+(defun member-op (field element rest-pattern token)
   (let ((string-list (cl-ppcre:split "[|]" (slot-value token field))))
     (if (member element  string-list)
 	(match-token token rest-pattern)
