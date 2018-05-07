@@ -83,6 +83,7 @@ initialize sentence OBJ."
        (setf (token-sentence tk)
 	     obj))
    tokens))
+
 (defun sentence-matrix (sentence)
   (let ((arr (make-array (list (length (sentence-tokens sentence)) 10)))
 	(tb '(0 id 1 form 2 lemma 3 upostag 4 xpostag 5 feats 6 head 7 deprel 8 deps 9 misc)))
@@ -277,10 +278,12 @@ initialize sentence OBJ."
 
 
 (defun insert-token (sentence new-token)
-  "Inserts token in a sentence object. It will not be inserted exactly
+  "Inserts TOKEN in a SENTENCE object. It will not be inserted exactly
    as given: its ID will be the same (place where it'll be inserted)
-   but its head should point to id value prior to the insertion. It
-   changes the sentence object passed."
+   but its head should point to id value prior to the insertion.
+   Therefore, it will be modified. Its TOKEN-SENTENCE slot will be
+   modified as well in order to point to SENTENCE. It changes the
+   SENTENCE object passed."
   (with-slots (tokens mtokens) sentence
     (dolist (token tokens)
       (if (>= (token-id token) (token-id new-token))
@@ -297,6 +300,8 @@ initialize sentence OBJ."
 	(incf (token-head new-token)))
     (setf tokens
 	  (insert-at tokens (1- (token-id new-token)) new-token))
+    (setf (token-sentence new-token)
+	     new-token)
     sentence))
 
 
@@ -326,6 +331,7 @@ initialize sentence OBJ."
 	       (if (> (mtoken-end mtoken) id)
 		   (decf (mtoken-end mtoken))))
 	     (setf tokens (remove to-remove tokens))
+             (slot-makunbound to-remove 'sentence)
 	     (values sentence t))))))
 
 

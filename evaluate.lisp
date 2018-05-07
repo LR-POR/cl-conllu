@@ -1,8 +1,10 @@
 
-(in-package :cl-conllu)
+(in-package :conllu.evaluate)
 
 ;; Functions for evaluating parsers
 
+(defparameter *token-fields*
+  '(id form lemma upostag xpostag feats head deprel deps misc))
 
 (defvar *deprel-value-list*
   '("nsubj"
@@ -218,12 +220,12 @@
             (remove-if-not
              #'(lambda (x)
                  (equal x deprel))
-             (mappend #'sentence-tokens
+             (alexandria:mappend #'sentence-tokens
                       list-sent2)
              :key #'token-deprel-chosen)))
           (wrong-words
            (length
-            (mapcar
+            (alexandria:mappend
              #'(lambda (sent1 sent2)
                  (remove-if-not
                   #'(lambda (x)
@@ -281,12 +283,12 @@
 	    (remove-if-not
 	     #'(lambda (x)
 		 (equal x deprel))
-	     (mappend #'sentence-tokens
+	     (alexandria:mappend #'sentence-tokens
 		      list-sent1)
 	     :key #'token-deprel-chosen)))
 	  (wrong-words
 	   (length
-	    (mapcar
+	    (alexandria:mappend
 	     #'(lambda (sent1 sent2)
 		 (remove-if-not
 		  #'(lambda (x)
@@ -440,64 +442,4 @@
 	   :simple-dep simple-dep
 	   :ignore-punct ignore-punct))))
     (/ correct-sentences n)))
-
-(defun confusion-matrix (list-sent1 list-sent2 &key (normalize t))
-  "Returns a hash table where keys are lists (deprel1 deprel2) and
-   values are fraction of classifications as deprel1 of a word that
-   originally was deprel2.
-
-   We assume that LIST-SENT1 is the classified result
-   and LIST-SENT2 is the list of golden (correct) sentences."
-  (let* ((M (make-hash-table :test #'equal))
-	 (all-words-pair-list
-	  (mapcar
-	   #'list
-	   (mappend #'sentence-tokens list-sent1)
-	   (mappend #'sentence-tokens list-sent2)))
-	 (N (coerce (length all-words-pair-list) 'float)))
-    (assert
-     (every #'identity
-	    (mapcar
-	     #'(lambda (pair)
-		 (let ((tk1 (first pair))
-		       (tk2 (second pair)))
-		   (and (equal (token-id tk1)
-			       (token-id tk2))
-			(equal (token-form tk1)
-			       (token-form tk2)))))
-	     all-words-pair-list))
-     ()
-     "Error: Sentence words do not match.")
-    
-    (dolist (rel1 *deprel-value-list*)
-      (dolist (rel2 *deprel-value-list*)
-	(setf (gethash `(,rel1 ,rel2) M) 0)))
-    
-    (dolist (pair all-words-pair-list)
-      (incf (gethash
-	     (mapcar #'(lambda (tk)
-			 (simple-deprel (token-deprel tk)))
-		     pair)
-	     M)))
-
-    (if normalize
-	(dolist (rel1 *deprel-value-list* M)
-	  (dolist (rel2 *deprel-value-list*)
-	    (if (not
-		 (eq 0
-		     (gethash `(,rel1 ,rel2) M)))
-		(setf (gethash `(,rel1 ,rel2) M)
-		      (/ (gethash `(,rel1 ,rel2) M)
-			 N))))))
-    M))
-
-
-(defun format-matrix (matrix)
-  (let ((M (alexandria:hash-table-alist matrix)))
-    (format t "~{~15a |~^ ~}~%" (cons " " *deprel-value-list*))
-    (dolist (dep1 *deprel-value-list*)
-      (let ((L (reverse (remove-if-not #'(lambda (x) (equal x dep1)) M
-				       :key #'(lambda (x) (first (car x)))))))
-	(format t "~{~15a |~^ ~}~%"
-		(cons dep1 (mapcar #'(lambda (x) (cdr x)) L)))))))
 

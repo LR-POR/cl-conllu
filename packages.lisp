@@ -51,13 +51,17 @@
 	   #:token-misc
 	   #:token-sentence
 
+           #:id
 	   #:form
 	   #:lemma
 	   #:upostag
 	   #:xpostag
 	   #:feats
+           #:head
 	   #:deprel
+           #:deps
 	   #:misc
+           #:simple-deprel
 
 	   #:mtoken
 	   #:mtoken-start
@@ -73,6 +77,7 @@
 	   #:sentence-text
 	   #:sentence-id
 	   #:sentence-equal
+           #:sentence-size
 
 	   #:apply-rules
 	   #:apply-rules-from-files
@@ -80,17 +85,7 @@
 	   #:convert-rdf
 	   #:convert-rdf-file
 
-	   #:convert-to-rdf
-
-	   #:confusion-matrix
-	   #:confusion-matrix-labels
-	   #:confusion-matrix-cells-labels
-	   #:confusion-matrix-cell-count
-	   #:confusion-matrix-cell-tokens
-	   #:confusion-matrix-corpus-id
-	   #:make-confusion-matrix
-	   #:confusion-matrix-update
-	   #:confusion-matrix-normalize))
+	   #:convert-to-rdf))
   
 
 (defpackage #:conllu.prolog
@@ -119,3 +114,34 @@
 (defpackage #:conllu.draw
   (:use #:cl #:cl-conllu)
   (:export #:tree-sentence))
+
+(defpackage #:conllu.evaluate
+  (:use #:cl #:cl-conllu)
+  (:documentation "Functions for evaluating datasets and parser outputs in the CoNLL-U format.")
+  (:export #:attachment-score-by-sentence
+           #:attachment-score-by-word
+           #:recall
+           #:precision
+           #:non-projectivity-accuracy
+           #:non-projectivity-precision
+           #:non-projectivity-recall
+           #:exact-match
+           #:exact-match-score
+           
+           #:confusion-matrix
+           #:confusion-matrix-rows-labels
+           #:confusion-matrix-columns-labels
+           #:confusion-matrix-labels
+           #:confusion-matrix-cells-labels
+           #:confusion-matrix-cell-count
+           #:confusion-matrix-cell-tokens
+           #:confusion-matrix-corpus-id
+           #:make-confusion-matrix
+           #:confusion-matrix-update
+           #:confusion-matrix-normalize))
+
+(defpackage #:conllu.html
+  (:use #:cl #:cl-conllu)
+  (:documentation "Functions for producing html formatting of objects in the library.")
+  (:export #:format-html
+           #:*confusion-matrix-style*))
