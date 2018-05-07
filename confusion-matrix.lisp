@@ -121,35 +121,49 @@ matrix CM."
    (sort (alexandria:hash-table-keys (confusion-matrix-rows cm))
 	 (confusion-matrix-sort-fn cm)))))
 
-(defun confusion-matrix-cell-count (label1 label2 cm)
+(defun confusion-matrix-cell-count (label1 label2 cm &key default-if-undefined)
   "Returns the number of tokens that are contained in the cell defined
-by LABEL1 LABEL2 in the confusion matrix CM."
+by LABEL1 LABEL2 in the confusion matrix CM.
+
+   If DEFAULT-IF-UNDEFINED, returns 0. Otherwise, raises an error in
+   case there is no such cell."
   ;; output: int
   (let ((entry-array
 	 (gethash label2
 		  (gethash label1 (confusion-matrix-rows cm)))))
-    (if entry-array
+    (cond
+      (entry-array
 	(aref
 	 entry-array
-	 0)
-	(error "There is no cell (~a ~a)."
-	       label1
-	       label2))))
+	 0))
+      (default-if-undefined
+       0)
+      (t
+       (error "There is no cell (~a ~a)."
+              label1
+              label2)))))
 
-(defun confusion-matrix-cell-tokens (label1 label2 cm)
+(defun confusion-matrix-cell-tokens (label1 label2 cm &key default-if-undefined)
   "Returns the list of (SENT-ID . TOKEN-ID) of tokens in the cell
-LABEL1 LABEL2."
+LABEL1 LABEL2.
+
+   If DEFAULT-IF-UNDEFINED, returns the empty list. Otherwise, raises
+   an error in case there is no such cell."
   ;; output: list of (sent-id . token-id)
   (let ((entry-array
 	 (gethash label2
 		  (gethash label1 (confusion-matrix-rows cm)))))
-    (if entry-array
-	(aref
-	 entry-array
-	 1)
-	(error "There is no cell (~a ~a)."
-	       label1
-	       label2))))
+    (cond
+      (entry-array
+       (aref
+        entry-array
+        1))
+      (default-if-undefined
+       '())
+      (t
+       (error "There is no cell (~a ~a)."
+              label1
+              label2)))))
 
 ;; TODO
 ;; (defun confusion-matrix-sentences-ids (cm)
