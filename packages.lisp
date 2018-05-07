@@ -129,6 +129,8 @@
            #:exact-match-score
            
            #:confusion-matrix
+           #:confusion-matrix-rows-labels
+           #:confusion-matrix-columns-labels
            #:confusion-matrix-labels
            #:confusion-matrix-cells-labels
            #:confusion-matrix-cell-count
