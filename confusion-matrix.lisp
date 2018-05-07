@@ -75,20 +75,34 @@
 
 ;;; Utility functions
 
+(defun confusion-matrix-rows-labels (cm)
+  "Returns the list of labels occuring in the rows of the confusion
+  matix CM."
+  (sort
+   (copy-list
+    (alexandria:hash-table-keys
+     (confusion-matrix-rows cm)))
+   (confusion-matrix-sort-fn cm)))
+
+(defun confusion-matrix-columns-labels (cm)
+  (sort
+   (remove-duplicates
+    (alexandria:mappend
+     #'alexandria:hash-table-keys
+     (alexandria:hash-table-values (confusion-matrix-rows cm)))
+    :test (confusion-matrix-test-fn cm))
+   (confusion-matrix-sort-fn cm)))
+
 (defun confusion-matrix-labels (cm)
   "Returns the list of all labels in the confusion matrix CM."
   ;; output: list of labels
   (sort
-  (remove-duplicates
-   (append
-    (alexandria:hash-table-keys
-     (confusion-matrix-rows cm))
-    (apply #'append
-	   (mapcar
-	    #'alexandria:hash-table-keys
-	    (alexandria:hash-table-values (confusion-matrix-rows cm)))))
-   :test (confusion-matrix-test-fn cm))
-  (confusion-matrix-sort-fn cm)))
+   (remove-duplicates
+    (append
+     (confusion-matrix-rows-labels cm)
+     (confusion-matrix-columns-labels cm))
+    :test (confusion-matrix-test-fn cm))
+   (confusion-matrix-sort-fn cm)))
 
 (defun confusion-matrix-cells-labels (cm)
   "Returns a list of '(LABEL1 LABEL2) for each cell in the confusion
