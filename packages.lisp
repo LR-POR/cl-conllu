@@ -139,3 +139,9 @@
            #:make-confusion-matrix
            #:confusion-matrix-update
            #:confusion-matrix-normalize))
+
+(defpackage #:conllu.html
+  (:use #:cl #:cl-conllu)
+  (:documentation "Functions for producing html formatting of objects in the library.")
+  (:export #:format-html
+           #:*confusion-matrix-style*))
