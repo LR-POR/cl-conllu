@@ -81,7 +81,7 @@ Pierre_NNP Vinken_NNP ,_, 61_CD years_NNS old_JJ ,_, will_MD join_VB the_DT boar
   
   (macrolet ((my-read-line ()
 	       `(read-line stream nil nil)))
-    (flet ((list-to-sentence (pair-list)
+    (flet ((list-to-sentence (pair-list sent-id)
 	     ;; Receives a list of lists ("Form" "Field-Value")
 	     ;; returns sentence with these tokens as sentence-tokens
 	     (make-instance
@@ -98,18 +98,24 @@ Pierre_NNP Vinken_NNP ,_, 61_CD years_NNS old_JJ ,_, will_MD join_VB the_DT boar
 				       :lemma "_")))
 		       (setf (slot-value new-token field) (second pair))
 		       new-token))
-		 pair-list)))))
+		 pair-list))
+              :meta `(("text" . ,(format nil "~{~a~}"
+                                         (mapcar #'car pair-list)))
+                      ("sent_id" . ,sent-id)))))
       
       (let ((sentences nil))
 	(do ((line
 	      (my-read-line)
-	      (my-read-line)))
+	      (my-read-line))
+             (id (uuid:make-v4-uuid)
+                 (uuid:make-v4-uuid)))
 	    ((null line)
 	     (reverse sentences))
 	  (push
 	   (list-to-sentence
 	    (mapcar #'(lambda (x) (split separator x))
-		    (cl-ppcre:split " " line)))
+		    (cl-ppcre:split " " line))
+            id)
 	   sentences))))))
 
 (defun read-file-tag-suffix (filename &key (tag 'upostag) (separator "_"))
