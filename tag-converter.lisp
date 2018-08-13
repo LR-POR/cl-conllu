@@ -10,7 +10,7 @@
   "Writes sentence as CoNLL-U file in STREAM as FORM.SEPARATOR.TAGVALUE (without
   dots), followed by a whitespace character.
 
-  If TAG is NIL, then writes only FORMs, followed by a whitepsace character.
+  If TAG is NIL, then writes only FORMs, followed by a whitespace character.
 
   Example:
   ;; supposing sentence already defined
