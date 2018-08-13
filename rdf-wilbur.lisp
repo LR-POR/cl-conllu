@@ -84,7 +84,8 @@
 	 ((stringp (car pair))
 	  (wilbur:triple
 	   sentence-node
-	   (node (format nil "conll:metadata/~a" (car pair)))
+	   (node (format nil "conll:metadata/~a"
+                         (encode-to-iri (car pair))))
 	   (wilbur:literal (cdr pair))))
 	 ((equal (car pair)
 		 :raw)
@@ -133,6 +134,7 @@
    in SENTENCES, using the function TEXT-FN to extract the text of each
    sentence and ID-FN to extract the id of each sentence (we need this
    as there is no standardized way of knowing this.)
+   Result is sent to the STREAM.
 
    Currently only ntriples is supported as RDF-FORMAT."
 
@@ -204,6 +206,10 @@
   ;;   (t
   ;;    (wilbur:node arg))))
   (wilbur::unresolved-node arg))
+
+(defun encode-to-iri (string)
+  "Prepare a string in order to enter in a IRI"
+  (quri.encode:url-encode string))
 
 ;; ==============
 ;; Some useful information/snippets about wilbur:
