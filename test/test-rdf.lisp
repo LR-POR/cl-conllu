@@ -17,8 +17,12 @@
   ;; Ideally it should be checked whether every IRI follows RFC 3987:
   ;; https://www.ietf.org/rfc/rfc3987.txt
   ;; However, there is no ready library for this.
-  (let* ((sentences (read-conllu (truename "./test-data/metadata-example.conllu")))
-         (my-stream (make-string-output-stream)))
+  (let* ((example-relative-path
+          "./test-data/metadata-example.conllu")
+         (sentences
+          (read-conllu (truename example-relative-path)))
+         (my-stream
+          (make-string-output-stream)))
     (conllu.rdf:convert-to-rdf sentences :stream my-stream)
     (let ((iri-with-whitespace
            (cl-ppcre:scan-to-strings

@@ -20,8 +20,7 @@
   (let* ((sentence-relative-path "./test-data/hashhashhash.conllu")
          (sentence
           (first (read-conllu sentence-relative-path))))
-    (is-type sentence 'cl-conllu:sentence
-             (format nil "~a is a sentence." sentence))))
+    (is-type sentence 'cl-conllu:sentence)))
 
 (subtest "Testing empty notes from Enhanced Dependencies"
   (pass "Not yet implemented.")
