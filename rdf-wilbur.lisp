@@ -21,14 +21,17 @@
 	     "_")
       '()
       (let ((node-list nil))
-	(dolist (feat-pair (split-sequence #\| features-string :remove-empty-subseqs features-string) node-list)
+	(dolist (feat-pair
+                  (split-sequence #\| features-string
+                                  :remove-empty-subseqs nil)
+                 node-list)
 	  (destructuring-bind (name value) (split-sequence #\= feat-pair :count 2)
 	    (push 
 	     (node (format nil "conll:~a~a"
-			  (concatenate 'string
-				       (string-downcase (subseq name 0 1))
-				       (subseq name 1))
-			  value))
+                           (concatenate 'string
+                                        (string-downcase (subseq name 0 1))
+                                        (subseq name 1))
+                           value))
 	     node-list))))))
 
 
