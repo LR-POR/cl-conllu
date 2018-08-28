@@ -20,21 +20,31 @@
   (if (equal features-string
 	     "_")
       '()
-      (let ((node-list nil))
-	(dolist (feat-pair
-                  (split-sequence #\| features-string
-                                  :remove-empty-subseqs nil)
-                 node-list)
-	  (destructuring-bind (name value) (split-sequence #\= feat-pair :count 2)
-	    (push 
-	     (node (format nil "conll:~a~a"
-                           (concatenate 'string
-                                        (string-downcase (subseq name 0 1))
-                                        (subseq name 1))
-                           value))
-	     node-list))))))
+      (mapcar
+       #'produce-node-from-feat-value-pair
+       (produce-feat-value-pairs-from-string features-string))))
 
+(defun produce-feat-value-pairs-from-string (features-string)
+  (mappend
+   #'(lambda (feature-string)
+       (destructuring-bind (feature-name values)
+           (split-sequence #\= feature-string :count 2)
+         (mapcar
+          (lambda (value)
+            (list feature-name value))
+          (split-sequence #\, values))))
+   (split-sequence #\| features-string
+                   :remove-empty-subseqs nil)))
 
+(defun produce-node-from-feat-value-pair (feat-value-pair)
+  "Receives a list with two values (FEATURE-NAME FEATURE-VALUE) and returns a wilbur NODE for this feature with the conll prefix."
+  (let ((feature-name (first feat-value-pair))
+        (feature-value (second feat-value-pair)))
+    (node (format nil "conll:~a~a"
+                  (concatenate 'string
+                               (string-downcase (subseq feature-name 0 1))
+                               (subseq feature-name 1))
+                  feature-value))))
 
 (defun convert-token-to-rdf (token sentence-id sentence-node)
   (let* ((token-node (node (format nil "NAMESPACE:~a-~a" sentence-id (slot-value token 'cl-conllu::id))))
