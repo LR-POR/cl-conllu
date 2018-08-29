@@ -43,7 +43,7 @@
     (node (format nil "conll:~a~a"
                   (concatenate 'string
                                (string-downcase (subseq feature-name 0 1))
-                               (subseq feature-name 1))
+                               (encode-to-iri (subseq feature-name 1)))
                   feature-value))))
 
 (defun convert-token-to-rdf (token sentence-id sentence-node)
