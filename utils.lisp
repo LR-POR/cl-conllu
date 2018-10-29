@@ -13,7 +13,7 @@
   (apply #'append (mapcar function list)))
 
 
-(defun levenshtein (s1 s2 &key test)
+(defun levenshtein (s1 s2 &key (test #'string-equal))
   (let* ((width (1+ (length s1)))
 	 (height (1+ (length s2)))
 	 (d (make-array (list height width))))

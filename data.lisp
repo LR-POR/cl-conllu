@@ -365,16 +365,18 @@ initialize sentence OBJ."
   "Receives a sentence and reenumerate IDs and HEAD values of each
    token so that their order (as in sentence-tokens) is respected."
   (with-slots (tokens mtokens) sentence
-    (let ((maps (cons `(0 . 0)
-		      (mapcar (lambda (tk pos)
-				(cons (token-id tk) (1+ pos)))
-			      tokens (alexandria:iota (length tokens))))))
-      (dolist (tk tokens)
-	(setf (token-id tk)   (cdr (assoc (token-id tk) maps))
-	      (token-head tk) (cdr (assoc (token-head tk) maps))))
-      (dolist (mtk mtokens)
-	(setf (mtoken-start mtk) (cdr (assoc (mtoken-start mtk) maps))
-	      (mtoken-end mtk)   (cdr (assoc (mtoken-end mtk) maps))))))
+    (let* ((maps (cons `(0 . 0)
+		       (mapcar (lambda (tk pos)
+				 (cons (token-id tk) (1+ pos)))
+			       tokens (alexandria:iota (length tokens)))))
+	   (no-change  (every (lambda (p) (equal (car p) (cdr p))) maps)))
+      (when (not no-change)
+	(dolist (tk tokens)
+	  (setf (token-id tk)   (cdr (assoc (token-id tk) maps))
+		(token-head tk) (cdr (assoc (token-head tk) maps))))
+	(dolist (mtk mtokens)
+	  (setf (mtoken-start mtk) (cdr (assoc (mtoken-start mtk) maps))
+		(mtoken-end mtk)   (cdr (assoc (mtoken-end mtk) maps)))))))
   sentence)
 
 
