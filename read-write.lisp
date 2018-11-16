@@ -30,7 +30,7 @@
 
 (defun collect-meta (lines)
   (mapcar (lambda (line)
-	    (let* ((cl (string-trim '(#\# #\Space #\Tab) line))
+	    (let* ((cl (string-right-trim '(#\Space #\Tab) (string-left-trim '(#\# #\Space) line)))
 		   (pos (position #\= cl)))
               (if pos
                   (cons (subseq cl 0 (1- pos))
