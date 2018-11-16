@@ -7,9 +7,12 @@
       (let ((tk (make-instance 'token)))
 	(assert (equal 10 (length (cl-ppcre:split "\\t" line))))
 	(mapc (lambda (value key)
-		(if (member key '(id head))
-		    (setf (slot-value tk key) (parse-integer value))
-		    (setf (slot-value tk key) value)))
+                (case key
+                  (id (setf (slot-value tk key) (parse-integer value)))
+                  (head (setf (slot-value tk key) (if (string-equal value "_")
+                                                      nil
+                                                      (parse-integer value))))
+                  (otherwise (setf (slot-value tk key) value))))
 	      (cl-ppcre:split "\\t" line)
 	      '(id form lemma upostag xpostag feats head deprel deps misc))
 	tk)))
