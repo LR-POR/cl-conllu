@@ -4,13 +4,17 @@
 (defun line->token (line)
   (if (cl-ppcre:scan "^#" line)
       line
-      (let ((tk (make-instance 'token)))
-	(assert (equal 10 (length (cl-ppcre:split "\\t" line))))
+      (let ((tk     (make-instance 'token))
+	    (fields (cl-ppcre:split "\\t" line)))
+	(assert (equal 10 (length fields)))
 	(mapc (lambda (value key)
-		(if (member key '(id head))
-		    (setf (slot-value tk key) (parse-integer value))
-		    (setf (slot-value tk key) value)))
-	      (cl-ppcre:split "\\t" line)
+		(setf (slot-value tk key)
+		      (case key
+			(id   (parse-integer value))
+			(head (if (string-equal value "_") nil
+				  (parse-integer value)))
+			(t    value))))
+	      fields
 	      '(id form lemma upostag xpostag feats head deprel deps misc))
 	tk)))
 
