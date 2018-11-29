@@ -81,31 +81,29 @@
     (read-stream in :fn-meta fn-meta)))
 
 
-(defun read-stream (stream &key (fn-meta #'collect-meta))
+(defun read-stream (stream &key (fn-meta #'collect-meta) (stop? #'null))
   (macrolet ((flush-line ()
 	       `(setq line (read-line stream nil nil)
-		      lineno (+ lineno 1))))
+		      lineno (1+ lineno))))
     (prog (line (lineno 0) begining lines sentences)
      label-1
      (flush-line)
-     (alexandria:switch (line :test #'equal)
-       (nil (go label-3))
-       ("" (go label-1))
-       (t (setq begining lineno)
-	  (push line lines)
-	  (go label-2)))
+     (cond  ((or (null line) (funcall stop? line))  (go label-3)) 
+	    ((equal line "") (go label-1))
+	    (t (setq begining lineno)
+	       (push line lines)
+	       (go label-2)))
      
      label-2
      (flush-line)
-     (alexandria:switch (line :test #'equal)
-       (nil (go label-3))
-       ("" (push (make-sentence begining (reverse lines) fn-meta)
-		 sentences)
-	   (setq lines nil)
-	   (go label-1))
-       (t (push line lines)
-	  (go label-2)))
-
+     (cond ((or (null line) (funcall stop? line)) (go label-3))
+	   ((equal line "") (push (make-sentence begining (reverse lines) fn-meta)
+				  sentences)
+	    (setq lines nil)
+	    (go label-1))
+	   (t (push line lines)
+	      (go label-2)))
+     
      label-3
      (if lines
 	 (push (make-sentence begining (reverse lines) fn-meta)
