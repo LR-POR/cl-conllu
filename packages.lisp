@@ -25,6 +25,7 @@
 	   #:read-file
 	   #:read-directory
 	   #:read-conllu
+           #:lazy-stream-reader
 	   #:query
 	   #:query-as-json
 	   #:write-conllu
@@ -33,8 +34,8 @@
 	   #:diff
 
 	   #:sentence-binary-tree
-	   ; #:insert-token
-	   ; #:remove-token
+         ; #:insert-token
+         ; #:remove-token
 	   #:adjust-sentence
 	   #:non-projective?
 

@@ -80,37 +80,45 @@
   (with-open-file (in path)
     (read-stream in :fn-meta fn-meta)))
 
+(defun lazy-stream-reader (stream &key (fn-meta #'collect-meta) (start-lineno 0))
+  "Return a function that returns one CoNLL-U sentence per call. "
+  (let ((curr-lineno start-lineno))
+    (lambda ()
+      (multiple-value-bind (sent lineno)
+          (read-stream stream :fn-meta fn-meta :stop? (cl-ppcre:scan "^[ \t]*$" line)
+                       :start-lineno curr-lineno)
+        (setf curr-lineno lineno)
+        (car sent)))))
 
-(defun read-stream (stream &key (fn-meta #'collect-meta))
+
+(defun read-stream (stream &key (fn-meta #'collect-meta) (stop? #'null) (start-lineno 0))
   (macrolet ((flush-line ()
 	       `(setq line (read-line stream nil nil)
-		      lineno (+ lineno 1))))
-    (prog (line (lineno 0) begining lines sentences)
+		      lineno (1+ lineno))))
+    (prog (line (lineno start-lineno) begining lines sentences)
      label-1
      (flush-line)
-     (alexandria:switch (line :test #'equal)
-       (nil (go label-3))
-       ("" (go label-1))
-       (t (setq begining lineno)
-	  (push line lines)
-	  (go label-2)))
+     (cond  ((or (null line) (funcall stop? line))  (go label-3)) 
+	    ((equal line "") (go label-1))
+	    (t (setq begining lineno)
+	       (push line lines)
+	       (go label-2)))
      
      label-2
      (flush-line)
-     (alexandria:switch (line :test #'equal)
-       (nil (go label-3))
-       ("" (push (make-sentence begining (reverse lines) fn-meta)
-		 sentences)
-	   (setq lines nil)
-	   (go label-1))
-       (t (push line lines)
-	  (go label-2)))
-
+     (cond ((or (null line) (funcall stop? line)) (go label-3))
+	   ((equal line "") (push (make-sentence begining (reverse lines) fn-meta)
+				  sentences)
+	    (setq lines nil)
+	    (go label-1))
+	   (t (push line lines)
+	      (go label-2)))
+     
      label-3
      (if lines
 	 (push (make-sentence begining (reverse lines) fn-meta)
 	       sentences))
-     (return (reverse sentences)))))
+     (return (values (reverse sentences) lineno)))))
 
 
 ;; O(2n) complexity
