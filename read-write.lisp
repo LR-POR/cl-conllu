@@ -80,12 +80,22 @@
   (with-open-file (in path)
     (read-stream in :fn-meta fn-meta)))
 
+(defun lazy-stream-reader (stream &key (fn-meta #'collect-meta) (start-lineno 0))
+  "Return a function that returns one CoNLL-U sentence per call. "
+  (let ((curr-lineno start-lineno))
+    (lambda ()
+      (multiple-value-bind (sent lineno)
+          (read-stream stream :fn-meta fn-meta :stop? (cl-ppcre:scan "^[ \t]*$" line)
+                       :start-lineno curr-lineno)
+        (setf curr-lineno lineno)
+        (car sent)))))
 
-(defun read-stream (stream &key (fn-meta #'collect-meta) (stop? #'null))
+
+(defun read-stream (stream &key (fn-meta #'collect-meta) (stop? #'null) (start-lineno 0))
   (macrolet ((flush-line ()
 	       `(setq line (read-line stream nil nil)
 		      lineno (1+ lineno))))
-    (prog (line (lineno 0) begining lines sentences)
+    (prog (line (lineno start-lineno) begining lines sentences)
      label-1
      (flush-line)
      (cond  ((or (null line) (funcall stop? line))  (go label-3)) 
@@ -108,7 +118,7 @@
      (if lines
 	 (push (make-sentence begining (reverse lines) fn-meta)
 	       sentences))
-     (return (reverse sentences)))))
+     (return (values (reverse sentences) lineno)))))
 
 
 ;; O(2n) complexity
