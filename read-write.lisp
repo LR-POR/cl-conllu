@@ -85,29 +85,31 @@
   (let ((curr-lineno start-lineno))
     (lambda ()
       (multiple-value-bind (sent lineno)
-          (read-stream stream :fn-meta fn-meta :stop? (cl-ppcre:scan "^[ \t]*$" line)
+          (read-stream stream :fn-meta fn-meta :stop? #'blank-line?
                        :start-lineno curr-lineno)
         (setf curr-lineno lineno)
         (car sent)))))
-
 
 (defun read-stream (stream &key (fn-meta #'collect-meta) (stop? #'null) (start-lineno 0))
   (macrolet ((flush-line ()
 	       `(setq line (read-line stream nil nil)
 		      lineno (1+ lineno))))
-    (prog (line (lineno start-lineno) begining lines sentences)
+    (prog (line (lineno start-lineno) beginning lines sentences)
      label-1
      (flush-line)
-     (cond  ((or (null line) (funcall stop? line))  (go label-3)) 
-	    ((equal line "") (go label-1))
-	    (t (setq begining lineno)
-	       (push line lines)
-	       (go label-2)))
+     (let ((blank-line? (blank-line? line)))
+       (cond
+         ((and line blank-line? (not lines)) (go label-1))
+         ((or (null line) (funcall stop? line))  (go label-3))
+         (blank-line? (go label-1))
+         (t (setq beginning lineno)
+	    (push line lines)
+	    (go label-2))))
      
      label-2
      (flush-line)
      (cond ((or (null line) (funcall stop? line)) (go label-3))
-	   ((equal line "") (push (make-sentence begining (reverse lines) fn-meta)
+	   ((equal line "") (push (make-sentence beginning (reverse lines) fn-meta)
 				  sentences)
 	    (setq lines nil)
 	    (go label-1))
@@ -116,7 +118,7 @@
      
      label-3
      (if lines
-	 (push (make-sentence begining (reverse lines) fn-meta)
+	 (push (make-sentence beginning (reverse lines) fn-meta)
 	       sentences))
      (return (values (reverse sentences) lineno)))))
 

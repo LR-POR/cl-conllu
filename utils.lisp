@@ -143,3 +143,6 @@
 	      ;; No violation
 	      (push pair interval)))))))
 
+
+(defun blank-line? (line)
+  (cl-ppcre:scan "^[\t ]*$" line))
