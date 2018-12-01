@@ -15,9 +15,9 @@
 
 (asdf:defsystem #:cl-conllu
   :serial t
-  :version "0.3"
+  :version "0.4"
   :description "Common Lisp corpus conllu utilities"
-  :author "Fabricio Chalub <fchalub@br.ibm.com> and Alexandre Rademaker <alexrad@br.ibm.com>"
+  :author "Fabricio Chalub and Alexandre Rademaker <alexrad@br.ibm.com> and Henrique Muniz and Bruno Cuconato"
   :license "Apache 2.0"
   :depends-on (#:cl-ppcre #:uuid #:alexandria #:cl-log #:split-sequence #:xmls
 			  #:yason #:lispbuilder-lexer #:wilbur #:cl-markup)
