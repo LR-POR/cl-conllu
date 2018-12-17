@@ -434,4 +434,9 @@ initialize sentence OBJ."
   (let* ((misc-str (token-misc token))
          (misc-elems (split-sequence:split-sequence #\| misc-str))
          (misc-pairs (mapcar (alexandria:curry #'split-sequence:split-sequence #\=) misc-elems)))
+    (mapc (lambda (pair) (when (not (cdr pair))
+                           (format *error-output*
+                                   "token-misc-value: MISC field not a key-value pair: ~a"
+                                   (car pair))))
+          misc-pairs)
     (second (assoc misc-key misc-pairs :test #'string=))))
