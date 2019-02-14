@@ -80,9 +80,6 @@
 	   #:sentence-equal
            #:sentence-size
 
-	   #:apply-rules
-	   #:apply-rules-from-files
-
 	   #:convert-rdf
 	   #:convert-rdf-file
 
@@ -115,6 +112,16 @@
 (defpackage #:conllu.draw
   (:use #:cl #:cl-conllu)
   (:export #:tree-sentence))
+
+(defpackage #:conllu.rules
+  (:use #:cl #:cl-conllu)
+  (:export #:apply-rules
+	   #:apply-rules-from-files))
+
+(defpackage #:conllu.editor
+  (:use #:cl #:cl-conllu)
+  (:documentation "ruled based transformations")
+  (:export #:conlluedit))
 
 (defpackage #:conllu.evaluate
   (:use #:cl #:cl-conllu)

@@ -1,5 +1,5 @@
 
-(in-package :cl-conllu)
+(in-package :conllu.rules)
 
 ;; rule       ::= => rls rhs
 ;; rls, rhs   ::= (pattern+)

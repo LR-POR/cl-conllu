@@ -33,6 +33,7 @@
 	       (:file "rdf-wilbur"         :depends-on ("data"))
 	       (:file "command-line"       :depends-on ("data"))
 	       (:file "rules"              :depends-on ("utils" "data"))
+	       (:file "editor"             :depends-on ("utils" "data"))
 	       (:file "conllu-prolog"      :depends-on ("data"))
 	       (:file "niceline"           :depends-on ("data"))
 	       (:file "tag-converter"      :depends-on ("data"))
