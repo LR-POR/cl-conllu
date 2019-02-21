@@ -3,28 +3,29 @@
 
 (defun conlluedit (sentences transformations)
   (mapcar #'(lambda (sentence)
-	      (all-transformations (sentence-tokens sentence) (sentence-id sentence)
-				   transformations 1))
+	      (all-transformations sentence transformations 1))
 	  sentences)
   t)
 
 ;; part 0
 
-(defun all-transformations (tokens sentence-index transformations index)
+(defun all-transformations (sentence transformations index)
   (when transformations
-    (when (apply-transformation tokens sentence-index (first transformations) index)
-      (all-transformations tokens sentence-index (rest transformations) (1+ index)))))
+    (when (apply-transformation sentence (first transformations) index)
+      (all-transformations sentence (rest transformations) (1+ index)))))
 
-(defun apply-transformation (tokens sentence-index transformation transform-index)
+
+(defun apply-transformation (sentence transformation transform-index)
   (let* ((transformation (transformation transformation))
-	 (definitions (getf transformation :definitions))
-	 (relations (getf transformation :relations))
-	 (actions (getf transformation :actions))
-	 (nodes (node-matchers tokens definitions)))
+	 (definitions    (getf transformation :definitions))
+	 (relations      (getf transformation :relations))
+	 (actions        (getf transformation :actions))
+	 (tokens         (sentence-tokens sentence))
+	 (nodes          (node-matchers tokens definitions)))
     (when nodes
       (let ((sets (sets nodes relations)))
 	(when sets 
-	  (let ((set (merge-sets (list-length definitions) (list-length relations) sets)))
+	  (let ((set (merge-sets (length definitions) (length relations) sets)))
 	    (when set
 	      (let* ((result-actions (all-result-actions set tokens actions))
 		     (final-actions (rest result-actions))) 
@@ -32,7 +33,7 @@
 		  (mapcar #'(lambda (result-action) (apply-action result-action))
 			  final-actions)
 		  (format *error-output* "Sentence ~a changed by tranform ~a ~%"
-			  sentence-index transform-index)
+			  (sentence-id sentence) transform-index)
 		  (first result-actions))))))))))
 
 
@@ -106,12 +107,9 @@
 
 (defun action (expression)
   (unless (eql (first expression) 'last)
-    (let ((nth-1 (nth 1 expression))
-	  (nth-2 (nth 2 expression))
-	  (nth-3 (nth 3 expression)))
-      (if (= (list-length expression) 5)
-	  (list t nth-1 nth-3 nth-2 (nth 4 expression))
-	  (list nil nth-1 nth-2 (stringp nth-3) nth-3)))))
+    (if (= (length expression) 5)
+	(list t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
+	(list nil (nth 1 expression) (nth 2 expression) (stringp nth-3) (nth 3 expression)))))
 
 (defun get-field (field token)
   (cond ((string= field 'id) (write-to-string (token-id token)))
@@ -227,16 +225,16 @@
 			       :test #'tree-equal))
 	(relation-indexes (union (getf bin-1 :relation-index)
 				 (getf bin-2 :relation-index))))
-    (when (and (<= (list-length matchers-union) defs-count)
-	       (<= (list-length relation-indexes) rels-count))
+    (when (and (<= (length matchers-union) defs-count)
+	       (<= (length relation-indexes) rels-count))
       (list :relation-index relation-indexes
 	    :matchers matchers-union))))
 
 (defun union-matchers (defs-count rels-count sets)
   (reduce #'(lambda (result-sets set)
 	      (let ((matcher (getf set :matchers)))
-		(if (and (= (list-length (getf set :relation-index)) rels-count)
-			 (= (list-length matcher) defs-count))
+		(if (and (= (length (getf set :relation-index)) rels-count)
+			 (= (length matcher) defs-count))
 		    (union matcher result-sets)
 		    result-sets)))
 	  sets :initial-value nil))
@@ -297,6 +295,7 @@
 	      (let ((value (if (or (string= field 'id) (string= field 'head))
 			       (parse-integer string-value)
 			       string-value)))
-		(setf (slot-value token (itern field "CL-CONLLU")) value)))
+		(setf (slot-value token (itern field "CL-CONLLU"))
+		      value)))
 	    (nth 1 result-action) (nth 2 result-action))))
 
