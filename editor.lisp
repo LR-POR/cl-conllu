@@ -111,16 +111,12 @@
 	(list t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
 	(list nil (nth 1 expression) (nth 2 expression) (stringp nth-3) (nth 3 expression)))))
 
+
 (defun get-field (field token)
-  (cond ((string= field 'id) (write-to-string (token-id token)))
-	((string= field 'form) (token-form token))
-	((string= field 'lemma) (token-lemma token))
-	((string= field 'upostag) (token-upostag token))
-	((string= field 'feats) (token-feats token))
-	((string= field 'head) (write-to-string (token-head token)))
-	((string= field 'deprel) (token-deprel token))
-	((string= field 'deps) (token-deps token))
-	((string= field 'misc) (token-misc token))))
+  (let ((v (slot-value token (intern (symbol-name field) "CL-CONLLU"))))
+    (if (integerp v)
+	(write-to-string v))))
+
 
 (defun normalize-shorthand (expression operator)
   (if (eql (first expression) '>)
