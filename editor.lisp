@@ -1,3 +1,4 @@
+
 (in-package :conllu.editor)
 
 (defun conlluedit (sentences transformations)
@@ -7,7 +8,8 @@
 	  sentences)
   t)
 
-;Part 0
+;; part 0
+
 (defun all-transformations (tokens sentence-index transformations index)
   (when transformations
     (when (apply-transformation tokens sentence-index (first transformations) index)
@@ -33,7 +35,9 @@
 			  sentence-index transform-index)
 		  (first result-actions))))))))))
 
-;Part 1
+
+;; part 1
+
 (defun transformation (transformation)
   (list :definitions (definitions (first transformation)) 
 	:relations (relations (nth 1 transformation))
@@ -129,7 +133,9 @@
 		     (cddr expression) :initial-value (list (nth 1 expression) nil)))
       (list expression)))
 
-;Part 2
+
+;; part 2
+
 (defun node-matchers (tokens definitions &optional (result-nodes nil))
   (if definitions
       (let* ((first-def (first definitions))
@@ -139,6 +145,7 @@
 			 (cons (cons (getf first-def :def-index) tokens-matchers)
 			       result-nodes))))
       result-nodes))
+
 
 (defun token-matchers (definition tokens)
   (reduce #'(lambda (result-matchers token)
@@ -158,7 +165,9 @@
 	(all-defs-test token (rest defs)))
       t))
 
-;Part 3
+
+;;part 3
+
 (defun sets (nodes relations &optional (relation-index 1) (result-sets nil))
   (if relations
       (let ((set (relation-match nodes (first relations) relation-index)))
@@ -193,7 +202,9 @@
 	    :matchers (list (cons def-1 (token-id token-1))
 			    (cons def-2 (token-id token-2))))))
 
-;Part 4  
+
+;; part 4  
+
 (defun merge-sets (defs-count rels-count sets)
   (union-matchers defs-count rels-count
 		  (reduce #'(lambda (result-sets set)
@@ -230,7 +241,9 @@
 		    result-sets)))
 	  sets :initial-value nil))
   
-;Part 5
+
+;; part 5
+
 (defun all-result-actions (sets tokens actions &optional (result-actions nil))
   (cond ((null actions)
 	 (cons t (reverse result-actions))) 
@@ -265,7 +278,9 @@
 		  result-tokens))
 	  sets :initial-value nil))
 
-;Part 6	      
+
+;; part 6	      
+
 (defun examine-actions (final-actions &optional (not-first nil))
   (if final-actions
       (let ((result-action (first final-actions)))
@@ -278,21 +293,10 @@
 
 (defun apply-action (result-action)
   (let ((field (first result-action)))
-    (mapcar
-     #'(lambda (token string-value)
-	 (let ((value (if (or (string= field 'id) (string= field 'head))
-			  (parse-integer string-value)
-			  string-value)))
-	   (setf (slot-value token (return-symbol field)) value)))
-     (nth 1 result-action) (nth 2 result-action))))
+    (mapcar (lambda (token string-value)
+	      (let ((value (if (or (string= field 'id) (string= field 'head))
+			       (parse-integer string-value)
+			       string-value)))
+		(setf (slot-value token (itern field "CL-CONLLU")) value)))
+	    (nth 1 result-action) (nth 2 result-action))))
 
-(defun return-symbol (field)
-  (cond ((string= field 'id) 'id)
-	((string= field 'form) 'form)
-	((string= field 'lemma) 'lemma)
-	((string= field 'upostag) 'upostag)
-	((string= field 'feats) 'feats)
-	((string= field 'head) 'head)
-	((string= field 'deprel) 'deprel)
-	((string= field 'deps) 'deps)
-	((string= field 'misc) 'misc)))

@@ -428,9 +428,10 @@ initialize sentence OBJ."
 		      (nth x (sentence-mtokens sent-2)))
 	       (return nil))))))
 
+
 (defun token-misc-value  (token misc-key)
   "Assume token's MISC is a list of key-value pairs, return value
-  corresponding to key MISC-KEY."
+   corresponding to key MISC-KEY."
   (let* ((misc-str (token-misc token))
          (misc-elems (split-sequence:split-sequence #\| misc-str))
          (misc-pairs (mapcar (alexandria:curry #'split-sequence:split-sequence #\=) misc-elems)))
