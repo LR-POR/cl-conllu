@@ -1,10 +1,10 @@
 
 (in-package :conllu.editor)
 
-(defun conlluedit (sentences transformations)
+(defun conlluedit (sentences rules)
   (reduce #'(lambda (acumulated-results sentence)
 	      (let* ((sent-id (sentence-id sentence)) 
-		     (results (apply-transformations sentence sent-id transformations)))
+		     (results (apply-transformations sentence sent-id rules)))
 		(if results
 		    (cons (cons sent-id results) acumulated-results)
 		    acumulated-results)))
@@ -14,29 +14,29 @@
 
 (defun apply-transformations (sentence sent-id rules &optional (index 1) acumulated-results)
   (if rules
-      (let ((results (apply-transformation sentence sent-id (first rules) index)))
+      (let ((results (apply-transformation sentence sent-id (rest (first rules)) index)))
 	(when (first results)
 	  (apply-transformations sentence sent-id (rest rules) (1+ index)
 				 (cons (cons index (rest results)) acumulated-results))))
       acumulated-results))
 
 
-(defun apply-transformation (sentence sent-id rules rule-index)
-  (let* ((definitions    (definitions (first rules)))
-	 (relations      (relations (nth 1 rules)))
-	 (actions        (actions (nth 2 rules)))
+(defun apply-transformation (sentence sent-id rule rule-index)
+  (let* ((definitions    (definitions (getf rule :vars)))
+	 (relations      (relations (getf rule :rels)))
+	 (actions        (actions (getf rule :acts)))
 	 (tokens         (sentence-tokens sentence))
 	 (nodes          (node-matchers tokens definitions)))
     (when nodes
       (let ((sets (sets nodes relations)))
 	(when sets 
-	  (let ((set (merge-sets (length definitions) (length relations) sets)))
-	    (when set
-	      (let* ((result-actions (result-actions set tokens actions))
+	  (let ((merged-sets (merge-sets (length definitions) (length relations) sets)))
+	    (when merged-sets
+	      (let* ((result-actions (result-actions merged-sets tokens actions))
 		     (final-actions (rest result-actions))) 
 		(when (examine-actions final-actions) 
 		  (let ((results (mapcar #'(lambda (result-action) (apply-action result-action))
-					 final-actions)))
+ 					 final-actions)))
 		    (format *error-output* "Transformation ~a changed ~a tokens of Sentenca ~a ~%"
 			    rule-index (length results) sent-id)
 		    (cons (first result-actions) results)))))))))))
