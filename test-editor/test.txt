@@ -1,0 +1,26 @@
+((("CF892-3"
+   (1
+    ((10 CL-CONLLU:HEAD "9" 6) (11 CL-CONLLU:HEAD "9" 6)
+     (12 CL-CONLLU:HEAD "9" 6))
+    ((6 CL-CONLLU:HEAD "3" 9))
+    ((9 CL-CONLLU:HEAD "6" 3) (9 CL-CONLLU:HEAD "6" 3)
+     (9 CL-CONLLU:HEAD "6" 3))
+    ((10 DEPREL "flat:name" "CASE") (11 DEPREL "flat:name" "CASE")
+     (12 DEPREL "flat:name" "CASE"))
+    ((9 DEPREL "nmod" "ADVERB") (9 DEPREL "nmod" "ADVERB")
+     (9 DEPREL "nmod" "ADVERB"))
+    ((6 DEPREL "nsubj" "DET")) ((3 DEPREL "root" "ROOT")))))
+ (("CF893-2"
+   (1
+    ((19 CL-CONLLU:HEAD "16" 18) (19 CL-CONLLU:HEAD "16" 18)
+     (19 CL-CONLLU:HEAD "16" 18) (19 CL-CONLLU:HEAD "16" 18))
+    ((16 CL-CONLLU:HEAD "8" 19)) ((8 CL-CONLLU:HEAD "6" 16))
+    ((6 CL-CONLLU:HEAD "0" 8))))
+  ("CF893-1"
+   (2 ((2 CL-CONLLU:HEAD "0" 1) (2 CL-CONLLU:HEAD "0" 1))
+    ((2 FORM "Godard" "fuck") (2 FORM "Godard" "fuck"))
+    ((3 UPOSTAG "ADJ" "Godard") (1 UPOSTAG "DET" "Godard"))
+    ((3 FORM "intergaláctico" "INTERGALÁCTICO") (1 FORM "Um" "UM"))))
+  ("CF892-3"
+   (1 ((17 CL-CONLLU:HEAD "14" 16)) ((14 CL-CONLLU:HEAD "6" 17))
+    ((6 CL-CONLLU:HEAD "3" 14)) ((3 CL-CONLLU:HEAD "0" 6))))))
