@@ -14,10 +14,14 @@
 
 (defun apply-transformations (sentence sent-id rules &optional (index 1) acumulated-results)
   (if rules
-      (let ((results (apply-transformation sentence sent-id (rest (first rules)) index)))
-	(when (first results)
-	  (apply-transformations sentence sent-id (rest rules) (1+ index)
-				 (cons (cons index (rest results)) acumulated-results))))
+      (let* ((results (apply-transformation sentence sent-id (rest (first rules)) index))
+	     (final-results (cons (cons index (rest results)) acumulated-results))) 
+	(cond ((first results)
+	       (apply-transformations sentence sent-id (rest rules)
+				      (1+ index) final-results))
+	      (results final-results)
+	      (t (apply-transformations sentence sent-id (rest rules)
+					(1+ index) acumulated-results))))
       acumulated-results))
 
 
@@ -60,7 +64,9 @@
 	 (expression (if negative (nth 1 def) def))
 	 (criterion (nth 1 expression))
 	 (value (nth 2 expression)))
-    (set-match-test (if (string= criterion 'id) (write-to-string value) value)
+    (set-match-test (if (or (string= criterion 'id) (string= criterion 'head))
+			(write-to-string value)
+			value)
 		    criterion negative (string= (first expression) '~))))
     
 (defun set-match-test (value criterion negative-criterion regular-expression)
@@ -109,12 +115,12 @@
   (unless (string= (first expression) 'last)
     (if (= (length expression) 5)
 	(list t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
-	(list nil (nth 1 expression) (nth 2 expression) (stringp nth-3) (nth 3 expression)))))
+	(list nil (nth 1 expression) (nth 2 expression) (stringp (nth 3 expression)) (nth 3 expression)))))
 
 
 (defun get-field-value (field token)
   (let ((value (slot-value token (intern (symbol-name field) "CL-CONLLU"))))
-    (if (integerp value)
+    (if (or (string= field 'id) (string= field 'head))
 	(write-to-string value)
 	value)))
 
