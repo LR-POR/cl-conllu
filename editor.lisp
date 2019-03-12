@@ -6,7 +6,7 @@
 	      (let* ((sent-id (sentence-id sentence)) 
 		     (results (apply-transformations sentence sent-id rules)))
 		(if results
-		    (cons (cons sent-id results) acumulated-results)
+		    (cons (cons sent-id (reverse results)) acumulated-results)
 		    acumulated-results)))
 	  sentences :initial-value nil))
 
@@ -112,10 +112,11 @@
 			   actions :initial-value nil))))
 
 (defun action (expression)
-  (unless (string= (first expression) 'last)
-    (if (= (length expression) 5)
-	(list t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
-	(list nil (nth 1 expression) (nth 2 expression) (stringp (nth 3 expression)) (nth 3 expression)))))
+  (let ((op (first expression))) 
+    (unless (string= op 'last)
+      (if (= (length expression) 5)
+	  (list op t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
+	  (list op nil (nth 1 expression) (nth 2 expression) (stringp (nth 3 expression)) (nth 3 expression))))))
 
 
 (defun get-field-value (field token)
@@ -251,25 +252,59 @@
 	(t
 	 (cons nil (reverse result-actions)))))
 
+
 (defun result-action (sets tokens action)
-  (let* ((field (nth 2 action))
-	 (result-assocs (assocs (nth 1 action) sets field tokens)) 
+  (let* ((field (nth 3 action))
+	 (result-assocs (assocs (nth 2 action) sets field tokens)) 
 	 (result-ids (first result-assocs))
 	 (result-tokens (nth 1 result-assocs)) 
 	 (old-fields (nth 2 result-assocs)))
     (list field result-tokens result-ids old-fields
-	  (mapcar (cond ((first action)
-			 #'(lambda (token)
-			     (get-field-value (nth 4 action)
-					      (nth (1- (rest (assoc (nth 3 action) sets)))
-						   tokens))))
-			((nth 3 action)
-			 #'(lambda (token)
-			     (nth 4 action)))
-			(t
-			 #'(lambda (token)
-			     (eval `(funcall ,(nth 4 action) ,(get-field-value field token))))))
+	  (mapcar #'(lambda (token)
+		      (let ((value 
+			     (cond ((nth 1 action)
+				    (get-field-value (nth 5 action)
+						     (nth (1- (rest (assoc (nth 4 action) sets))) tokens)))
+				   ((nth 4 action)
+				    (nth 5 action))
+				   (t
+				    (eval `(funcall ,(nth 5 action) ,(get-field-value field token)))))))
+			(if (string= (first action) 'set)
+			    value
+			    (add-or-subt (first action) field token value))))
 		  result-tokens))))
+
+
+(defun add-or-subt (op field token value)
+  (let ((token-value (get-field-value field token)))
+    (if (stringp op)
+	(reverse (cl-ppcre:regex-replace (reverse op) (reverse token-value) (reverse value)))
+	(clear
+	 (format nil "~{|~A~}"
+		 (reduce #'(lambda (result-value sub-value)
+			     (if (string= op '-)
+				 (remove sub-value result-value :test #'test-feats-misc)
+				 (if (find sub-value result-value :test #'test-feats-misc)
+				     (substitute sub-value sub-value result-value :test #'test-feats-misc)
+				     (append result-value (list sub-value)))))
+			 (cl-ppcre:split "\\|" value) :initial-value (cl-ppcre:split "\\|" token-value)))))))
+
+
+(defun test-feats-misc (string-1 string-2)
+  (string= (first (cl-ppcre:split "=" string-1))
+	   (first (cl-ppcre:split "=" string-2))))
+    
+
+(defun clear (string)
+  (let ((length-string (length string)))
+    (cond ((< length-string 1)
+	   "_")
+	  ((or (char= (elt string 0) #\|) (char= (elt string 0) #\_))
+	   (clear (subseq string 1)))
+	  ((or (char= (elt string (1- length-string)) #\|) (char= (elt string (1- length-string)) #\_))
+	   (clear (subseq string 0 (- length-string 2))))
+	  (t (cl-ppcre:regex-replace-all "\\|\\|" string "|")))))
+
 
 (defun assocs (value sets field tokens &optional ids result-tokens old-fields)
   (if sets
