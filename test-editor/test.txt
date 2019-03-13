@@ -15,12 +15,20 @@
     ((19 CL-CONLLU:HEAD "16" 18) (19 CL-CONLLU:HEAD "16" 18)
      (19 CL-CONLLU:HEAD "16" 18) (19 CL-CONLLU:HEAD "16" 18))
     ((16 CL-CONLLU:HEAD "8" 19)) ((8 CL-CONLLU:HEAD "6" 16))
-    ((6 CL-CONLLU:HEAD "0" 8))))
+    ((6 CL-CONLLU:HEAD "0" 8)) ((6 FORM "mistura" "misturando"))
+    ((6 FORM "mistura" "mistura"))))
   ("CF893-1"
    (2 ((2 CL-CONLLU:HEAD "0" 1) (2 CL-CONLLU:HEAD "0" 1))
-    ((2 FORM "Godard" "um") (2 FORM "Godard" "um"))
+    ((2 FEATS "Gender=Masc|Number=Sing" "Gender=Masc|Number=Plural|hello=oi")
+     (2 FEATS "Gender=Masc|Number=Sing" "Gender=Masc|Number=Plural|hello=oi"))
+    ((3 FEATS "Gender=Masc|Number=Sing" "_")
+     (1 FEATS "Definite=Ind|Gender=Masc|Number=Sing|PronType=Art"
+      "Definite=Ind|PronType=Art"))
+    ((2 LEMMA "Godard" "Godando") (2 LEMMA "Godard" "Godando"))
+    ((2 FORM "Godard" "olá") (2 FORM "Godard" "olá"))
     ((3 UPOSTAG "ADJ" "Godard") (1 UPOSTAG "DET" "Godard"))
     ((3 FORM "intergaláctico" "INTERGALÁCTICO") (1 FORM "Um" "UM"))))
   ("CF892-3"
    (1 ((17 CL-CONLLU:HEAD "14" 16)) ((14 CL-CONLLU:HEAD "6" 17))
-    ((6 CL-CONLLU:HEAD "3" 14)) ((3 CL-CONLLU:HEAD "0" 6))))))
+    ((6 CL-CONLLU:HEAD "3" 14)) ((3 CL-CONLLU:HEAD "0" 6))
+    ((3 FORM "ele" "ele")) ((3 FORM "ele" "ela"))))))

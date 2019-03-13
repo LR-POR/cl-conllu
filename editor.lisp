@@ -64,7 +64,7 @@
 		     (final-actions (rest result-actions))) 
 		(when (examine-actions final-actions) 
 		  (let ((results (mapcar #'(lambda (result-action) (apply-action result-action)) final-actions)))
-		    (format *error-output* "Transformation ~a changed ~a tokens of Sentenca ~a ~%"
+		    (format *error-output* "Transformation ~a made ~a changes in Sentenca ~a ~%"
 			    rule-index (length results) sent-id)
 		    (cons (first result-actions) results)))))))))))
 
