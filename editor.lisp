@@ -4,42 +4,39 @@
 
 (defun conlluedit (sentences rules)
   (rest (reduce #'(lambda (acumulated-results sentence)
-		    (let* ((sent-id (sentence-id sentence))
+   		    (let* ((sent-id (sentence-id sentence))
 			   (tokens (sentence-tokens sentence))
-			   (results (apply-transformations tokens sent-id rules
-							   (first acumulated-results))))
+			   (results (apply-transformations tokens sent-id rules (first acumulated-results))))
 		      (if (rest results)
 			  (cons (first results) (cons (cons sent-id (reverse (rest results)))
 						      (rest acumulated-results)))
 			  (cons (first results) (rest acumulated-results)))))
-		sentences :initial-value (list nil))))
+		sentences :initial-value nil)))
 
 ;; part 0
 
 (defun apply-transformations (tokens sent-id rules errors &optional (index 1) acumulated-results)
   (if rules
       (if (find index errors)
-	  (apply-transformations tokens sent-id (rest rules) errors
-				 (1+ index) acumulated-results)
-	  (let ((results (error-test (apply-transformation tokens sent-id
-							   (rest (first rules)) index))))
+	  (apply-transformations tokens sent-id (rest rules) errors (1+ index) acumulated-results)
+	  (let ((results (error-test
+			  (apply-transformation tokens sent-id (rest (first rules)) index))))
 	    (if (integerp results)
-		(apply-transformations tokens sent-id (rest rules) (cons index errors)
-				       (1+ index) acumulated-results)
-		(let ((final-results (cons (cons index (rest results)) acumulated-results))) 
+		(apply-transformations tokens sent-id (rest rules) (cons index errors) (1+ index) acumulated-results)
+		(let ((final-results (cons (cons index (rest results))
+					   acumulated-results))) 
 		  (cond ((first results)
-			 (apply-transformations tokens sent-id (rest rules) errors
-						(1+ index) final-results))
+			 (apply-transformations tokens sent-id (rest rules) errors (1+ index) final-results))
 			(results
 			 (cons errors final-results))
 			(t
-			 (apply-transformations tokens sent-id (rest rules) errors
-						(1+ index) acumulated-results)))))))
+			 (apply-transformations tokens sent-id (rest rules) errors (1+ index) acumulated-results)))))))
       (cons errors acumulated-results)))
 
 
 (defmacro error-test (expression)
-  `(let ((result (handler-case ,expression (error () 0))))
+  `(let ((result (handler-case ,expression
+		   (error () 0))))
      (if (integerp result)
 	 (restart-case (error 'malformed-rule :index ,(nth 4 expression))
 	   (process-next-rules () 0))
@@ -66,8 +63,7 @@
 	      (let* ((result-actions (result-actions merged-sets tokens actions))
 		     (final-actions (rest result-actions))) 
 		(when (examine-actions final-actions) 
-		  (let ((results (mapcar #'(lambda (result-action) (apply-action result-action))
- 					 final-actions)))
+		  (let ((results (mapcar #'(lambda (result-action) (apply-action result-action)) final-actions)))
 		    (format *error-output* "Transformation ~a changed ~a tokens of Sentenca ~a ~%"
 			    rule-index (length results) sent-id)
 		    (cons (first result-actions) results)))))))))))
@@ -148,7 +144,7 @@
 
 
 (defun action (expression)
-  (let ((op (first expression))) 
+  (let ((op (first expression)))
     (unless (string= op 'last)
       (if (= (length expression) 5)
 	  (list op t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
@@ -277,7 +273,7 @@
 		    (union matcher result-sets)
 		    result-sets)))
 	  sets :initial-value nil))
-  
+
 ;; part 5
 
 (defun result-actions (sets tokens actions &optional result-actions)
@@ -285,8 +281,8 @@
 	 (cons t (reverse result-actions))) 
 	((first actions)
 	 (result-actions sets tokens (rest actions)
-			     (cons (result-action sets tokens (first actions)) 
-				   result-actions)))
+			 (cons (result-action sets tokens (first actions)) 
+			       result-actions)))
 	(t
 	 (cons nil (reverse result-actions)))))
 
@@ -342,7 +338,7 @@
 (defun test-feats-misc (string-1 string-2)
   (string= (first (cl-ppcre:split "=" string-1))
 	   (first (cl-ppcre:split "=" string-2))))
-  
+
 
 (defun clear (string)
   (let ((length-string (length string)))
@@ -352,7 +348,8 @@
 	   (clear (subseq string 1)))
 	  ((or (char= (elt string (1- length-string)) #\|) (char= (elt string (1- length-string)) #\_))
 	   (clear (subseq string 0 (- length-string 1))))
-	  (t (cl-ppcre:regex-replace-all "\\|\\|" string "|")))))
+	  (t
+	   (cl-ppcre:regex-replace-all "\\|\\|" string "|")))))
 
 ;; part 6	      
 
