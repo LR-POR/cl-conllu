@@ -3,34 +3,60 @@
 
 
 (defun conlluedit (sentences rules)
-  (reduce #'(lambda (acumulated-results sentence)
-	      (let* ((sent-id (sentence-id sentence)) 
-		     (results (apply-transformations sentence sent-id rules)))
-		(if results
-		    (cons (cons sent-id (reverse results)) acumulated-results)
-		    acumulated-results)))
-	  sentences :initial-value nil))
+  (rest (reduce #'(lambda (acumulated-results sentence)
+		    (let* ((sent-id (sentence-id sentence))
+			   (tokens (sentence-tokens sentence))
+			   (results (apply-transformations tokens sent-id rules
+							   (first acumulated-results))))
+		      (if (rest results)
+			  (cons (first results) (cons (cons sent-id (reverse (rest results)))
+						      (rest acumulated-results)))
+			  (cons (first results) (rest acumulated-results)))))
+		sentences :initial-value (list nil))))
 
 ;; part 0
 
-(defun apply-transformations (sentence sent-id rules &optional (index 1) acumulated-results)
+(defun apply-transformations (tokens sent-id rules errors &optional (index 1) acumulated-results)
   (if rules
-      (let* ((results (apply-transformation sentence sent-id (rest (first rules)) index))
-	     (final-results (cons (cons index (rest results)) acumulated-results))) 
-	(cond ((first results)
-	       (apply-transformations sentence sent-id (rest rules)
-				      (1+ index) final-results))
-	      (results final-results)
-	      (t (apply-transformations sentence sent-id (rest rules)
-					(1+ index) acumulated-results))))
-      acumulated-results))
+      (if (find index errors)
+	  (apply-transformations tokens sent-id (rest rules) errors
+				 (1+ index) acumulated-results)
+	  (let ((results (error-test (apply-transformation tokens sent-id
+							   (rest (first rules)) index))))
+	    (if (integerp results)
+		(apply-transformations tokens sent-id (rest rules) (cons index errors)
+				       (1+ index) acumulated-results)
+		(let ((final-results (cons (cons index (rest results)) acumulated-results))) 
+		  (cond ((first results)
+			 (apply-transformations tokens sent-id (rest rules) errors
+						(1+ index) final-results))
+			(results
+			 (cons errors final-results))
+			(t
+			 (apply-transformations tokens sent-id (rest rules) errors
+						(1+ index) acumulated-results)))))))
+      (cons errors acumulated-results)))
 
 
-(defun apply-transformation (sentence sent-id rule rule-index)
+(defmacro error-test (expression)
+  `(let ((result (handler-case ,expression (error () 0))))
+     (if (integerp result)
+	 (restart-case (error 'malformed-rule :index ,(nth 4 expression))
+	   (process-next-rules () 0))
+	 result)))
+
+
+(define-condition malformed-rule (error)
+  ((index :initarg :index :reader index))
+  (:report (lambda (condition stream)
+	     (format stream "Error in rule: ~a~%Note: Previous rules may have been successfully completed.~&"
+		     (index condition)))))
+
+
+(defun apply-transformation (tokens sent-id rule rule-index)
   (let* ((definitions    (definitions (getf rule :vars)))
 	 (relations      (relations (getf rule :rels)))
 	 (actions        (actions (getf rule :acts)))
-	 (tokens         (sentence-tokens sentence))
 	 (nodes          (node-matchers tokens definitions)))
     (when nodes
       (let ((sets (sets nodes relations)))
