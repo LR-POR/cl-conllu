@@ -357,7 +357,7 @@
   (if final-actions
       (let ((result-action (first final-actions)))
 	(when (and (find (first result-action)
-			 '(id form lemma upostag feats feats head deprel deps misc)
+			 '(id form lemma upostag xpostag feats head deprel deps misc)
 			 :test #'string=)
 		   (not (string= 'nil (first (nth 4 result-action)))))
 	  (examine-actions (rest final-actions) t)))
