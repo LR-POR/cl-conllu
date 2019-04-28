@@ -1,6 +1,7 @@
 
 (in-package :conllu.editor)
 
+;;; Abbreviations:
 ;; prev    -> previous
 ;; sent(s) -> sentence(s)
 ;; acum    -> acumulated
@@ -35,7 +36,7 @@
           (let ((records (error-test (apply-rule tokens sent-id (rest (first rules)) index))))
             (if (integerp records)
                 (apply-rules tokens sent-id (rest rules) (cons index errors) (1+ index) acum-records)
-                (let ((last? (first records))
+                (let ((last?         (first records))
                       (final-records (cons (cons index (rest records)) acum-records)))
                   (cond (last?
                          (apply-rules tokens sent-id (rest rules) errors (1+ index) final-records))
@@ -73,8 +74,8 @@
             (when merged-sets
               (let* ((result-acts (result-acts merged-sets tokens acts))
                      (last?       (first result-acts))
-                     (final-acts  (rest result-acts))) 
-                (when (examine-acts final-acts) 
+                     (final-acts  (rest result-acts)))
+                (when (examine-acts final-acts)
                   (let ((results (mapcar #'(lambda (result-act) (apply-act result-act)) final-acts)))
                     (format *error-output* "Transformation ~a made ~a changes in Sentenca ~a ~%" rule-index (length results) sent-id)
                     (cons last? results)))))))))))
@@ -83,12 +84,12 @@
 
 (defun definitions (definitions &optional (index 1) result-defs)
   (if definitions
-      (let ((first-definition (first definitions)))
+      (let ((fst-definition (first definitions)))
         (definitions (rest definitions) (1+ index)
           (cons (list :def-index index
-                      :matchs (mapcar #'def-match (if (listp (first first-definition))
-                                                      first-definition
-                                                      (list first-definition))))
+                      :matchs (mapcar #'def-match (if (listp (first fst-definition))
+                                                      fst-definition
+                                                      (list fst-definition))))
                 result-defs)))
       result-defs))
 
@@ -104,16 +105,16 @@
                 criterion negative? (first expression))))
 
 
-(defun match-test (value criterion negative? operation)
+(defun match-test (value criterion negative? op)
   #'(lambda (token)
       (let ((field (get-field-value criterion token)))
         (when field
           (funcall (if negative? #'not #'identity)
-                   (cond ((string= operation '=)
+                   (cond ((string= op '=)
                           (string= value field))
-                         ((string= operation '~)
+                         ((string= op '~)
                           (cl-ppcre:scan value field))
-                         ((string= operation '%)
+                         ((string= op '%)
                           (find value (cl-ppcre:split "\\|" field) :test #'string=))))))))
 
 
@@ -182,11 +183,11 @@
 
 (defun node-matchs (tokens defs &optional result-nodes)
   (if defs
-      (let* ((first-def       (first defs))
-             (tokens-matchs   (token-matchs first-def tokens)))
+      (let* ((fst-def       (first defs))
+             (tokens-matchs (token-matchs fst-def tokens)))
         (when tokens-matchs
           (node-matchs tokens (rest defs)
-                       (cons (cons (getf first-def :def-index) tokens-matchs)
+                       (cons (cons (getf fst-def :def-index) tokens-matchs)
                              result-nodes))))
       result-nodes))
 
@@ -196,10 +197,10 @@
               (if (defs-tests token (getf def :matchs))
                   (cons token result-matchs)
                   result-matchs))
-          tokens :initial-value nil))  
+          tokens :initial-value nil))
 
 
-(defun defs-tests (token defs) 
+(defun defs-tests (token defs)
   (if defs
       (when (funcall (first defs) token)
         (defs-tests token (rest defs)))
@@ -210,7 +211,7 @@
 (defun sets (nodes rels &optional (rel-index 1) result-sets)
   (if rels
       (let ((set (rel-match nodes (first rels) rel-index)))
-        (when set 
+        (when set
           (sets nodes (rest rels) (1+ rel-index) (append set result-sets))))
       (if result-sets
           result-sets
@@ -245,7 +246,7 @@
             :matchs (list (cons def-1 (token-id token-1))
                           (cons def-2 (token-id token-2))))))
 
-;; part 4  
+;; part 4
 
 (defun merge-sets (defs-count rels-count sets)
   (join-matchs defs-count rels-count
@@ -286,7 +287,7 @@
 
 (defun result-acts (sets tokens acts &optional result-acts)
   (cond ((null acts)
-         (cons t (reverse result-acts))) 
+         (cons t (reverse result-acts)))
         ((first acts)
          (result-acts sets tokens (rest acts) (cons (result-act sets tokens (first acts)) result-acts)))
         (t
@@ -295,11 +296,11 @@
 
 (defun result-act (sets tokens act)
   (let* ((field         (fourth act))
-         (result-assocs (assocs (third act) sets field tokens)) 
+         (result-assocs (assocs (third act) sets field tokens))
          (result-tokens (second result-assocs)))
     (list field result-tokens (first result-assocs) (third result-assocs)
           (mapcar #'(lambda (token)
-                      (let ((value 
+                      (let ((value
                              (cond ((second act)
                                     (get-field-value (sixth act) (nth (1- (rest (assoc (fifth act) sets))) tokens)))
                                    ((fifth act)
@@ -354,15 +355,15 @@
           (t
            (cl-ppcre:regex-replace-all "\\|\\|" string "|")))))
 
-;; part 6	      
+;; part 6
 
-(defun examine-acts (final-acts &optional not-first)
+(defun examine-acts (final-acts &optional not-fst)
   (if final-acts
       (let ((result-act (first final-acts)))
         (when (and (find (first result-act) '(id form lemma upostag xpostag feats head deprel deps misc) :test #'string=)
                    (not (string= 'nil (first (fifth result-act)))))
           (examine-acts (rest final-acts) t)))
-      not-first))
+      not-fst))
 
 
 (defun apply-act (result-act)
@@ -373,5 +374,5 @@
                                string-value)))
                 (progn
                   (setf (slot-value token (intern (symbol-name field) "CL-CONLLU")) value)
-                  (list token-id field old-field value)))) 
+                  (list token-id field old-field value))))
             (second result-act) (third result-act) (fourth result-act) (fifth result-act))))
