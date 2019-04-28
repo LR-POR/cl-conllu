@@ -53,8 +53,8 @@
                  (set 2 form #'string-upcase))))))
   (is
    (with-open-file (str "test.txt") (read str))
-   (print (list (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-1)
-         (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-2)))
+   (list (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-1)
+         (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-2))
    :test #'(lambda (a b) (tree-equal a b :test (lambda (a b)
                                                  (cond ((integerp a) (= a b))
                                                        ((stringp a) (string= a b))
