@@ -372,7 +372,6 @@
               (let ((value (if (or (string= field 'id) (string= field 'head))
                                (parse-integer string-value)
                                string-value)))
-                (progn
-                  (setf (slot-value token (intern (symbol-name field) "CL-CONLLU")) value)
-                  (list token-id field old-field value))))
+                (setf (slot-value token (intern (symbol-name field) "CL-CONLLU")) value)
+                (list token-id field old-field value)))
             (second result-act) (third result-act) (fourth result-act) (fifth result-act))))

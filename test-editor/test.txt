@@ -27,7 +27,7 @@
      (1 FEATS "Definite=Ind|Gender=Masc|Number=Sing|PronType=Art"
       "Definite=Ind|PronType=Art"))
     ((2 LEMMA "Godard" "Godard|ando") (2 LEMMA "Godard" "Godard|ando"))
-    ((2 FORM "Godard" "ol?") (2 FORM "Godard" "ol?"))
+    ((2 FORM "Godard" "ola") (2 FORM "Godard" "ola"))
     ((3 UPOSTAG "ADJ" "Godard") (1 UPOSTAG "DET" "Godard"))
     ((3 FORM "intergal?ctico" "INTERGAL?CTICO") (1 FORM "Um" "UM"))))
   ("CF892-3"

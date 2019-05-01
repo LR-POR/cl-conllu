@@ -48,17 +48,14 @@
                  (+ 1 feats "Number=Plural||hello=oi")
                  (- 2 feats "Gender=Masc|Number=Sing|Dia=1|")
                  (+ 1 lemma "ando")
-                 (set 1 form "olá")
+                 (set 1 form "ola")
                  (set 2 1 upostag form)
                  (set 2 form #'string-upcase))))))
   (is
    (with-open-file (str "test.txt") (read str))
    (list (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-1)
          (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-2))
-   :test #'(lambda (a b) (tree-equal a b :test (lambda (a b)
-                                                 (cond ((integerp a) (= a b))
-                                                       ((stringp a) (string= a b))
-                                                       (t (eql a b))))))))
+   :test #'(lambda (a b) (tree-equal a b :test #'equal))))
 
 
 (finalize)

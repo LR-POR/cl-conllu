@@ -37,14 +37,13 @@
                  (+ 1 feats "Number=Plural||hello=oi")
                  (- 2 feats "Gender=Masc|Number=Sing|Dia=1|")
                  (+ 1 lemma "ando")
-                 (set 1 form "olá")
+                 (set 1 form "ola")
                  (set 2 1 upostag form)
                  (set 2 form #'string-upcase))))))
   (with-open-file (str "test.txt"
-                       :direction :output
-                       :if-exists :supersede
+                       :direction         :output
+                       :if-exists         :supersede
                        :if-does-not-exist :create)
     (prin1 (list (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-1)
                  (conllu.editor:conlluedit (cl-conllu:read-conllu #P"test.conllu") rule-2))
            str)))
-

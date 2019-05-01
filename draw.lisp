@@ -1,53 +1,76 @@
+
 (in-package :conllu.draw)
 
 
 (defun tree-sentence (sentence &key (stream *standard-output*) show-meta)
-  (when show-meta 
+  (when show-meta
     (mapc (lambda (p)
             (format stream "~a = ~a~%" (car p) (cdr p)))
           (sentence-meta sentence)))
-  (format stream "~{~a ~%~}~%" (make-tree sentence))
+   (format stream "~{~a ~%~}~%" (make-tree sentence))
   (values))
 
 
 (defun make-tree (sent)
-  (let*  ((tks (sentence-tokens sent))
-	  (len-tks (length tks))
-	  (lines  (make-list len-tks :initial-element ""))
-	  (spaces (make-list len-tks :initial-element 0))
-	  (root (root-leaf tks)))
-    (make-root-lines tks root lines spaces)
-    (make-branchs root (children root tks) tks len-tks lines spaces)
+  (let*  ((tokens     (sentence-tokens sent))
+          (root       (root-leaf tokens))
+          (len-tokens (length tokens))
+          (lines      (make-list len-tokens :initial-element ""))
+          (spaces     (make-list len-tokens :initial-element 0)))
+    (make-root-lines root lines spaces)
+    (make-branchs root (children root tokens) tokens len-tokens lines spaces)
     (cons "─┮" lines)))
+
+
+(defun root-leaf (tokens)
+  (let ((token (first tokens)))
+    (if (equal (slot-value token 'CL-CONLLU::HEAD) 0)
+        token
+        (root-leaf (rest tokens)))))
+
+
+(defun make-root-lines (root lines spaces)
+  (let ((id (- (slot-value root 'CL-CONLLU::ID) 1)))
+    (loop for i from 0 to id do (add lines spaces i " │"))
+    (add lines spaces id " ╰")))
+
+
+(defun add (lines spaces id text)
+  (setf (nth id lines)  text)
+  (setf (nth id spaces) (length text)))
+
+
+(defun children (father tokens)
+  (let ((id-father (slot-value father 'CL-CONLLU::ID)))
+    (remove-if-not
+     (lambda (x)
+       (or (equal (slot-value x 'CL-CONLLU::HEAD) id-father)
+           (equal x father)))
+     tokens)))
 
 
 (defun make-branchs (father children tokens len-tokens lines spaces)
   (if (null father)
       (values)
       (let* ((to-do '())
-	     (bot (- (slot-value (car children) 'CL-CONLLU::ID) 1))
-	     (top (- (slot-value (car (last children)) 'CL-CONLLU::ID) 1))
-	     (father-id (slot-value father 'CL-CONLLU::ID))
-	     (max-s (maximum-between spaces bot top)))
-     ;TO-DO : usar uma recurção aqui para subistituir o loop
-	(loop for index from bot to top do
-	      (let ((node (nth index tokens)))
-		(if (equal node father)
-		    (draw-father index lines spaces (equal bot index) (equal top index) node max-s)
-		    (if (member node children)
-			(progn
-			  (draw-descendent index lines spaces (equal bot index)
-					   (equal top index) max-s)
-			  (if (is-not-just-a-leaf (+ 1 index) tokens)
-			      (push node to-do)
-			      (draw-node index lines spaces node)))
-			(draw-no-descendets index lines spaces max-s)))))
-	(loop for i in to-do do
-	      (make-branchs i (children i tokens) tokens len-tokens lines spaces)))))
-
-(defun draw-node (id lines spaces node)
-  (add lines spaces id (concatenate 'string (nth id lines) "─╼ "))
-  (draw-node-values id lines spaces node))
+             (bot   (- (slot-value (car children)        'CL-CONLLU::ID) 1))
+             (top   (- (slot-value (car (last children)) 'CL-CONLLU::ID) 1))
+             (max-s (maximum-between spaces bot top)))
+                                        ;TO-DO : usar uma recurção aqui para subistituir o loop
+        (loop for index from bot to top do
+             (let ((node (nth index tokens)))
+               (if (equal node father)
+                   (draw-father index lines spaces (equal bot index) (equal top index) node max-s)
+                   (if (member node children)
+                       (progn
+                         (draw-descendent index lines spaces (equal bot index)
+                                          (equal top index) max-s)
+                         (if (is-not-just-a-leaf (+ 1 index) tokens)
+                             (push node to-do)
+                             (draw-node index lines spaces node)))
+                       (draw-no-descendets index lines spaces max-s)))))
+        (loop for i in to-do do
+             (make-branchs i (children i tokens) tokens len-tokens lines spaces)))))
 
 
 (defun maximum-between (list bot top)
@@ -56,14 +79,19 @@
 
 (defun between (list bot top)
   (labels ((between-aux (list top count aux)
-	     (if (equal top count)
-		 (append aux (list (car list)))
-		 (between-aux (cdr list) top (+ 1 count) (append aux (list (car list))))))
-	   (starting (list bot count)
-	     (if (equal bot count)
-		 list
-		 (starting (cdr list) bot (+ 1 count)))))
+             (if (equal top count)
+                 (append aux (list (car list)))
+                 (between-aux (cdr list) top (+ 1 count) (append aux (list (car list))))))
+           (starting (list bot count)
+             (if (equal bot count)
+                 list
+                 (starting (cdr list) bot (+ 1 count)))))
     (between-aux (starting list bot 0) top bot nil)))
+
+
+(defun draw-node (id lines spaces node)
+  (add lines spaces id (concatenate 'string (nth id lines) "─╼ "))
+  (draw-node-values id lines spaces node))
 
 
 (defun is-not-just-a-leaf (id tokens)
@@ -73,10 +101,10 @@
 (defun draw-descendent (id lines spaces bot top n)
   (let ((alinhar (make-string (- n (nth id spaces)) :initial-element #\space)))
     (if bot
-	(add lines spaces id (concatenate 'string (nth id lines) alinhar " ╭"))
-	(if top
-	    (add lines spaces id (concatenate 'string (nth id lines) alinhar " ╰"))
-	    (add lines spaces id (concatenate 'string (nth id lines) alinhar " ├"))))))
+        (add lines spaces id (concatenate 'string (nth id lines) alinhar " ╭"))
+        (if top
+            (add lines spaces id (concatenate 'string (nth id lines) alinhar " ╰"))
+            (add lines spaces id (concatenate 'string (nth id lines) alinhar " ├"))))))
 
 
 (defun draw-no-descendets (id lines spaces n)
@@ -95,8 +123,8 @@
   (if bot
       (add lines spaces id (concatenate 'string (nth id lines) "─┮ "))
       (if top
-	  (add lines spaces id (concatenate 'string (nth id lines) "─┶ "))
-	  (add lines spaces id (concatenate 'string (nth id lines) "─┾ ")))))
+          (add lines spaces id (concatenate 'string (nth id lines) "─┶ "))
+          (add lines spaces id (concatenate 'string (nth id lines) "─┾ ")))))
 
 
 (defun draw-node-values (id lines spaces node)
@@ -109,31 +137,3 @@
   (if (null (cdr slots))
       (concatenate 'string acum (slot-value token (car slots)))
       (collect-slots token (cdr slots) (concatenate 'string acum (slot-value token (car slots)) " "))))
-
-
-(defun make-root-lines (tokens root lines spaces )
-  (let ((id (- (slot-value root 'CL-CONLLU::ID ) 1)))
-    (if (> id 0)
-	(progn
-	  (loop for i from 0 to id do (add lines spaces i " │"))
-	  (add lines spaces id " ╰")
-	  (values))
-	(progn
-	  (add lines spaces id " ╰")))))
-
-
-(defun root-leaf (tokens)
-  (car (remove-if-not (lambda (x) (equal (slot-value x 'CL-CONLLU::HEAD) 0)) tokens)))
-
-
-(defun children (father tokens)
-  (let ((id-father (slot-value father 'CL-CONLLU::ID)))
-    (remove-if-not
-     (lambda (x) (or (equal (slot-value x 'CL-CONLLU::HEAD) id-father) (equal x father)))
-     tokens)))
-
-
-(defun add (lines spaces id text)
-  (setf (nth id lines) text)
-  (setf (nth id spaces) (length text)))
-
