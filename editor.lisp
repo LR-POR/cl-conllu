@@ -1,301 +1,377 @@
 
 (in-package :conllu.editor)
 
+;;; Abbreviations:
+;; prev    -> previous
+;; sent(s) -> sentence(s)
+;; acum    -> acumulated
+;; def(s)  -> definitions(s)
+;; rel(s)  -> relations(s)
+;; act(s)  -> actions(s)
+;; op      -> operator
+;; fst     -> first
+;; scd     -> second
+;; rst     -> rest
+
 (defun conlluedit (sentences rules)
-  (reduce #'(lambda (acumulated-results sentence)
-	      (let* ((sent-id (sentence-id sentence)) 
-		     (results (apply-transformations sentence sent-id rules)))
-		(if results
-		    (cons (cons sent-id results) acumulated-results)
-		    acumulated-results)))
-	  sentences :initial-value nil))
+  (reduce #'(lambda (prev-errors&records sentence)
+              (let* ((prev-errors    (first prev-errors&records))
+                     (prev-records   (rest prev-errors&records))
+                     (sent-id        (sentence-id sentence))
+                     (tokens         (sentence-tokens sentence))
+                     (errors&records (apply-rules tokens sent-id rules prev-errors))
+                     (errors         (first errors&records))
+                     (records        (reverse (rest errors&records))))
+                (cons errors (if records
+                                 (cons (cons sent-id records) prev-records)
+                                 prev-records))))
+          sentences :initial-value nil))
 
 ;; part 0
 
-(defun apply-transformations (sentence sent-id rules &optional (index 1) acumulated-results)
+(defun apply-rules (tokens sent-id rules errors &optional (index 1) acum-records)
   (if rules
-      (let ((results (apply-transformation sentence sent-id (rest (first rules)) index)))
-	(when (first results)
-	  (apply-transformations sentence sent-id (rest rules) (1+ index)
-				 (cons (cons index (rest results)) acumulated-results))))
-      acumulated-results))
+      (if (find index errors)
+          (apply-rules tokens sent-id (rest rules) errors (1+ index) acum-records)
+          (let ((records (error-test (apply-rule tokens sent-id (rest (first rules)) index))))
+            (if (integerp records)
+                (apply-rules tokens sent-id (rest rules) (cons index errors) (1+ index) acum-records)
+                (let ((last?         (first records))
+                      (final-records (cons (cons index (rest records)) acum-records)))
+                  (cond (last?
+                         (apply-rules tokens sent-id (rest rules) errors (1+ index) final-records))
+                        (records
+                         (cons errors final-records))
+                        (t
+                         (apply-rules tokens sent-id (rest rules) errors (1+ index) acum-records)))))))
+      (cons errors acum-records)))
 
 
-(defun apply-transformation (sentence sent-id rule rule-index)
-  (let* ((definitions    (definitions (getf rule :vars)))
-	 (relations      (relations (getf rule :rels)))
-	 (actions        (actions (getf rule :acts)))
-	 (tokens         (sentence-tokens sentence))
-	 (nodes          (node-matchers tokens definitions)))
+(defmacro error-test (expression)
+  `(let ((record (handler-case ,expression (error () 0))))
+     (if (integerp record)
+         (restart-case (error 'malformed-rule :index ,(fifth expression))
+           (process-next-rules () 0))
+         record)))
+
+
+(define-condition malformed-rule (error)
+  ((index :initarg :index :reader index))
+  (:report (lambda (condition stream)
+             (format stream "Error in rule: ~a~%Note: Previous rules may have been successfully completed.~&"
+                     (index condition)))))
+
+
+(defun apply-rule (tokens sent-id rule rule-index)
+  (let* ((defs  (definitions (getf rule :defs)))
+         (rels  (relations   (getf rule :rels)))
+         (acts  (actions     (getf rule :acts)))
+         (nodes (node-matchs tokens defs)))
     (when nodes
-      (let ((sets (sets nodes relations)))
-	(when sets 
-	  (let ((merged-sets (merge-sets (length definitions) (length relations) sets)))
-	    (when merged-sets
-	      (let* ((result-actions (result-actions merged-sets tokens actions))
-		     (final-actions (rest result-actions))) 
-		(when (examine-actions final-actions) 
-		  (let ((results (mapcar #'(lambda (result-action) (apply-action result-action))
- 					 final-actions)))
-		    (format *error-output* "Transformation ~a changed ~a tokens of Sentenca ~a ~%"
-			    rule-index (length results) sent-id)
-		    (cons (first result-actions) results)))))))))))
-
+      (let ((sets (sets nodes rels)))
+        (when sets
+          (let ((merged-sets (merge-sets (length defs) (length rels) sets)))
+            (when merged-sets
+              (let* ((result-acts (result-acts merged-sets tokens acts))
+                     (last?       (first result-acts))
+                     (final-acts  (rest result-acts)))
+                (when (examine-acts final-acts)
+                  (let ((results (mapcar #'(lambda (result-act) (apply-act result-act)) final-acts)))
+                    (format *error-output* "Transformation ~a made ~a changes in Sentenca ~a ~%" rule-index (length results) sent-id)
+                    (cons last? results)))))))))))
 
 ;; part 1
 
 (defun definitions (definitions &optional (index 1) result-defs)
   (if definitions
-      (let ((first-def (first definitions)))
-	(definitions (rest definitions) (1+ index)
-	  (cons (list :def-index index
-		      :defs (mapcar #'def-match (if (listp (first first-def))
-						    first-def
-						    (list first-def))))
-		result-defs)))
+      (let ((fst-definition (first definitions)))
+        (definitions (rest definitions) (1+ index)
+          (cons (list :def-index index
+                      :matchs (mapcar #'def-match (if (listp (first fst-definition))
+                                                      fst-definition
+                                                      (list fst-definition))))
+                result-defs)))
       result-defs))
-  
+
+
 (defun def-match (def)
-  (let* ((negative (string= (first def) 'not))
-	 (expression (if negative (nth 1 def) def))
-	 (criterion (nth 1 expression))
-	 (value (nth 2 expression)))
-    (set-match-test (if (string= criterion 'id) (write-to-string value) value)
-		    criterion negative (string= (first expression) '~))))
-    
-(defun set-match-test (value criterion negative-criterion regular-expression)
+  (let* ((negative?  (string= (first def) 'not))
+         (expression (if negative? (second def) def))
+         (criterion  (second expression))
+         (value      (third expression)))
+    (match-test (if (or (string= criterion 'id) (string= criterion 'head))
+                    (write-to-string value)
+                    value)
+                criterion negative? (first expression))))
+
+
+(defun match-test (value criterion negative? op)
   #'(lambda (token)
       (let ((field (get-field-value criterion token)))
-	(when field
-	  (funcall (if negative-criterion #'not #'identity)
-		   (if regular-expression
-		       (cl-ppcre:scan value field)
-		       (string= value field)))))))
+        (when field
+          (funcall (if negative? #'not #'identity)
+                   (cond ((string= op '=)
+                          (string= value field))
+                         ((string= op '~)
+                          (cl-ppcre:scan value field))
+                         ((string= op '%)
+                          (find value (cl-ppcre:split "\\|" field) :test #'string=))))))))
+
 
 (defun relations (relations)
   (mapcar #'relation
-	  (reduce #'(lambda (result relation)
-		      (append (normalize-shorthand relation '=) result))
-		  relations :initial-value nil)))
+          (reduce #'(lambda (result relation)
+                      (append (normalize-shortcut relation '=) result))
+                  relations :initial-value nil)))
+
 
 (defun relation (relation)
-  (let* ((negative (string= (first relation) 'not))
-	 (expression (if negative (nth 1 relation) relation)))
-    (list
-     :defs (cons (nth 1 expression) (nth 2 expression))
-     :relation-test (set-relation-test negative (first expression)
-				       (nth 3 expression) (nth 4 expression)))))
+  (let* ((negative?  (string= (first relation) 'not))
+         (expression (if negative? (second relation) relation)))
+    (list :defs (cons (second expression) (third expression))
+          :rel-test (relation-test negative? (first expression) (fourth expression) (fifth expression)))))
 
-(defun set-relation-test (negative first-expression field-1 field-2)
+
+(defun relation-test (negative? op field-1 field-2)
   #'(lambda (token-1 token-2)
       (let ((id-1 (parse-integer (get-field-value 'id token-1)))
-	    (id-2 (parse-integer (get-field-value 'id token-2))))
-	(and (not (= id-1 id-2))
-	     (funcall (if negative #'not #'identity)
-		      (if (string= first-expression '=)
-			  (string= (get-field-value field-1 token-1)
-				   (get-field-value field-2 token-2))
-			  (let ((null-field-1 (if field-1 field-1 1)))
-			    (<= null-field-1 (- id-2 id-1)
-				(if field-2 field-2 null-field-1)))))))))
+            (id-2 (parse-integer (get-field-value 'id token-2))))
+        (and (/= id-1 id-2)
+             (funcall (if negative? #'not #'identity)
+                      (if (string= op '=)
+                          (string= (get-field-value field-1 token-1)
+                                   (get-field-value field-2 token-2))
+                          (let* ((fst-field (if field-1 field-1 1))
+                                 (scd-field (if field-2 field-2 fst-field)))
+                            (<= fst-field (- id-2 id-1) scd-field))))))))
+
 
 (defun actions (actions)
-  (reverse (mapcar #'action
-		   (reduce #'(lambda (result relation)
-			       (append (normalize-shorthand relation 'set) result))
-			   actions :initial-value nil))))
+  (reverse
+   (mapcar #'action
+           (reduce #'(lambda (result action)
+                       (append (normalize-shortcut action 'set) result))
+                   actions :initial-value nil))))
+
 
 (defun action (expression)
-  (unless (string= (first expression) 'last)
-    (if (= (length expression) 5)
-	(list t   (nth 1 expression) (nth 3 expression) (nth 2 expression) (nth 4 expression))
-	(list nil (nth 1 expression) (nth 2 expression) (stringp nth-3) (nth 3 expression)))))
+  (let ((op (first expression)))
+    (unless (string= op 'last)
+      (if (= (length expression) 5)
+          (list op t (second expression) (fourth expression) (third expression) (fifth expression))
+          (list op nil (second expression) (third expression) (stringp (fourth expression)) (fourth expression))))))
 
 
 (defun get-field-value (field token)
   (let ((value (slot-value token (intern (symbol-name field) "CL-CONLLU"))))
-    (if (integerp value)
-	(write-to-string value)
-	value)))
+    (if (or (string= field 'id) (string= field 'head))
+        (write-to-string value)
+        value)))
 
 
-(defun normalize-shorthand (expression operator)
+(defun normalize-shortcut (expression op)
   (if (string= (first expression) '>)
-      (nth 1 (reduce #'(lambda (result node-2)
-			 (list node-2
-			       (cons `(,operator ,node-2 ,(first result) head id)
-				     (nth 1 result))))
-		     (cddr expression) :initial-value (list (nth 1 expression) nil)))
+      (second
+       (reduce #'(lambda (result node)
+                   (list node
+                         (cons `(,op ,node ,(first result) head id)
+                               (second result))))
+               (cddr expression) :initial-value (list (second expression) nil)))
       (list expression)))
-
 
 ;; part 2
 
-(defun node-matchers (tokens definitions &optional result-nodes)
-  (if definitions
-      (let* ((first-def (first definitions))
-	     (tokens-matchers (token-matchers first-def tokens)))
-	(when tokens-matchers
-	  (node-matchers tokens (rest definitions)
-			 (cons (cons (getf first-def :def-index) tokens-matchers)
-			       result-nodes))))
+(defun node-matchs (tokens defs &optional result-nodes)
+  (if defs
+      (let* ((fst-def       (first defs))
+             (tokens-matchs (token-matchs fst-def tokens)))
+        (when tokens-matchs
+          (node-matchs tokens (rest defs)
+                       (cons (cons (getf fst-def :def-index) tokens-matchs)
+                             result-nodes))))
       result-nodes))
 
 
-(defun token-matchers (definition tokens)
-  (reduce #'(lambda (result-matchers token)
-	      (if (all-defs-test token (getf definition :defs))
-		  (cons token result-matchers)
-		  result-matchers))
-	  tokens :initial-value nil))  
+(defun token-matchs (def tokens)
+  (reduce #'(lambda (result-matchs token)
+              (if (defs-tests token (getf def :matchs))
+                  (cons token result-matchs)
+                  result-matchs))
+          tokens :initial-value nil))
 
 
-(defun all-defs-test (token defs) 
+(defun defs-tests (token defs)
   (if defs
       (when (funcall (first defs) token)
-	(all-defs-test token (rest defs)))
+        (defs-tests token (rest defs)))
       t))
-
 
 ;;part 3
 
-(defun sets (nodes relations &optional (relation-index 1) result-sets)
-  (if relations
-      (let ((set (relation-match nodes (first relations) relation-index)))
-	(when set 
-	  (sets nodes (rest relations) (1+ relation-index) (append set result-sets))))
+(defun sets (nodes rels &optional (rel-index 1) result-sets)
+  (if rels
+      (let ((set (rel-match nodes (first rels) rel-index)))
+        (when set
+          (sets nodes (rest rels) (1+ rel-index) (append set result-sets))))
       (if result-sets
-	  result-sets
-	  (mapcar #'(lambda (matcher-1)
-		      (list :relation-index nil
-			    :matchers (list (cons 1 (token-id matcher-1)))))
-		  (rest (assoc 1 nodes))))))
-
-(defun relation-match (nodes relation relation-index)
-  (let* ((defs (getf relation :defs))
-	 (def-1 (first defs))
-	 (def-2 (rest defs)))
-    (result-sets (getf relation :relation-test) relation-index def-1 def-2
-		 (rest (assoc def-1 nodes)) (rest (assoc def-2 nodes)))))
- 							    
-(defun result-sets (relation-test relation-index def-1 def-2 nodes-1 nodes-2)
-  (reduce #'(lambda (result-1 first-1)
-	      (reduce #'(lambda (result-2 first-2)
-			  (let ((set (result-set first-1 first-2 def-1 def-2
-						 relation-test relation-index)))
-			    (if set (cons set result-2) result-2)))
-		      nodes-2 :initial-value result-1))
-	  nodes-1 :initial-value nil))
-  
-(defun result-set (token-1 token-2 def-1 def-2 relation-test relation-index)
-  (if (funcall relation-test token-1 token-2)
-      (list :relation-index (list relation-index)
-	    :matchers (list (cons def-1 (token-id token-1))
-			    (cons def-2 (token-id token-2))))))
+          result-sets
+          (mapcar #'(lambda (match-def-1)
+                      (list :rel-index nil
+                            :matchs (list (cons 1 (token-id match-def-1)))))
+                  (rest (assoc 1 nodes))))))
 
 
-;; part 4  
+(defun rel-match (nodes rel rel-index)
+  (let* ((defs  (getf rel :defs))
+         (def-1 (first defs))
+         (def-2 (rest defs)))
+    (result-sets (getf rel :rel-test) rel-index def-1 def-2
+                 (rest (assoc def-1 nodes)) (rest (assoc def-2 nodes)))))
+
+
+(defun result-sets (rel-test rel-index def-1 def-2 nodes-1 nodes-2)
+  (reduce #'(lambda (result-1 fst-1)
+              (reduce #'(lambda (result-2 fst-2)
+                          (let ((set (result-set fst-1 fst-2 def-1 def-2 rel-test rel-index)))
+                            (if set
+                                (cons set result-2)
+                                result-2)))
+                      nodes-2 :initial-value result-1))
+          nodes-1 :initial-value nil))
+
+
+(defun result-set (token-1 token-2 def-1 def-2 rel-test rel-index)
+  (if (funcall rel-test token-1 token-2)
+      (list :rel-index (list rel-index)
+            :matchs (list (cons def-1 (token-id token-1))
+                          (cons def-2 (token-id token-2))))))
+
+;; part 4
 
 (defun merge-sets (defs-count rels-count sets)
-  (union-matchers defs-count rels-count
-		  (reduce #'(lambda (result-sets set)
-			      (let ((merged-matchers
-				     (multiple-merges defs-count rels-count
-						      set result-sets)))
-				(append (list set) merged-matchers result-sets)))
-			  sets :initial-value nil)))
+  (join-matchs defs-count rels-count
+               (reduce #'(lambda (result-sets set)
+                           (let ((merged-matchs (multiple-merges defs-count rels-count set result-sets)))
+                             (append (list set) merged-matchs result-sets)))
+                       sets :initial-value nil)))
+
 
 (defun multiple-merges (defs-count rels-count bin-1 bins)
-  (reduce #'(lambda (result-matchers bin)
-	      (let ((merged-matchers (merge-matchers defs-count rels-count bin-1 bin)))
-		(if merged-matchers
-		    (cons merged-matchers result-matchers)
-		    result-matchers)))
-	  bins :initial-value nil))
-		
-(defun merge-matchers (defs-count rels-count bin-1 bin-2)
-  (let ((matchers-union (union (getf bin-1 :matchers) (getf bin-2 :matchers)
-			       :test #'tree-equal))
-	(relation-indexes (union (getf bin-1 :relation-index)
-				 (getf bin-2 :relation-index))))
-    (when (and (<= (length matchers-union) defs-count)
-	       (<= (length relation-indexes) rels-count))
-      (list :relation-index relation-indexes
-	    :matchers matchers-union))))
+  (reduce #'(lambda (result-matchs bin)
+              (let ((merged-matchs (merge-matchs defs-count rels-count bin-1 bin)))
+                (if merged-matchs
+                    (cons merged-matchs result-matchs)
+                    result-matchs)))
+          bins :initial-value nil))
 
-(defun union-matchers (defs-count rels-count sets)
+
+(defun merge-matchs (defs-count rels-count bin-1 bin-2)
+  (let ((matchs-union (union (getf bin-1 :matchs) (getf bin-2 :matchs) :test #'tree-equal))
+        (rel-indexes  (union (getf bin-1 :rel-index) (getf bin-2 :rel-index))))
+    (when (and (<= (length matchs-union) defs-count)
+               (<= (length rel-indexes) rels-count))
+      (list :rel-index rel-indexes
+            :matchs matchs-union))))
+
+
+(defun join-matchs (defs-count rels-count sets)
   (reduce #'(lambda (result-sets set)
-	      (let ((matcher (getf set :matchers)))
-		(if (and (= (length (getf set :relation-index)) rels-count)
-			 (= (length matcher) defs-count))
-		    (union matcher result-sets)
-		    result-sets)))
-	  sets :initial-value nil))
-  
+              (let ((match (getf set :matchs)))
+                (if (and (= (length (getf set :rel-index)) rels-count)
+                         (= (length match) defs-count))
+                    (union match result-sets)
+                    result-sets)))
+          sets :initial-value nil))
 
 ;; part 5
 
-(defun result-actions (sets tokens actions &optional result-actions)
-  (cond ((null actions)
-	 (cons t (reverse result-actions))) 
-	((first actions)
-	 (result-actions sets tokens (rest actions)
-			     (cons (result-action sets tokens (first actions)) 
-				   result-actions)))
-	(t
-	 (cons nil (reverse result-actions)))))
+(defun result-acts (sets tokens acts &optional result-acts)
+  (cond ((null acts)
+         (cons t (reverse result-acts)))
+        ((first acts)
+         (result-acts sets tokens (rest acts) (cons (result-act sets tokens (first acts)) result-acts)))
+        (t
+         (cons nil (reverse result-acts)))))
 
-(defun result-action (sets tokens action)
-  (let* ((field (nth 2 action))
-	 (result-assocs (assocs (nth 1 action) sets field tokens)) 
-	 (result-ids (first result-assocs))
-	 (result-tokens (nth 1 result-assocs)) 
-	 (old-fields (nth 2 result-assocs)))
-    (list field result-tokens result-ids old-fields
-	  (mapcar (cond ((first action)
-			 #'(lambda (token)
-			     (get-field-value (nth 4 action)
-					      (nth (1- (rest (assoc (nth 3 action) sets)))
-						   tokens))))
-			((nth 3 action)
-			 #'(lambda (token)
-			     (nth 4 action)))
-			(t
-			 #'(lambda (token)
-			     (eval `(funcall ,(nth 4 action) ,(get-field-value field token))))))
-		  result-tokens))))
+
+(defun result-act (sets tokens act)
+  (let* ((field         (fourth act))
+         (result-assocs (assocs (third act) sets field tokens))
+         (result-tokens (second result-assocs)))
+    (list field result-tokens (first result-assocs) (third result-assocs)
+          (mapcar #'(lambda (token)
+                      (let ((value
+                             (cond ((second act)
+                                    (get-field-value (sixth act) (nth (1- (rest (assoc (fifth act) sets))) tokens)))
+                                   ((fifth act)
+                                    (sixth act))
+                                   (t
+                                    (eval `(funcall ,(sixth act) ,(get-field-value field token)))))))
+                        (if (string= (first act) 'set)
+                            value
+                            (add-or-subt (first act) field token value))))
+                  result-tokens))))
+
 
 (defun assocs (value sets field tokens &optional ids result-tokens old-fields)
   (if sets
       (let ((set (first sets)))
-	(if (= value (first set))
-	    (let* ((id (rest set))
-		   (token (nth (1- id) tokens))
-		   (old-field (get-field-value field token)))
-	      (assocs value (rest sets) field tokens (cons id ids)
-		      (cons token result-tokens) (cons old-field old-fields)))
-	    (assocs value (rest sets) field tokens ids result-tokens old-fields)))
+        (if (= value (first set))
+            (let* ((id        (rest set))
+                   (token     (nth (1- id) tokens))
+                   (old-field (get-field-value field token)))
+              (assocs value (rest sets) field tokens (cons id ids) (cons token result-tokens) (cons old-field old-fields)))
+            (assocs value (rest sets) field tokens ids result-tokens old-fields)))
       (list ids result-tokens old-fields)))
 
-;; part 6	      
 
-(defun examine-actions (final-actions &optional not-first)
-  (if final-actions
-      (let ((result-action (first final-actions)))
-	(when (and (find (first result-action)
-			 '(id form lemma upostag feats feats head deprel deps misc)
-			 :test #'string=)
-		   (not (string= 'nil (first (nth 4 result-action)))))
-	  (examine-actions (rest final-actions) t)))
-      not-first))
+(defun add-or-subt (op field token value)
+  (let ((token-value (get-field-value field token)))
+    (clear
+     (format nil "~{|~A~}"
+             (reduce #'(lambda (result-value sub-value)
+                         (cond ((string= op '-)
+                                (remove sub-value result-value :test #'test-feats&misc))
+                               ((string= op '+)
+                                (if (find sub-value result-value :test #'test-feats&misc)
+                                    (substitute sub-value sub-value result-value :test #'test-feats&misc)
+                                    (append result-value (list sub-value))))))
+                     (cl-ppcre:split "\\|" value) :initial-value (cl-ppcre:split "\\|" token-value))))))
 
-(defun apply-action (result-action)
-  (let ((field (first result-action)))
+
+(defun test-feats&misc (string-1 string-2)
+  (string= (first (cl-ppcre:split "=" string-1))
+           (first (cl-ppcre:split "=" string-2))))
+
+
+(defun clear (string)
+  (let ((length-string (length string)))
+    (cond ((< length-string 2)
+           "_")
+          ((or (char= (elt string 0) #\|) (char= (elt string 0) #\_))
+           (clear (subseq string 1)))
+          ((or (char= (elt string (1- length-string)) #\|) (char= (elt string (1- length-string)) #\_))
+           (clear (subseq string 0 (- length-string 1))))
+          (t
+           (cl-ppcre:regex-replace-all "\\|\\|" string "|")))))
+
+;; part 6
+
+(defun examine-acts (final-acts &optional not-fst)
+  (if final-acts
+      (let ((result-act (first final-acts)))
+        (when (and (find (first result-act) '(id form lemma upostag xpostag feats head deprel deps misc) :test #'string=)
+                   (not (string= 'nil (first (fifth result-act)))))
+          (examine-acts (rest final-acts) t)))
+      not-fst))
+
+
+(defun apply-act (result-act)
+  (let ((field (first result-act)))
     (mapcar (lambda (token token-id old-field string-value)
-	      (let ((value (if (or (string= field 'id) (string= field 'head))
-			       (parse-integer string-value)
-			       string-value)))
-		(progn
-		  (setf (slot-value token (intern (symbol-name field) "CL-CONLLU")) value)
-		  (list token-id field old-field value)))) 
-	    (nth 1 result-action) (nth 2 result-action) (nth 3 result-action) (nth 4 result-action))))
+              (let ((value (if (or (string= field 'id) (string= field 'head))
+                               (parse-integer string-value)
+                               string-value)))
+                (setf (slot-value token (intern (symbol-name field) "CL-CONLLU")) value)
+                (list token-id field old-field value)))
+            (second result-act) (third result-act) (fourth result-act) (fifth result-act))))
