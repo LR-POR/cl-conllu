@@ -441,3 +441,7 @@ initialize sentence OBJ."
                                    (car pair))))
           misc-pairs)
     (second (assoc misc-key misc-pairs :test #'string=))))
+
+
+(defun sentence-by-id (id filename) 
+  (find-if (lambda (s) (equal id (sentence-id s))) (read-conllu filename)))

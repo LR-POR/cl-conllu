@@ -1,139 +1,114 @@
+
 (in-package :conllu.draw)
 
+;;; Abbreviations
+;; dad     -> parent id
+;; child   -> children
+;; adopted -> nodes between the child of a node
+;; kids    -> child and adopted
+;; branch  -> (list dad kids)
+;; len     -> length
 
-(defun tree-sentence (sentence &key (stream *standard-output*) show-meta)
-  (when show-meta 
+(defun tree-sentence (sentence &key (fields (list 'CL-CONLLU::FORM 'CL-CONLLU::DEPREL))
+				 (stream *standard-output*) show-meta)
+  (when show-meta
     (mapc (lambda (p)
             (format stream "~a = ~a~%" (car p) (cdr p)))
           (sentence-meta sentence)))
-  (format stream "~{~a ~%~}~%" (make-tree sentence))
-  (values))
-
-
-(defun make-tree (sent)
-  (let*  ((tks (sentence-tokens sent))
-	  (len-tks (length tks))
-	  (lines  (make-list len-tks :initial-element ""))
-	  (spaces (make-list len-tks :initial-element 0))
-	  (root (root-leaf tks)))
-    (make-root-lines tks root lines spaces)
-    (make-branchs root (children root tks) tks len-tks lines spaces)
-    (cons "─┮" lines)))
-
-
-(defun make-branchs (father children tokens len-tokens lines spaces)
-  (if (null father)
-      (values)
-      (let* ((to-do '())
-	     (bot (- (slot-value (car children) 'CL-CONLLU::ID) 1))
-	     (top (- (slot-value (car (last children)) 'CL-CONLLU::ID) 1))
-	     (father-id (slot-value father 'CL-CONLLU::ID))
-	     (max-s (maximum-between spaces bot top)))
-     ;TO-DO : usar uma recurção aqui para subistituir o loop
-	(loop for index from bot to top do
-	      (let ((node (nth index tokens)))
-		(if (equal node father)
-		    (draw-father index lines spaces (equal bot index) (equal top index) node max-s)
-		    (if (member node children)
-			(progn
-			  (draw-descendent index lines spaces (equal bot index)
-					   (equal top index) max-s)
-			  (if (is-not-just-a-leaf (+ 1 index) tokens)
-			      (push node to-do)
-			      (draw-node index lines spaces node)))
-			(draw-no-descendets index lines spaces max-s)))))
-	(loop for i in to-do do
-	      (make-branchs i (children i tokens) tokens len-tokens lines spaces)))))
-
-(defun draw-node (id lines spaces node)
-  (add lines spaces id (concatenate 'string (nth id lines) "─╼ "))
-  (draw-node-values id lines spaces node))
-
-
-(defun maximum-between (list bot top)
-  (reduce #'max (between list bot top)))
-
-
-(defun between (list bot top)
-  (labels ((between-aux (list top count aux)
-	     (if (equal top count)
-		 (append aux (list (car list)))
-		 (between-aux (cdr list) top (+ 1 count) (append aux (list (car list))))))
-	   (starting (list bot count)
-	     (if (equal bot count)
-		 list
-		 (starting (cdr list) bot (+ 1 count)))))
-    (between-aux (starting list bot 0) top bot nil)))
-
-
-(defun is-not-just-a-leaf (id tokens)
-  (remove-if-not (lambda (x) (equal (slot-value x 'CL-CONLLU::HEAD) id)) tokens))
-
-
-(defun draw-descendent (id lines spaces bot top n)
-  (let ((alinhar (make-string (- n (nth id spaces)) :initial-element #\space)))
-    (if bot
-	(add lines spaces id (concatenate 'string (nth id lines) alinhar " ╭"))
-	(if top
-	    (add lines spaces id (concatenate 'string (nth id lines) alinhar " ╰"))
-	    (add lines spaces id (concatenate 'string (nth id lines) alinhar " ├"))))))
-
-
-(defun draw-no-descendets (id lines spaces n)
-  (let ((alinhar (make-string (- n (nth id spaces)) :initial-element #\space)))
-    (add lines spaces id (concatenate 'string (nth id lines) alinhar  " │"))))
-
-
-(defun draw-father (id lines spaces bot top node n)
-  (let ((alinhar (make-string (- n (nth id spaces)) :initial-element #\-)))
-    (add lines spaces id (concatenate 'string (nth id lines) alinhar))
-    (draw-father-lines id lines spaces bot top)
-    (draw-node-values id lines spaces node)))
-
-
-(defun draw-father-lines (id lines spaces bot top)
-  (if bot
-      (add lines spaces id (concatenate 'string (nth id lines) "─┮ "))
-      (if top
-	  (add lines spaces id (concatenate 'string (nth id lines) "─┶ "))
-	  (add lines spaces id (concatenate 'string (nth id lines) "─┾ ")))))
-
-
-(defun draw-node-values (id lines spaces node)
-  (let ((infos (collect-slots node '(CL-CONLLU::FORM CL-CONLLU::DEPREL) "")))
-    (add lines spaces id (concatenate 'string (nth id lines) infos))
+  (let* ((tokens   (sentence-tokens sentence))
+         (branches (list (cons 0 (get-kids 0 tokens t))))
+         (lines    (make-tree fields tokens (make-list (1+ (length tokens)) :initial-element "") branches)))
+    (format stream "~{~a ~%~}~%" lines)
     (values)))
 
 
-(defun collect-slots (token slots acum)
-  (if (null (cdr slots))
-      (concatenate 'string acum (slot-value token (car slots)))
-      (collect-slots token (cdr slots) (concatenate 'string acum (slot-value token (car slots)) " "))))
+(defun get-kids (dad tokens &optional stock? child adopted infant)
+  (if tokens
+      (let* ((token  (first tokens))
+             (tokens (rest tokens))
+             (id     (token-id token)))
+        (cond ((equal dad id)
+               (get-kids dad tokens t child infant infant))
+              ((equal dad (token-head token))
+               (get-kids dad tokens t (cons id child) infant infant))
+              (t
+               (get-kids dad tokens stock? child adopted (if stock? (cons id infant) nil)))))
+      (cons (reverse child) (reverse adopted))))
 
 
-(defun make-root-lines (tokens root lines spaces )
-  (let ((id (- (slot-value root 'CL-CONLLU::ID ) 1)))
-    (if (> id 0)
-	(progn
-	  (loop for i from 0 to id do (add lines spaces i " │"))
-	  (add lines spaces id " ╰")
-	  (values))
-	(progn
-	  (add lines spaces id " ╰")))))
+(defun make-tree (fields tokens lines branches)
+  (if branches
+      (let* ((branch   (first branches))
+             (branches (rest branches))
+             (kids     (rest branch))
+             (adopted  (rest kids)))
+        (if (adopted-unfinished? lines adopted)
+            (make-tree fields tokens lines (append branches (list branch)))
+            (let* ((dad   (first branch))
+                   (child (first kids))
+                   (data  (get-data fields tokens dad)))
+              (if child
+                  (let ((lines        (make-twigs data dad child adopted lines))
+                        (new-branches (mapcar #'(lambda (id) (cons id (get-kids id tokens))) child)))
+                    (make-tree fields tokens lines (append new-branches branches)))
+                  (let ((lines (update-lines dad (concatenate 'string "─╼" data) lines)))
+                    (make-tree fields tokens lines branches))))))
+      lines))
 
 
-(defun root-leaf (tokens)
-  (car (remove-if-not (lambda (x) (equal (slot-value x 'CL-CONLLU::HEAD) 0)) tokens)))
+(defun adopted-unfinished? (lines ids)
+  (when ids
+    (let* ((line (nth (first ids) lines))
+           (len  (1- (length line))))
+      (if (or (equal len -1) (equal (elt line len) #\│) (equal (elt line len) #\space))
+          (adopted-unfinished? lines (rest ids))
+          t))))
 
 
-(defun children (father tokens)
-  (let ((id-father (slot-value father 'CL-CONLLU::ID)))
-    (remove-if-not
-     (lambda (x) (or (equal (slot-value x 'CL-CONLLU::HEAD) id-father) (equal x father)))
-     tokens)))
+(defun get-data (fields tokens id)
+  (if (equal id 0) " "
+      (reduce #'(lambda (data field)
+                  (concatenate 'string " " (slot-value (nth (1- id) tokens) field) data))
+              (reverse fields) :initial-value " ")))
 
 
-(defun add (lines spaces id text)
-  (setf (nth id lines) text)
-  (setf (nth id spaces) (length text)))
+(defun make-twigs (data dad child adopted lines)
+  (let* ((stroke-size (get-stroke-size adopted lines))
+         (space-size  (max stroke-size (length (nth dad lines))))
+         (lines       (reduce #'(lambda (lines id) (update-lines id " │" lines space-size #\space))
+                              adopted :initial-value lines)))
+    (cond ((> dad (apply #'max child))
+           (let* ((lines (update-lines dad (concatenate 'string "─┶" data) lines stroke-size #\─))
+                  (lines (update-lines (first child) " ╭" lines space-size #\space)))
+             (reduce #'(lambda (lines id) (update-lines id " ├" lines space-size #\space))
+                     (rest child) :initial-value lines)))
+          ((< dad (apply #'min child))
+           (let* ((lines (update-lines dad (concatenate 'string "─┮" data) lines stroke-size #\─))
+                  (child (reverse child))
+                  (lines (update-lines (first child) " ╰" lines space-size #\space)))
+             (reduce #'(lambda (lines id) (update-lines id " ├" lines space-size #\space))
+                     (rest child) :initial-value lines)))
+          (t
+           (let* ((lines (update-lines dad (concatenate 'string "─┾" data) lines stroke-size #\─))
+                  (lines (update-lines (first child) " ╭" lines space-size #\space))
+                  (lines (update-lines (first (last child)) " ╰" lines space-size #\space))
+                  (len   (length child)))
+             (reduce #'(lambda (lines id) (update-lines id " ├" lines space-size #\space))
+                     (if (> len 2) (subseq child 1 (1- len)) nil) :initial-value lines))))))
 
+
+(defun get-stroke-size (adopted lines)
+  (if adopted
+      (reduce #'(lambda (size id) (max size (length (nth id lines))))
+              (rest adopted) :initial-value (length (nth (first adopted) lines)))
+      0))
+
+
+(defun update-lines (id text lines &optional size char)
+  (let* ((old-line   (nth id lines))
+         (complement (if size
+                         (make-string (max 0 (- size (length old-line))) :initial-element char)
+                         "")))
+    (append (subseq lines 0 id)
+            (list (concatenate 'string old-line complement text))
+            (subseq lines (1+ id)))))
