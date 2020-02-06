@@ -15,7 +15,7 @@
 
 (asdf:defsystem #:cl-conllu
   :serial t
-  :version "0.5"
+  :version "0.6"
   :description "Common Lisp library for dealing with CoNLL-U files"
   :long-description "This library provides a set of functions to work with CoNLL-U files. See https://universaldependencies.org/format.html for details about the CoNLL-U format adopted by the Universal Dependencies community. The library has functions for read/write files, apply rules for sentences transformation in batch mode, tree visualization, compare and evaluation trees etc. Documentation available in https://github.com/own-pt/cl-conllu/wiki."
   :author "Alexandre Rademaker <alexrad@br.ibm.com>"

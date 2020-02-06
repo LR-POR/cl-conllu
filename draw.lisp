@@ -9,15 +9,29 @@
 ;; branch  -> (list dad kids)
 ;; len     -> length
 
-(defun tree-sentence (sentence &key (fields (list 'CL-CONLLU::FORM 'CL-CONLLU::DEPREL))
-				 (stream *standard-output*) show-meta)
+
+(defun tree-sentence-by-id (path id)
+  (let* ((p   (subseq id 0 (position #\- id)))
+	 (ps  (subseq p 2))
+	 (pb  (subseq p 0 2))
+	 (fl  (format nil "~4,'0d" (parse-integer ps)))
+	 (fp  (merge-pathnames (make-pathname :name (format nil "~a~a" pb fl) :type "conllu") path))
+	 (s   (car (remove-if-not (lambda (s) (equal id (sentence-id s))) 
+				  (cl-conllu:read-conllu fp)))))
+    (if s (conllu.draw:tree-sentence s) (error "Sentence ~a not found in ~a" id fp))))
+
+
+(defun tree-sentence (sentence &key
+				 (fields-or-function (list 'CL-CONLLU::FORM 'CL-CONLLU::UPOSTAG 'CL-CONLLU::DEPREL))
+				 (stream *standard-output*)
+				 (show-meta nil))
   (when show-meta
     (mapc (lambda (p)
             (format stream "~a = ~a~%" (car p) (cdr p)))
           (sentence-meta sentence)))
   (let* ((tokens   (sentence-tokens sentence))
          (branches (list (cons 0 (get-kids 0 tokens t))))
-         (lines    (make-tree fields tokens (make-list (1+ (length tokens)) :initial-element "") branches)))
+         (lines    (make-tree fields-or-function tokens (make-list (1+ (length tokens)) :initial-element "") branches)))
     (format stream "~{~a ~%~}~%" lines)
     (values)))
 
@@ -36,23 +50,23 @@
       (cons (reverse child) (reverse adopted))))
 
 
-(defun make-tree (fields tokens lines branches)
+(defun make-tree (fields-or-function tokens lines branches)
   (if branches
       (let* ((branch   (first branches))
              (branches (rest branches))
              (kids     (rest branch))
              (adopted  (rest kids)))
         (if (adopted-unfinished? lines adopted)
-            (make-tree fields tokens lines (append branches (list branch)))
+            (make-tree fields-or-function tokens lines (append branches (list branch)))
             (let* ((dad   (first branch))
                    (child (first kids))
-                   (data  (get-data fields tokens dad)))
+                   (data  (get-data fields-or-function tokens dad)))
               (if child
                   (let ((lines        (make-twigs data dad child adopted lines))
                         (new-branches (mapcar #'(lambda (id) (cons id (get-kids id tokens))) child)))
-                    (make-tree fields tokens lines (append new-branches branches)))
+                    (make-tree fields-or-function tokens lines (append new-branches branches)))
                   (let ((lines (update-lines dad (concatenate 'string "─╼" data) lines)))
-                    (make-tree fields tokens lines branches))))))
+                    (make-tree fields-or-function tokens lines branches))))))
       lines))
 
 
@@ -65,11 +79,14 @@
           t))))
 
 
-(defun get-data (fields tokens id)
-  (if (equal id 0) " "
-      (reduce #'(lambda (data field)
-                  (concatenate 'string " " (slot-value (nth (1- id) tokens) field) data))
-              (reverse fields) :initial-value " ")))
+(defun get-data (fields-or-function tokens id)
+  (if (listp fields-or-function)
+      (if (equal id 0) " "
+	  (reduce #'(lambda (data field)
+		      (concatenate 'string " " (slot-value (nth (1- id) tokens) field) data))
+		  (reverse fields-or-function) :initial-value " "))
+      (if (equal id 0) " "
+	  (funcall fields-or-function (nth (1- id) tokens)))))
 
 
 (defun make-twigs (data dad child adopted lines)

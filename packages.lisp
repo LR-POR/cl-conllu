@@ -111,7 +111,8 @@
 
 (defpackage #:conllu.draw
   (:use #:cl #:cl-conllu)
-  (:export #:tree-sentence))
+  (:export #:tree-sentence
+	   #:tree-sentence-by-id))
 
 (defpackage #:conllu.rules
   (:use #:cl #:cl-conllu)
@@ -153,3 +154,8 @@
   (:documentation "Functions for producing html formatting of objects in the library.")
   (:export #:format-html
            #:*confusion-matrix-style*))
+
+
+(defpackage #:conllu.user
+  (:use #:cl #:cl-conllu #:conllu.draw))
+

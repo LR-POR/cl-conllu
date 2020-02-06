@@ -18,6 +18,12 @@
   (write-conllu-to-stream (mapcar #'adjust-sentence (read-conllu input-filename))
 			  output))
 
+(defun draw-conllu (input-filename output)
+  (mapc (lambda (s)
+	  (format output "~%~a> ~a~%~%" (sentence-id s) (sentence-text s))
+	  (conllu.draw:tree-sentence s :stream output))
+	(read-conllu input-filename)))
+
 
 (defun modify-conllu (original-file changes-file output &optional (add-news nil))
   "The original file contains a set of sentences. The modified file

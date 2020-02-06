@@ -34,6 +34,30 @@
 	    :accessor token-misc)
    (sentence :accessor token-sentence)))
 
+(defclass etoken ()
+  ((prev    :initarg :prev
+	    :accessor etoken-prev)
+   (index   :initarg :index
+	    :accessor etoken-index)
+   (form    :initarg :form
+	    :accessor etoken-form)
+   (lemma   :initarg :lemma
+	    :accessor etoken-lemma)
+   (upostag :initarg :upostag
+	    :initform "_"
+	    :accessor etoken-upostag)
+   (xpostag :initarg :xpostag
+	    :initform "_"
+	    :accessor etoken-xpostag)
+   (feats   :initarg :feats
+	    :initform "_"
+	    :accessor etoken-feats)
+   (deps    :initarg :deps
+	    :initform "_"
+	    :accessor etoken-deps)
+   (misc    :initarg :misc
+	    :initform "_"
+	    :accessor etoken-misc)))
 
 (defclass mtoken ()
   ((start   :initarg :start
@@ -58,7 +82,10 @@
 	    :accessor sentence-tokens)
    (mtokens :initarg :mtokens
 	    :initform nil
-	    :accessor sentence-mtokens)))
+	    :accessor sentence-mtokens)
+   (etokens :initarg :etokens
+	    :initform nil
+	    :accessor sentence-etokens)))
 
 
 (defmethod print-object ((obj sentence) out)
