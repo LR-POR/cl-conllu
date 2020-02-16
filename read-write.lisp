@@ -1,7 +1,7 @@
 
 (in-package :cl-conllu)
 
-(defun line->token (line)
+(defun line->token (line pos)
   (if (cl-ppcre:scan "^#" line)
       line
       (let ((tk     (make-instance 'token))
@@ -16,10 +16,11 @@
 			(t    value))))
 	      fields
 	      '(id form lemma upostag xpostag feats head deprel deps misc))
+	(setf (slot-value tk 'lineno) pos)
 	tk)))
 
 
-(defun line->etoken (line)
+(defun line->etoken (line pos)
   (if (cl-ppcre:scan "^#" line)
       line
       (let ((fields (cl-ppcre:split "\\t" line)))
@@ -35,20 +36,22 @@
 		       :xpostag (nth 4 fields)
 		       :feats   (nth 5 fields)
 		       :deps    (nth 8 fields)
-		       :misc    (nth 9 fields))))))
+		       :misc    (nth 9 fields)
+		       :lineno  pos)))))
 
 
-(defun line->mtoken (line)
+(defun line->mtoken (line pos)
   (if (cl-ppcre:scan "^#" line)
       line
       (let* ((mtk (make-instance 'mtoken))
 	     (res (cl-ppcre:split "\\t" line))
 	     (range (cadr (multiple-value-list (cl-ppcre:scan-to-strings "([0-9]+)-([0-9]+)" (car res))))))
 	(assert (equal 10 (length res)))
-	(setf (slot-value mtk 'start) (parse-integer (aref range 0))
-	      (slot-value mtk 'end)   (parse-integer (aref range 1))
-	      (slot-value mtk 'form)  (second res)
-	      (slot-value mtk 'misc)  (car (last res)))
+	(setf (slot-value mtk 'start)  (parse-integer (aref range 0))
+	      (slot-value mtk 'end)    (parse-integer (aref range 1))
+	      (slot-value mtk 'form)   (second res)
+	      (slot-value mtk 'misc)   (car (last res))
+	      (slot-value mtk 'lineno) pos)
 	mtk)))
 
 (defun collect-meta (lines)
@@ -63,23 +66,23 @@
 
 
 (defun make-sentence (lineno lines fn-meta)
-  (labels ((reading (lines meta tokens mtokens etokens)
+  (labels ((reading (lines meta tokens mtokens etokens pos)
 	     (cond
 	       ((null lines)
 		(values (reverse meta) (reverse tokens) (reverse mtokens) (reverse etokens)))
 	       ((cl-ppcre:scan "^#" (car lines))
-		(reading (cdr lines) (cons (car lines) meta) tokens mtokens etokens))
+		(reading (cdr lines) (cons (car lines) meta) tokens mtokens etokens pos))
 	       ;; range for multiword tokens
 	       ((cl-ppcre:scan "^[0-9]+-[0-9]+\\t" (car lines))
-		(reading (cdr lines) meta tokens (cons (line->mtoken (car lines)) mtokens) etokens))
+		(reading (cdr lines) meta tokens (cons (line->mtoken (car lines) pos) mtokens) etokens (incf pos)))
 	       ;; normal tokens
 	       ((cl-ppcre:scan "^[0-9]+\\t" (car lines))
-		(reading (cdr lines) meta (cons (line->token (car lines)) tokens) mtokens etokens))
+		(reading (cdr lines) meta (cons (line->token (car lines) pos) tokens) mtokens etokens (incf pos)))
 	       ;; empty nodes in enhanced dependencies
 	       ((cl-ppcre:scan "^[0-9]+.[0-9]+\\t" (car lines))
-		(reading (cdr lines) meta tokens mtokens (cons (line->etoken (car lines)) etokens))))))
+		(reading (cdr lines) meta tokens mtokens (cons (line->etoken (car lines) pos) etokens) (incf pos))))))
     (multiple-value-bind (meta tokens mtokens etokens)
-	(reading lines nil nil nil nil)
+	(reading lines nil nil nil nil 0)
       (make-instance 'sentence :start lineno :tokens tokens
 			       :meta (funcall fn-meta meta)
 			       :mtokens mtokens
@@ -115,6 +118,7 @@
                        :start-lineno curr-lineno)
         (setf curr-lineno lineno)
         (car sent)))))
+
 
 (defun read-stream (stream &key (fn-meta #'collect-meta) (stop? #'null) (start-lineno 0))
   (macrolet ((flush-line ()
@@ -159,7 +163,11 @@
 		  alist :from-end t :initial-value nil)))
 
 
-(defun write-token (tk stream)
+
+(defgeneric write-token (abstract-token stream)
+  (:documentation "write a token to a line in 10 tab-separated columns."))
+
+(defmethod write-token ((tk token) stream)
   (reduce (lambda (alist a)
 	    (if alist (princ #\Tab stream))
 	    (if (or (null (slot-value tk a))
@@ -170,16 +178,36 @@
 	  '(id form lemma upostag xpostag feats head deprel deps misc)
 	  :initial-value nil))
 
-
-(defun write-mtoken (mtk stream)
+(defmethod write-token ((tk mtoken) stream)
   (reduce (lambda (alist a)
 	    (if alist (princ #\Tab stream))
-	    (princ a stream)
-	    (cons a alist))
-	  (append (list (format nil "~a-~a" (mtoken-start mtk) (mtoken-end mtk))
-			(mtoken-form mtk))
-		  (make-list 7 :initial-element '_ )
-		  (list (mtoken-misc mtk)))
+	    (case a
+	      ('start-end
+	       (princ (format nil "~a-~a" (mtoken-start tk) (mtoken-end tk)) stream))
+	      (:none
+	       (princ "_" stream))
+	      (t (if (or (null (slot-value tk a))
+			 (equal "" (slot-value tk a)))
+		     (princ "_" stream)
+		     (princ (slot-value tk a) stream))))
+	    (append alist (cons a nil)))
+	  '(start-end form :none :none :none :none :none :none :none misc)
+	  :initial-value nil))
+
+(defmethod write-token ((tk etoken) stream)
+  (reduce (lambda (alist a)
+	    (if alist (princ #\Tab stream))
+	    (case a
+	      ('prev-index
+	       (princ (format nil "~a.~a" (etoken-prev tk) (etoken-index tk)) stream))
+	      (:none
+	       (princ "_" stream))
+	      (t (if (or (null (slot-value tk a))
+			 (equal "" (slot-value tk a)))
+		     (princ "_" stream)
+		     (princ (slot-value tk a) stream))))
+	    (append alist (cons a nil)))
+	  '(prev-index form lemma upostag xpostag feats :none :none deps misc)
 	  :initial-value nil))
 
 
@@ -189,20 +217,13 @@
 		(format stream "# ~a~%" (cdr pair))
                 (format stream "# ~a = ~a~%" (car pair) (cdr pair))))
 	  (sentence-meta sentence))
-  (with-slots (tokens mtokens) sentence
-    (setf mtokens (sort mtokens #'<= :key #'mtoken-start))
+  (with-slots (tokens mtokens etokens) sentence
+    (setf all-tokens (sort (append tokens mtokens etokens) #'<= :key #'token-lineno))
     (reduce (lambda (alist tk)
-	      (let* ((next-mtoken (find-if (lambda (x) (>= x (token-id tk)))
-					   mtokens
-					   :key 'mtoken-start)))
-		(if alist (princ #\Linefeed stream))
-		(when (and next-mtoken
-			   (equal (mtoken-start next-mtoken) (token-id tk)))
-		  (write-mtoken next-mtoken stream)
-		  (princ #\Newline stream))
-		(write-token tk stream)
-		(cons tk alist)))
-	    tokens :initial-value nil))
+	      (if alist (princ #\Linefeed stream))
+	      (write-token tk stream)
+	      (cons tk alist))
+	    all-tokens :initial-value nil))
   (princ #\Newline stream))
 
 

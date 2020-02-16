@@ -4,7 +4,12 @@
 (defparameter *token-fields*
   '(id form lemma upostag xpostag feats head deprel deps misc))
 
-(defclass token ()
+(defclass abstract-token ()
+  ((sentence :accessor token-sentence)
+   (lineno   :initarg :lineno
+	     :accessor token-lineno)))
+
+(defclass token (abstract-token)
   ((id      :initarg :id
 	    :accessor token-id)
    (form    :initarg :form
@@ -19,6 +24,7 @@
 	    :accessor token-xpostag)
    (feats   :initarg :feats
 	    :initform "_"
+
 	    :accessor token-feats)
    (head    :initarg :head
 	    :initform "_"
@@ -31,10 +37,10 @@
 	    :accessor token-deps)
    (misc    :initarg :misc
 	    :initform "_"
-	    :accessor token-misc)
-   (sentence :accessor token-sentence)))
+	    :accessor token-misc)))
 
-(defclass etoken ()
+
+(defclass etoken (abstract-token)
   ((prev    :initarg :prev
 	    :accessor etoken-prev)
    (index   :initarg :index
@@ -59,7 +65,8 @@
 	    :initform "_"
 	    :accessor etoken-misc)))
 
-(defclass mtoken ()
+
+(defclass mtoken (abstract-token)
   ((start   :initarg :start
 	    :accessor mtoken-start)
    (end     :initarg :end
@@ -69,6 +76,7 @@
    (misc    :initarg :misc
 	    :initform "_"
 	    :accessor mtoken-misc)))
+
 
 (defclass sentence ()
   ((start   :initarg :start
@@ -100,16 +108,16 @@
 	    (slot-value obj 'form) (slot-value obj 'upostag)
 	    (slot-value obj 'id) (slot-value obj 'deprel) (slot-value obj 'head))))
 
-
+ 
 (defmethod initialize-instance :after ((obj sentence)
 				       &key tokens &allow-other-keys)
-  "Sets the TOKEN-SENTENCE slot for each token attributed to the
-initialize sentence OBJ."
+  "Sets the TOKEN-SENTENCE slot for each token attributed to the initialize sentence OBJ."
   (mapc
    #'(lambda (tk)
        (setf (token-sentence tk)
 	     obj))
    tokens))
+
 
 (defun sentence-matrix (sentence)
   (let ((arr (make-array (list (length (sentence-tokens sentence)) 10)))
