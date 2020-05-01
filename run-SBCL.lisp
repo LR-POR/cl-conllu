@@ -21,6 +21,6 @@
 		    *standard-output*))
 
     ((equal cmd "draw")
-     (draw-conllu (nth 2 sb-ext:*posix-argv*)
+     (draw-conllu *standard-input*
 		  *standard-output*))))
 
