@@ -295,8 +295,7 @@
 
 (defun token-children (token sentence &key (fn-filter nil))
   (let ((res (remove-if-not (lambda (tk)
-			      (equal (slot-value tk 'head)
-				     (slot-value token 'id)))
+			      (equal (token-head tk) (token-id token)))
 			    (sentence-tokens sentence))))
     (if fn-filter (remove-if-not fn-filter res) res)))
 
