@@ -30,6 +30,7 @@
                (:file "html"               :depends-on ("data"))
 	       (:file "query"              :depends-on ("data"))
 	       (:file "utils"              :depends-on ("data"))
+	       (:file "projective"         :depends-on ("utils"))
 	       (:file "rdf"                :depends-on ("data"))
 	       (:file "rdf-wilbur"         :depends-on ("data"))
 	       (:file "command-line"       :depends-on ("data"))
