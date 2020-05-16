@@ -14,7 +14,11 @@ or j < k < i), i ->* k.
 References:
 
 - Nivre, Joakim; Inductive Dependency Parsing, 2006
+- S. Kubler, R. McDonald, and J. Nivre, Dependency Parsing. 2009,
+  pp. 1–127.
 - https://en.wikipedia.org/wiki/Discontinuity_(linguistics)
+- https://www.aclweb.org/anthology/E06-1010.pdf
+
 |#
 
 
