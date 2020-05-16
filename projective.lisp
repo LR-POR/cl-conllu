@@ -6,10 +6,11 @@
 Verifies if a sentence tree is projective. Intuitively, this means
 that, keeping word order, there's no two dependency arcs that cross.
  
-More formally, let i -> j mean that j's head is node i. Let '->*' be
-the transitive closure of '->'. A tree if projective when, for each
-node i, j: if i -> j, then for each node k between i and j (i < k < j
-or j < k < i), i ->* k.
+More formally, let i -> j mean an arc where j's head is node i. Let
+'->*' be the transitive closure of '->'. An arc is projective if for
+each node k between i and j (i < k < j or j < k < i), i ->* k.
+
+A tree is projective when all its arcs are projective. 
 
 References:
 
