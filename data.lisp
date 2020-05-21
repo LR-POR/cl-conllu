@@ -476,6 +476,10 @@
           misc-pairs)
     (second (assoc misc-key misc-pairs :test #'string=))))
 
+(defun sentence-get-token-by-id (sentence id)
+  (nth (1- id) (sentence-tokens sentence)))
 
 (defun sentence-by-id (id filename) 
   (find-if (lambda (s) (equal id (sentence-id s))) (read-conllu filename)))
+
+

@@ -1,4 +1,3 @@
-
 (in-package :cl-conllu)
 
 #|
@@ -54,7 +53,7 @@ References:
 	     (arange (if (< (token-head token) (token-id token))
 			 (range (1+ (token-head token)) (1- (token-id token)))
 			 (range (1+ (token-id token)) (1- (token-head token)))))
-	     (aset   (set-difference arange prj :test #'equal)))
+	     (aset   (sort (set-difference arange prj :test #'equal) #'<= )))
 	(values (not aset) aset))))
 
 
@@ -64,24 +63,17 @@ References:
 	 (sentence-tokens sentence)))
 
 
-
 (defun validate-punct (sentence)
-  (let ((err)
-	(tbe (make-hash-table :test #'equal))
-	(tokens (sentence-tokens sentence)))
-    (dolist (tk tokens (append err (mapcar (lambda (al)
-					     (list (car al) 'punct-causes-nonproj-of (cdr al)))
-					   (alexandria:hash-table-alist tbe))))
-      (multiple-value-bind (test ids)
+  (let ((errors))
+    (dolist (tk (sentence-tokens sentence) errors)
+      (multiple-value-bind (is-proj ids)
 	  (is-token-projective tk sentence)
-	(when (not test)
+	(when (not is-proj)
 	  (if (equal "PUNCT" (token-upostag tk))
-	      (push (list tk 'punct-is-nonproj-over 
-			  (mapcar (lambda (id) (nth (1- id) tokens)) ids))
-		    err))
-	  (dolist (id ids)
-	    (let ((ct (nth (1- id) tokens)))
-	      (if (equal "PUNCT" (token-upostag ct))
-		  (push tk (gethash ct tbe))))))))))
+	      (push (list tk 'punct-is-nonproj-over ids) errors)
+	      (dolist (id ids)
+		(let ((ct (sentence-get-token-by-id sentence id)))
+		  (if (equal "PUNCT" (token-upostag ct))
+		      (push (list ct 'punct-causes-nonproj-of (token-id tk)) errors))))))))))
 
 

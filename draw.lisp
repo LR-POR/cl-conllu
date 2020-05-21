@@ -22,7 +22,8 @@
 
 
 (defun tree-sentence (sentence &key
-				 (fields-or-function (list 'CL-CONLLU::FORM 'CL-CONLLU::UPOSTAG 'CL-CONLLU::DEPREL))
+				 (fields-or-function (list 'CL-CONLLU::FORM 'CL-CONLLU::UPOSTAG
+							   'CL-CONLLU::DEPREL 'CL-CONLLU::ID 'CL-CONLLU::HEAD))
 				 (stream *standard-output*)
 				 (show-meta nil))
   (when show-meta
@@ -83,7 +84,7 @@
   (if (listp fields-or-function)
       (if (equal id 0) " "
 	  (reduce #'(lambda (data field)
-		      (concatenate 'string " " (slot-value (nth (1- id) tokens) field) data))
+		      (format nil " ~a~a" (slot-value (nth (1- id) tokens) field) data))
 		  (reverse fields-or-function) :initial-value " "))
       (if (equal id 0) " "
 	  (funcall fields-or-function (nth (1- id) tokens)))))
