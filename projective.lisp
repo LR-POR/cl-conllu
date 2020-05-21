@@ -66,21 +66,22 @@ References:
 
 
 (defun validate-punct (sentence)
-  (let ((error-1 nil)
-	(error-2 nil)
+  (let ((err)
+	(tbe (make-hash-table :test #'equal))
 	(tokens (sentence-tokens sentence)))
-    (dolist (tk tokens (append error-1 error-2))
+    (dolist (tk tokens (append err (mapcar (lambda (al)
+					     (list (car al) 'punct-causes-nonproj-of (cdr al)))
+					   (alexandria:hash-table-alist tbe))))
       (multiple-value-bind (test ids)
 	  (is-token-projective tk sentence)
-	(if (not test)
-	    (if (equal "PUNCT" (token-upostag tk))
-		(push (list 'punct-is-nonproj-over tk 
-			    (mapcar (lambda (id) (nth (1- id) tokens)) ids))
-		      error-2)
-		(mapcar (lambda (id)
-		     (let ((ct (nth (1- id) tokens)))
-		       (if (equal "PUNCT" (token-upostag ct))
-			   (push (list 'causes-nonproj-of ct tk) error-1))))
-			ids)))))))
+	(when (not test)
+	  (if (equal "PUNCT" (token-upostag tk))
+	      (push (list tk 'punct-is-nonproj-over 
+			  (mapcar (lambda (id) (nth (1- id) tokens)) ids))
+		    err))
+	  (dolist (id ids)
+	    (let ((ct (nth (1- id) tokens)))
+	      (if (equal "PUNCT" (token-upostag ct))
+		  (push tk (gethash ct tbe))))))))))
 
 
