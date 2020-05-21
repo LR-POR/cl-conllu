@@ -69,7 +69,7 @@ References:
   (let ((error-1 nil)
 	(error-2 nil)
 	(tokens (sentence-tokens sentence)))
-    (dolist (tk tokens (values error-1 error-2))
+    (dolist (tk tokens (append error-1 error-2))
       (multiple-value-bind (test ids)
 	  (is-token-projective tk sentence)
 	(if (not test)
