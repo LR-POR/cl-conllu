@@ -104,7 +104,7 @@
 
 (defmethod print-object ((obj token) out)
   (print-unreadable-object (obj out :type t)
-    (format out "~a/~a #~a-~a-~a"
+    (format out "~a ~a #~a-~a-~a"
 	    (slot-value obj 'form) (slot-value obj 'upostag)
 	    (slot-value obj 'id) (slot-value obj 'deprel) (slot-value obj 'head))))
 

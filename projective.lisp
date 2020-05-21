@@ -23,6 +23,15 @@ References:
 |#
 
 
+(defun range (a b)
+  (assert (and (integerp a) (integerp b)))
+  (cond ((= a b) (list a))
+        ((< a b)
+         (cons a (range (+ a 1) b)))
+        ((> a b)
+         (cons a (range (- a 1) b)))))
+
+
 (defun get-projection (token sentence)
   (let ((pset (mapcar (lambda (tk)
 			(cons (token-id tk) (token-head tk)))
@@ -39,20 +48,39 @@ References:
 
 (defun is-token-projective (token sentence)
   (if (equal 0 (token-head token))
-      t
-      (let* ((htk (find (token-head token) (sentence-tokens sentence) :key #'token-id :test #'equal))
-	     (prj (get-projection htk sentence)))
-	(if (< (token-head token) (token-id token))
-	    (every (lambda (n) (member n prj))
-		   (loop for x from (1+ (token-head token)) upto (1- (token-id token))
-			 collect x))
-	    (every (lambda (n) (member n prj))
-		   (loop for x from (1+ (token-id token)) upto (1- (token-head token))
-			 collect x))))))
+      (values t nil)
+      (let* ((htk    (find (token-head token) (sentence-tokens sentence) :key #'token-id :test #'equal))
+	     (prj    (get-projection htk sentence))
+	     (arange (if (< (token-head token) (token-id token))
+			 (range (1+ (token-head token)) (1- (token-id token)))
+			 (range (1+ (token-id token)) (1- (token-head token)))))
+	     (aset   (set-difference arange prj :test #'equal)))
+	(values (not aset) aset))))
 
 
 (defun is-sentence-projective (sentence)
   (every (lambda (tk)
 	   (is-token-projective tk sentence))
 	 (sentence-tokens sentence)))
+
+
+
+(defun validate-punct (sentence)
+  (let ((error-1 nil)
+	(error-2 nil)
+	(tokens (sentence-tokens sentence)))
+    (dolist (tk tokens (values error-1 error-2))
+      (multiple-value-bind (test ids)
+	  (is-token-projective tk sentence)
+	(if (not test)
+	    (if (equal "PUNCT" (token-upostag tk))
+		(push (list 'punct-is-nonproj-over tk 
+			    (mapcar (lambda (id) (nth (1- id) tokens)) ids))
+		      error-2)
+		(mapcar (lambda (id)
+		     (let ((ct (nth (1- id) tokens)))
+		       (if (equal "PUNCT" (token-upostag ct))
+			   (push (list 'causes-nonproj-of ct tk) error-1))))
+			ids)))))))
+
 
