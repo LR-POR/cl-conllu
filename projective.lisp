@@ -21,6 +21,14 @@ References:
 
 |#
 
+(defun is-descendant-t-n (id-1 id-2 sentence)
+  (let ((parent (token-head (find id-1 (sentence-tokens sentence)
+				  :key #'token-id :test #'equal))))
+    (cond
+      ((equal parent 0) nil)
+      ((equal parent id-2) t)
+      (t
+       (is-descendant-t-n parent id-2 sentence)))))
 
 (defun range (a b)
   (assert (and (integerp a) (integerp b)))
@@ -30,29 +38,22 @@ References:
         ((> a b)
          (cons a (range (- a 1) b)))))
 
-
 (defun get-projection (token sentence)
-  (let ((pset (mapcar (lambda (tk)
-			(cons (token-id tk) (token-head tk)))
-		      (sentence-tokens sentence))))
-    (labels ((child (tk)
-	       (mapcar #'car (remove-if-not (lambda (n) (equal n tk)) pset :key #'cdr)))
-	     (aux (tokens projection)
-	       (if (null tokens)
-		   projection
-		   (aux (append (cdr tokens) (child (car tokens)))
-			(adjoin (car tokens) projection)))))
-      (sort (aux (list (token-id token)) nil) #'<=))))
-
+(let ((head-id (token-head token))
+      (arange (if (< (token-head token) (token-id token))
+                  (range (1+ (token-head token)) (token-id token))
+                  (range (token-id token) (1- (token-head token))))))
+  (remove-if-not (lambda (tk)
+                   (is-descendant-t-n tk  head-id sentence))
+                   arange)))
 
 (defun is-token-projective (token sentence)
   (if (equal 0 (token-head token))
       (values t nil)
-      (let* ((htk    (find (token-head token) (sentence-tokens sentence) :key #'token-id :test #'equal))
-	     (prj    (get-projection htk sentence))
+      (let* ((prj (get-projection token sentence))
 	     (arange (if (< (token-head token) (token-id token))
-			 (range (1+ (token-head token)) (1- (token-id token)))
-			 (range (1+ (token-id token)) (1- (token-head token)))))
+			 (range (1+ (token-head token)) (token-id token))
+			 (range (token-id token) (1- (token-head token)))))
 	     (aset   (sort (set-difference arange prj :test #'equal) #'<= )))
 	(values (not aset) aset))))
 
@@ -61,7 +62,6 @@ References:
   (every (lambda (tk)
 	   (is-token-projective tk sentence))
 	 (sentence-tokens sentence)))
-
 
 (defun validate-punct (sentence)
   (let ((errors))
@@ -75,5 +75,3 @@ References:
 		(let ((ct (sentence-get-token-by-id sentence id)))
 		  (if (equal "PUNCT" (token-upostag ct))
 		      (push (list ct 'punct-causes-nonproj-of (token-id tk)) errors))))))))))
-
-
