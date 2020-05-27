@@ -21,14 +21,6 @@ References:
 
 |#
 
-(defun is-descendant-t-n (id-1 id-2 sentence)
-  (let ((parent (token-head (find id-1 (sentence-tokens sentence)
-				  :key #'token-id :test #'equal))))
-    (cond
-      ((equal parent 0) nil)
-      ((equal parent id-2) t)
-      (t
-       (is-descendant-t-n parent id-2 sentence)))))
 
 (defun range (a b)
   (assert (and (integerp a) (integerp b)))
@@ -38,14 +30,16 @@ References:
         ((> a b)
          (cons a (range (- a 1) b)))))
 
+
 (defun get-projection (token sentence)
 (let ((head-id (token-head token))
       (arange (if (< (token-head token) (token-id token))
                   (range (1+ (token-head token)) (token-id token))
                   (range (token-id token) (1- (token-head token))))))
   (remove-if-not (lambda (tk)
-                   (is-descendant-t-n tk  head-id sentence))
-                   arange)))
+                   (is-descendant? tk head-id sentence))
+		 arange)))
+
 
 (defun is-token-projective (token sentence)
   (if (equal 0 (token-head token))
@@ -62,6 +56,7 @@ References:
   (every (lambda (tk)
 	   (is-token-projective tk sentence))
 	 (sentence-tokens sentence)))
+
 
 (defun validate-punct (sentence)
   (let ((errors))

@@ -385,14 +385,13 @@
 
 
 (defun is-descendant? (id-1 id-2 sentence &optional alist)
-  (let ((parent (token-head (find id-1 (sentence-tokens sentence)
-				  :key #'token-id :test #'equal))))
+  (let ((head-1 (token-head (sentence-get-token-by-id sentence id-1))))
     (cond
-      ((equal parent 0) nil)
-      ((equal parent id-2)
+      ((equal head-1 0) nil)
+      ((equal head-1 id-2)
        (reverse (cons id-2 (cons id-1 alist))))
       (t
-       (is-descendant? parent id-2 sentence (cons id-1 alist))))))
+       (is-descendant? head-1 id-2 sentence (cons id-1 alist))))))
  
 
 (defun adjust-sentence (sentence)
