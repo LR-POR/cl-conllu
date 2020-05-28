@@ -1,3 +1,4 @@
+
 (in-package :cl-conllu)
 
 #|
@@ -13,32 +14,33 @@ A tree is projective when all its arcs are projective.
 
 References:
 
+@book{kübler2009dependency,
+  title={Dependency Parsing},
+  author={K{\"u}bler, S. and McDonald, R. and Nivre, J.},
+  isbn={9781598295962},
+  series={Synthesis lectures on human language technologies},
+  url={https://books.google.com.br/books?id=k3iiup7HB9UC},
+  year={2009},
+  publisher={Morgan \& Claypool}
+}
+
+and
+
 - Nivre, Joakim; Inductive Dependency Parsing, 2006
-- S. Kubler, R. McDonald, and J. Nivre, Dependency Parsing. 2009,
-  pp. 1–127.
 - https://en.wikipedia.org/wiki/Discontinuity_(linguistics)
 - https://www.aclweb.org/anthology/E06-1010.pdf
 
 |#
 
 
-(defun range (a b)
-  (assert (and (integerp a) (integerp b)))
-  (cond ((= a b) (list a))
-        ((< a b)
-         (cons a (range (+ a 1) b)))
-        ((> a b)
-         (cons a (range (- a 1) b)))))
-
-
 (defun get-projection (token sentence)
-(let ((head-id (token-head token))
-      (arange (if (< (token-head token) (token-id token))
-                  (range (1+ (token-head token)) (token-id token))
-                  (range (token-id token) (1- (token-head token))))))
-  (remove-if-not (lambda (tk)
-                   (is-descendant? tk head-id sentence))
-		 arange)))
+  (let ((head-id (token-head token))
+	(arange (if (< (token-head token) (token-id token))
+                    (range (1+ (token-head token)) (token-id token))
+                    (range (token-id token) (1- (token-head token))))))
+    (remove-if-not (lambda (tk)
+                     (is-descendant? tk head-id sentence))
+		   arange)))
 
 
 (defun is-token-projective (token sentence)
@@ -70,3 +72,4 @@ References:
 		(let ((ct (sentence-get-token-by-id sentence id)))
 		  (if (equal "PUNCT" (token-upostag ct))
 		      (push (list ct 'punct-causes-nonproj-of (token-id tk)) errors))))))))))
+

@@ -12,6 +12,14 @@
    result of the aplication of the function to each list."
   (apply #'append (mapcar function list)))
 
+(defun range (a b)
+  (assert (and (integerp a) (integerp b)))
+  (cond ((= a b) (list a))
+        ((< a b)
+         (cons a (range (+ a 1) b)))
+        ((> a b)
+         (cons a (range (- a 1) b)))))
+
 
 (defun levenshtein (s1 s2 &key (test #'string-equal))
   (let* ((width (1+ (length s1)))
@@ -73,7 +81,6 @@
       (progn
 	(push newelt (cdr (nthcdr (1- index) lst)))
 	lst)))
-
 
 
 (defun blank-line? (line)
