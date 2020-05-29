@@ -55,9 +55,9 @@ and
 
 
 (defun is-sentence-projective (sentence)
-  (every (lambda (tk)
-	   (is-token-projective tk sentence))
-	 (sentence-tokens sentence)))
+  (let ((tks (remove-if (lambda (tk) (is-token-projective tk sentence))
+			(sentence-tokens sentence))))
+    (values (not tks) tks)))
 
 
 (defun validate-punct (sentence)
@@ -70,6 +70,7 @@ and
 	      (push (list tk 'punct-is-nonproj-over ids) errors)
 	      (dolist (id ids)
 		(let ((ct (sentence-get-token-by-id sentence id)))
-		  (if (equal "PUNCT" (token-upostag ct))
+		  (if (and (equal "PUNCT" (token-upostag ct))
+			   (notany (lambda (n) (is-descendant? id n sentence)) ids))
 		      (push (list ct 'punct-causes-nonproj-of (token-id tk)) errors))))))))))
 
