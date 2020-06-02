@@ -14,8 +14,8 @@
 	(write-conllu-to-stream (list selected) output))))
 
 
-(defun adjust-conllu (input-filename output)
-  (write-conllu-to-stream (mapcar #'adjust-sentence (read-conllu input-filename))
+(defun adjust-conllu (input output)
+  (write-conllu-to-stream (mapcar #'adjust-sentence (read-conllu input))
 			  output))
 
 (defun draw-conllu (input output)

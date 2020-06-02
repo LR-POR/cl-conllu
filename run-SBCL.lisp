@@ -17,7 +17,7 @@
 		    (nth 3 sb-ext:*posix-argv*)
 		    *standard-output*))
     ((equal cmd "adjust")
-     (adjust-conllu (nth 2 sb-ext:*posix-argv*)
+     (adjust-conllu *standard-input*
 		    *standard-output*))
 
     ((equal cmd "draw")

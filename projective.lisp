@@ -60,7 +60,7 @@ and
     (values (not tks) tks)))
 
 
-(defun validate-punct (sentence)
+(defun non-projective-punct (sentence)
   (let ((errors))
     (dolist (tk (sentence-tokens sentence) errors)
       (multiple-value-bind (is-proj ids)
