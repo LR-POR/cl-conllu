@@ -20,6 +20,8 @@
   (:export #:sentence-meta-value
 	   #:sentence-valid?
 	   #:make-sentence
+	   #:sentence-root
+	   #:token-children
 	   #:sentence->text
 	   #:read-stream
 	   #:read-file
