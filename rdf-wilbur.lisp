@@ -86,8 +86,7 @@
 	   sentence-node
 	   (node (format nil "conll:metadata/~a" (car pair)))
 	   (wilbur:literal (cdr pair))))
-	 ((equal (car pair)
-		 :raw)
+	 ((equal (cdr pair) :none)
 	  (wilbur:triple
 	   sentence-node
 	   (node "conll:metadata")

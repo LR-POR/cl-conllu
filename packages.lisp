@@ -21,6 +21,7 @@
 	   #:sentence-valid?
 	   #:make-sentence
 	   #:sentence-root
+	   #:sentence-meta-value
 	   #:token-children
 	   #:sentence->text
 	   #:read-stream

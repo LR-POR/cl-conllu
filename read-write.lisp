@@ -61,7 +61,7 @@
               (if pos
                   (cons (subseq cl 0 (1- pos))
                         (string-left-trim '(#\Space) (subseq cl (1+ pos))))
-                  (cons :raw cl))))
+                  (cons cl :none))))
 	  lines))
 
 
@@ -213,8 +213,8 @@
 
 (defun write-sentence (sentence stream)
   (mapcar (lambda (pair)
-            (if (equal :raw (car pair))
-		(format stream "# ~a~%" (cdr pair))
+            (if (equal :none (cdr pair))
+		(format stream "# ~a~%" (car pair))
                 (format stream "# ~a = ~a~%" (car pair) (cdr pair))))
 	  (sentence-meta sentence))
   (with-slots (tokens mtokens etokens) sentence

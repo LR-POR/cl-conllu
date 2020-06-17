@@ -67,8 +67,7 @@
 			  " "
 			  (string-downcase (car m)) "_")
 			 (make-literal (car m))))
-		((equal (car m)
-			:raw)
+		((equal (cdr m) :none)
 		 (format s "conll:m~a a conll:MetadataValue .~%"
 			 (cl-ppcre:regex-replace-all
 			  " "
@@ -94,8 +93,7 @@
 				(string-downcase (car m))
 				"_")
 			       (make-literal (cdr m))))
-		      ((eq (car m)
-			   :raw)
+		      ((eq (cdr m) :none)
 		       (format nil "a conll:m~a"
 			       (cl-ppcre:regex-replace-all
 				" "
