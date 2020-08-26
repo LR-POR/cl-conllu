@@ -131,7 +131,8 @@
 
 
 (defun sentence-root (sentence)
-  (find-if (lambda (tk) (equal 0 (slot-value tk 'head)))
+  (find-if (lambda (tk) (and (equal 0      (token-head tk))
+			     (equal "root" (token-deprel tk))))
 	   (sentence-tokens sentence)))
 
 
@@ -274,15 +275,22 @@
 			      nil nil))))
 
 
+(defun token-attached (tk sentence)
+  (labels ((aux (tk q)
+	     (cond
+	       ((equal (token-head tk) 0) t)
+	       ((member (token-id tk) q :test #'equal) nil)
+	       (t (aux (token-parent tk sentence) (cons (token-id tk) q))))))
+    (aux tk nil)))
+
+
 (defun sentence-valid? (sentence)
   (and (every (lambda (tk)
-		(not (equal (slot-value tk 'id)
-			    (slot-value tk 'head))))
+		(and (not (equal (token-id tk)
+				 (token-head tk)))
+		     (token-attached tk sentence)))
 	      (sentence-tokens sentence))
-       (some  (lambda (tk)
-		(and (equal 0 (slot-value tk 'head))
-		     (equal "root" (slot-value tk 'deprel))))
-	      (sentence-tokens sentence))
+       (sentence-root sentence)
        (sentence-meta-value sentence "text")
        (equal (sentence-meta-value sentence "text")
 	      (sentence->text sentence))

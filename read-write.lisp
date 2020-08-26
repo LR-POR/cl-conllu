@@ -1,4 +1,3 @@
-
 (in-package :cl-conllu)
 
 (defun line->token (line pos)
@@ -11,8 +10,7 @@
 		(setf (slot-value tk key)
 		      (case key
 			(id   (parse-integer value))
-			(head (if (string-equal value "_") nil
-				  (parse-integer value)))
+			(head (parse-integer value))
 			(t    value))))
 	      fields
 	      '(id form lemma upostag xpostag feats head deprel deps misc))
