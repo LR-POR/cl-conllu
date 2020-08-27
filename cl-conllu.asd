@@ -21,7 +21,7 @@
   :author "Alexandre Rademaker <alexrad@br.ibm.com>"
   :license "Apache 2.0"
   :depends-on (#:cl-ppcre #:uuid #:alexandria #:cl-log #:split-sequence #:xmls
-			  #:yason #:lispbuilder-lexer #:wilbur #:cl-markup)
+			  #:yason #:lispbuilder-lexer #:wilbur #:cl-markup :optima.ppcre)
   :components ((:file "packages")
 	       (:file "data"               :depends-on ("packages"))
 	       (:file "read-write"         :depends-on ("data"))

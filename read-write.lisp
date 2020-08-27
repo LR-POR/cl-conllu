@@ -1,56 +1,58 @@
 (in-package :cl-conllu)
 
-(defun line->token (line pos)
-  (if (cl-ppcre:scan "^#" line)
-      line
-      (let ((tk     (make-instance 'token))
-	    (fields (cl-ppcre:split "\\t" line)))
-	(assert (equal 10 (length fields)))
-	(mapc (lambda (value key)
-		(setf (slot-value tk key)
-		      (case key
-			(id   (parse-integer value))
-			(head (parse-integer value))
-			(t    value))))
-	      fields
-	      '(id form lemma upostag xpostag feats head deprel deps misc))
-	(setf (slot-value tk 'lineno) pos)
-	tk)))
+(define-condition malformed-field (error) 
+  ((line  :initarg :line)
+   (field :initarg :field)
+   (value :initarg :value))
+  (:report (lambda (c s)
+	     (with-slots (line field value) c
+	       (format s "Invalid ~s for ~s in line ~s" value field line)))))
+
+(define-condition malformed-line (error) 
+  ((line :initarg :line)
+   (message :initarg :message))
+  (:report (lambda (condition stream)
+	     (with-slots (message line) condition
+	       (format stream message line)))))
 
 
-(defun line->etoken (line pos)
-  (if (cl-ppcre:scan "^#" line)
-      line
-      (let ((fields (cl-ppcre:split "\\t" line)))
-	(assert (equal 10 (length fields)))
-	(register-groups-bind (prev idx) 
-	    ("([0-9]+)\\.([0-9]+)" (nth 0 fields) :sharedp t)
-	  (make-instance 'etoken
-		       :prev    prev
-		       :index   idx
-		       :form    (nth 1 fields)
-		       :lemma   (nth 2 fields)
-		       :upostag (nth 3 fields)
-		       :xpostag (nth 4 fields)
-		       :feats   (nth 5 fields)
-		       :deps    (nth 8 fields)
-		       :misc    (nth 9 fields)
-		       :lineno  pos)))))
+(defun parse-field (line field value)
+  (handler-case (parse-integer value)
+    (parse-error ()
+      (error 'malformed-field :line line :field field :value value))))
 
 
-(defun line->mtoken (line pos)
-  (if (cl-ppcre:scan "^#" line)
-      line
-      (let* ((mtk (make-instance 'mtoken))
-	     (res (cl-ppcre:split "\\t" line))
-	     (range (cadr (multiple-value-list (cl-ppcre:scan-to-strings "([0-9]+)-([0-9]+)" (car res))))))
-	(assert (equal 10 (length res)))
-	(setf (slot-value mtk 'start)  (parse-integer (aref range 0))
-	      (slot-value mtk 'end)    (parse-integer (aref range 1))
-	      (slot-value mtk 'form)   (second res)
-	      (slot-value mtk 'misc)   (car (last res))
-	      (slot-value mtk 'lineno) pos)
-	mtk)))
+(defun line->token (line lineno)
+  (let ((fields (cl-ppcre:split "\\t" line)))
+    (if (not (= 10 (length fields)))
+	(error 'malformed-line :message "Line ~s has less than 10 fields"
+			       :line line)
+	(destructuring-bind (id form lemma upostag xpostag feats head deprel deps misc)
+	    fields
+	  (optima:match id
+	    ((optima.ppcre:ppcre "^(\\d+)-(\\d+)$" begin end)
+	     (make-instance 'mtoken :lineno lineno
+				    :start  (parse-field line 'start begin)
+				    :end    (parse-field line 'end end)
+				    :form form :misc misc))
+	    ((optima.ppcre:ppcre "^(\\d+)\\.(\\d+)$" prev idx)
+	     (make-instance 'etoken :lineno lineno
+				    :prev   (parse-field line 'prev  prev)
+				    :index  (parse-field line 'index idx) 
+				    :form   form :lemma lemma
+				    :upostag upostag :xpostag xpostag :feats feats
+				    :deps    deps :misc misc))
+	    ((optima.ppcre:ppcre "^(\\d+)$" idx)
+	     (make-instance 'token  :lineno lineno
+				    :id   (parse-field line 'id idx)
+				    :form form :lemma lemma
+				    :upostag upostag :xpostag xpostag :feats feats
+				    :head (parse-field line 'head head)
+				    :deprel deprel :misc misc))
+	    (other (error 'malformed-field :line line
+					   :field 'id :value other)))))))
+
+
 
 (defun collect-meta (lines)
   (mapcar (lambda (line)
@@ -64,27 +66,25 @@
 
 
 (defun make-sentence (lineno lines fn-meta)
-  (labels ((reading (lines meta tokens mtokens etokens pos)
-	     (cond
-	       ((null lines)
-		(values (reverse meta) (reverse tokens) (reverse mtokens) (reverse etokens)))
-	       ((cl-ppcre:scan "^#" (car lines))
-		(reading (cdr lines) (cons (car lines) meta) tokens mtokens etokens pos))
-	       ;; range for multiword tokens
-	       ((cl-ppcre:scan "^[0-9]+-[0-9]+\\t" (car lines))
-		(reading (cdr lines) meta tokens (cons (line->mtoken (car lines) pos) mtokens) etokens (incf pos)))
-	       ;; normal tokens
-	       ((cl-ppcre:scan "^[0-9]+\\t" (car lines))
-		(reading (cdr lines) meta (cons (line->token (car lines) pos) tokens) mtokens etokens (incf pos)))
-	       ;; empty nodes in enhanced dependencies
-	       ((cl-ppcre:scan "^[0-9]+.[0-9]+\\t" (car lines))
-		(reading (cdr lines) meta tokens mtokens (cons (line->etoken (car lines) pos) etokens) (incf pos))))))
-    (multiple-value-bind (meta tokens mtokens etokens)
-	(reading lines nil nil nil nil 0)
-      (make-instance 'sentence :start lineno :tokens tokens
-			       :meta (funcall fn-meta meta)
-			       :mtokens mtokens
-			       :etokens etokens))))
+  (let (meta tokens mtokens etokens)
+    (handler-case
+	(loop for line in lines
+	      for cline = lineno then (incf cline)
+	      do (if (equal #\# (char line 0))
+		     (push line meta)
+		     (let ((tk (line->token line cline)))
+		       (ecase (type-of tk)
+			 (token  (push tk tokens))
+			 (mtoken (push tk mtokens))
+			 (etoken (push tk etokens)))))
+	      finally
+		 (return (make-instance 'sentence :start   lineno
+						  :meta    (funcall fn-meta (reverse meta))
+						  :tokens  (reverse tokens)
+						  :mtokens (reverse mtokens)
+						  :etokens (reverse etokens))))
+      (malformed-line (e) nil)
+      (malformed-field (e) nil))))
 
 
 (defun read-conllu (input &key (fn-meta #'collect-meta))
