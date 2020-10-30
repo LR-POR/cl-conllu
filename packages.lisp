@@ -24,6 +24,7 @@
 	   #:sentence-meta-value
 	   #:token-children
 	   #:sentence->text
+	   #:sentence-fill-offsets
 	   #:read-stream
 	   #:read-file
 	   #:read-directory
@@ -37,8 +38,6 @@
 	   #:diff
 
 	   #:sentence-binary-tree
-         ; #:insert-token
-         ; #:remove-token
 	   #:adjust-sentence
 	   #:non-projective?
 
@@ -54,6 +53,8 @@
 	   #:token-deps
 	   #:token-misc
 	   #:token-sentence
+	   #:token-cfrom
+	   #:token-cto
 
            #:id
 	   #:form
@@ -70,7 +71,6 @@
 	   #:mtoken
 	   #:mtoken-start
 	   #:mtoken-end
-	   #:mtoken-form
 
 	   #:sentence
 	   #:sentence-start

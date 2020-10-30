@@ -6,14 +6,23 @@
 
 (defclass abstract-token ()
   ((sentence :accessor token-sentence)
-   (lineno   :initarg :lineno
-	     :accessor token-lineno)))
+   (lineno   :initarg  :lineno
+	     :accessor token-lineno)
+   (form     :initarg  :form
+	     :accessor token-form)
+   (cfrom    :initarg  :cfrom
+	     :initform -1
+	     :accessor token-cfrom)
+   (cto      :initarg  :cto
+	     :initform -1
+	     :accessor token-cto)
+   (misc     :initarg  :misc
+	     :initform "_"
+	     :accessor token-misc)))
 
 (defclass token (abstract-token)
   ((id      :initarg :id
 	    :accessor token-id)
-   (form    :initarg :form
-	    :accessor token-form)
    (lemma   :initarg :lemma
 	    :accessor token-lemma)
    (upostag :initarg :upostag
@@ -24,7 +33,6 @@
 	    :accessor token-xpostag)
    (feats   :initarg :feats
 	    :initform "_"
-
 	    :accessor token-feats)
    (head    :initarg :head
 	    :initform "_"
@@ -34,10 +42,7 @@
 	    :accessor token-deprel)
    (deps    :initarg :deps
 	    :initform "_"
-	    :accessor token-deps)
-   (misc    :initarg :misc
-	    :initform "_"
-	    :accessor token-misc)))
+	    :accessor token-deps)))
 
 
 (defclass etoken (abstract-token)
@@ -45,8 +50,6 @@
 	    :accessor etoken-prev)
    (index   :initarg :index
 	    :accessor etoken-index)
-   (form    :initarg :form
-	    :accessor etoken-form)
    (lemma   :initarg :lemma
 	    :accessor etoken-lemma)
    (upostag :initarg :upostag
@@ -60,22 +63,14 @@
 	    :accessor etoken-feats)
    (deps    :initarg :deps
 	    :initform "_"
-	    :accessor etoken-deps)
-   (misc    :initarg :misc
-	    :initform "_"
-	    :accessor etoken-misc)))
+	    :accessor etoken-deps)))
 
 
 (defclass mtoken (abstract-token)
   ((start   :initarg :start
 	    :accessor mtoken-start)
    (end     :initarg :end
-	    :accessor mtoken-end)
-   (form    :initarg :form
-	    :accessor mtoken-form)
-   (misc    :initarg :misc
-	    :initform "_"
-	    :accessor mtoken-misc)))
+	    :accessor mtoken-end)))
 
 
 (defclass sentence ()
@@ -112,11 +107,32 @@
 (defmethod initialize-instance :after ((obj sentence)
 				       &key tokens &allow-other-keys)
   "Sets the TOKEN-SENTENCE slot for each token attributed to the initialize sentence OBJ."
-  (mapc
-   #'(lambda (tk)
-       (setf (token-sentence tk)
-	     obj))
-   tokens))
+  (mapc (lambda (tk) (setf (token-sentence tk) obj))
+	tokens)
+  (sentence-fill-offsets obj))
+
+
+(defun sentence-fill-offsets (sentence)
+  (with-slots (tokens mtokens) sentence
+    (loop with cpos = 0
+	  with next = 0
+	  for ltk = nil then tk
+	  for tk in (sort (copy-seq (append tokens mtokens)) #'<= :key #'token-lineno)
+	  for form  = (token-form tk)
+	  for spc   = (if (search "SpaceAfter=No" (token-misc tk)) 0 1)
+	  for len   = (length form)
+	  do (typecase tk
+	       (token  (if (> (token-id tk) next)
+			   (setf (token-cfrom tk) cpos
+				 (token-cto   tk) (+ len cpos)
+				 cpos             (+ cpos len spc))
+			   (setf (token-cfrom tk) (token-cfrom ltk)
+				 (token-cto   tk) (token-cto ltk))))
+	       (mtoken (setf (token-cfrom tk) cpos
+			     (token-cto tk)   (+ len cpos)
+			     cpos             (+ cpos len spc)
+			     next             (mtoken-end tk))))
+	  finally (return sentence))))
 
 
 (defun sentence-matrix (sentence)
@@ -206,30 +222,7 @@
    both SPECIAL-FORMAT-TEST and SPECIAL-FORMAT-FUNCTION should be
    passed. Then for each object (token or mtoken) for which
    SPECIAL-FORMAT-TEST returns a non-nil result, its form is modified
-   by SPECIAL-FORMAT-FUNCTION in the final string.
-
-   Example:
-  (sentence-tokens *sentence*)
-  => (#<TOKEN The/DET #1-det-3> #<TOKEN US/PROPN #2-compound-3>
- #<TOKEN troops/NOUN #3-nsubj-4> #<TOKEN fired/VERB #4-root-0>
- #<TOKEN into/ADP #5-case-8> #<TOKEN the/DET #6-det-8>
- #<TOKEN hostile/ADJ #7-amod-8> #<TOKEN crowd/NOUN #8-obl-4>
- #<TOKEN ,/PUNCT #9-punct-4> #<TOKEN killing/VERB #10-advcl-4>
- #<TOKEN 4/NUM #11-obj-10> #<TOKEN ./PUNCT #12-punct-4>)
-
-  (sentence->text 
-    sentence)
-  => \"The US troops fired into the hostile crowd, killing 4.\"
-  
-   (sentence->text 
-     sentence
-    :special-format-test #'(lambda (token)
-			     (eq (token-upostag token)
-				 \"VERB\"))
-    :special-format-function (lambda (string)
-			       (format nil \"*~a*\" (string-upcase string))))
-   => \"The US troops *FIRED* into the hostile crowd, *KILLING* 4.\"
-"
+   by SPECIAL-FORMAT-FUNCTION in the final string."
    
   (assert (or (and special-format-test-supplied-p
 		   special-format-function-supplied-p)
@@ -311,70 +304,6 @@
 (defun token-parent (token sentence)
   (nth (- (token-head token) 1)
        (sentence-tokens sentence)))
-
-(defun mtoken->tokens (sentence mtoken)
-  (remove-if-not (lambda (x) (and (>= x (mtoken-start mtoken))
-				  (<= x (mtoken-end mtoken))))
-		 (sentence-tokens sentence)
-		 :key 'token-id))
-
-
-(defun insert-token (sentence new-token)
-  "Inserts TOKEN in a SENTENCE object. It will not be inserted exactly
-   as given: its ID will be the same (place where it'll be inserted)
-   but its head should point to id value prior to the insertion.
-   Therefore, it will be modified. Its TOKEN-SENTENCE slot will be
-   modified as well in order to point to SENTENCE. It changes the
-   SENTENCE object passed."
-  (with-slots (tokens mtokens) sentence
-    (dolist (token tokens)
-      (if (>= (token-id token) (token-id new-token))
-	  (incf (token-id token)))
-      (if (>= (token-head token) (token-id new-token))
-	  (incf (token-head token))))
-    (dolist (mtoken mtokens)
-      (if (>= (mtoken-start mtoken) (token-id new-token))
-	  (incf (mtoken-start mtoken)))
-      (if (>= (mtoken-end mtoken) (token-id new-token))
-	  (incf (mtoken-end mtoken))))
-    (if (>= (token-head new-token)
-	    (token-id new-token))
-	(incf (token-head new-token)))
-    (setf tokens
-	  (insert-at tokens (1- (token-id new-token)) new-token))
-    (setf (token-sentence new-token)
-	     new-token)
-    sentence))
-
-
-(defun remove-token (sentence id)
-  "Remove the token with the given ID if it is not part of a
-   multi-word token and it does not contain childs. It returns two
-   values, the sentence (changed or not) and a boolean (nil if the
-   sentence was not changed and true if changed. If the removed token
-   is the root of the sentence, a new root must be provided."
-  (with-slots (tokens mtokens) sentence
-    (let ((to-remove (find id tokens :key #'token-id :test #'equal))
-	  (childs (find id tokens :key #'token-head :test #'equal)))
-      (cond ((some (lambda (mt) (<= (mtoken-start mt) id (mtoken-end mt)))
-		   mtokens)
-	     (values sentence nil))
-	    ((or (null to-remove) childs)
-	     (values sentence nil))
-	    (t
-	     (dolist (token (sentence-tokens sentence))
-	       (if (> (token-id token) id)
-		   (decf (token-id token)))
-	       (if (> (token-head token) id)
-		   (decf (token-head token))))
-	     (dolist (mtoken (sentence-mtokens sentence))
-	       (if (> (mtoken-start mtoken) id)
-		   (decf (mtoken-start mtoken)))
-	       (if (> (mtoken-end mtoken) id)
-		   (decf (mtoken-end mtoken))))
-	     (setf tokens (remove to-remove tokens))
-             (slot-makunbound to-remove 'sentence)
-	     (values sentence t))))))
 
 
 (defun set-head (sentence id new-head &optional deprel)
