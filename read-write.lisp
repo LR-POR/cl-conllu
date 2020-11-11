@@ -47,8 +47,8 @@
 				    :id   (parse-field line 'id idx)
 				    :form form :lemma lemma
 				    :upostag upostag :xpostag xpostag :feats feats
-				    :head (parse-field line 'head head)
-				    :deprel deprel :misc misc))
+				    :head (parse-field line 'head head) :deprel deprel
+				    :deps deps :misc misc))
 	    (other (error 'malformed-field :line line
 					   :field 'id :value other)))))))
 
