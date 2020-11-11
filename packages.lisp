@@ -160,5 +160,5 @@
 
 
 (defpackage #:conllu.user
-  (:use #:cl #:cl-conllu #:conllu.draw))
+  (:use #:cl #:cl-conllu #:conllu.draw #:split-sequence))
 
