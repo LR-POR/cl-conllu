@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/local/bin/sbcl --script
+#!/usr/bin/env sbcl --script
 
 (load (merge-pathnames ".sbclrc" (user-homedir-pathname)))
 

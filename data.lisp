@@ -302,8 +302,31 @@
 
 
 (defun token-parent (token sentence)
-  (nth (- (token-head token) 1)
-       (sentence-tokens sentence)))
+  (when (not (equal 0 (token-head token)))
+    (nth (- (token-head token) 1)
+	 (sentence-tokens sentence))))
+
+(defun token-hash-features (token)
+  (alexandria:alist-hash-table
+   (mapcar (lambda (v)
+	     (let ((xs (cl-ppcre:split "=" v)))
+	       (cons (car xs) (cadr xs))))
+	   (cl-ppcre:split "\\|" (token-feats token))) :test #'equal))
+
+(defun hash-to-features (tb)
+  (let ((as (sort (alexandria:hash-table-alist tb) #'string<= :key #'car)))
+    (format nil "~{~a~^|~}"
+	    (loop for p in as collect (format nil "~a=~a" (car p) (cdr p))))))
+
+(defun token-add-feature (token feat val)
+  (let ((tb (token-hash-features token)))
+    (setf (gethash feat tb) val)
+    (setf (token-feats token) (hash-to-features tb))))
+
+(defun token-rem-feature (token feat)
+  (let ((tb (token-hash-features token)))
+    (remhash feat tb)
+    (setf (token-feats token) (hash-to-features tb))))
 
 
 (defun set-head (sentence id new-head &optional deprel)

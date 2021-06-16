@@ -23,6 +23,10 @@
 	   #:sentence-root
 	   #:sentence-meta-value
 	   #:token-children
+	   #:token-parent
+	   #:token-hash-features
+	   #:token-add-feature
+	   #:token-rem-feature
 	   #:sentence->text
 	   #:sentence-fill-offsets
 	   #:read-stream
