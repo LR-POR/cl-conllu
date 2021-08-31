@@ -51,24 +51,42 @@
       (cons (reverse child) (reverse adopted))))
 
 
-(defun make-tree (fields-or-function tokens lines branches)
-  (if branches
-      (let* ((branch   (first branches))
-             (branches (rest branches))
-             (kids     (rest branch))
-             (adopted  (rest kids)))
-        (if (adopted-unfinished? lines adopted)
-            (make-tree fields-or-function tokens lines (append branches (list branch)))
-            (let* ((dad   (first branch))
-                   (child (first kids))
-                   (data  (get-data fields-or-function tokens dad)))
-              (if child
-                  (let ((lines        (make-twigs data dad child adopted lines))
-                        (new-branches (mapcar #'(lambda (id) (cons id (get-kids id tokens))) child)))
-                    (make-tree fields-or-function tokens lines (append new-branches branches)))
-                  (let ((lines (update-lines dad (concatenate 'string "─╼" data) lines)))
-                    (make-tree fields-or-function tokens lines branches))))))
-      lines))
+(defun make-tree (fields-or-function tokens lines branches &optional branches-alt)
+  (cond (branches
+         (let* ((branch   (first branches))
+                (branches (rest branches))
+                (kids     (rest branch))
+                (adopted  (rest kids)))
+           (if (adopted-unfinished? lines adopted)
+               (make-tree fields-or-function tokens lines branches (cons branch branches-alt))
+               (let* ((dad   (first branch))
+                      (child (first kids))
+                      (data  (get-data fields-or-function tokens dad)))
+                 (if child
+                     (let ((lines        (make-twigs data dad child adopted lines))
+                           (new-branches (mapcar #'(lambda (id) (cons id (get-kids id tokens)))
+                                                 child)))
+                       (make-tree fields-or-function tokens lines
+                                  (append new-branches branches-alt branches)))
+                     (let ((lines (update-lines dad (concatenate 'string "─╼" data) lines)))
+                       (make-tree fields-or-function tokens lines
+                                  (append branches-alt branches))))))))
+        (branches-alt
+         (let* ((branch   (first branches-alt))
+                (branches (rest branches-alt))
+                (kids     (rest branch))
+                (adopted  (rest kids))
+                (dad      (first branch))
+                (child    (first kids))
+                (data     (get-data fields-or-function tokens dad)))
+           (if child
+               (let ((lines        (make-twigs data dad child adopted lines))
+                     (new-branches (mapcar #'(lambda (id) (cons id (get-kids id tokens)))
+                                           child)))
+                 (make-tree fields-or-function tokens lines (append new-branches branches)))
+               (let ((lines (update-lines dad (concatenate 'string "─╼" data) lines)))
+                 (make-tree fields-or-function tokens lines branches-alt)))))
+        (t lines)))
 
 
 (defun adopted-unfinished? (lines ids)
